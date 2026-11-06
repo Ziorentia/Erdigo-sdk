@@ -1,0 +1,70 @@
+{
+  "connect_counter" : 1700000000000,
+  "description" : "An ordinary connection. All keys here are test-only and derived from public labels.",
+  "device_ephemeral_private" : "6f657cd226da96140dac6b3c6cb8ba95d8d2938cf16e6b0430da3266d2dc7c68",
+  "device_fingerprint" : "2a03ad4d2af5efd7a32e9f0d964b460fe4ebbe94699dd8736c08834eee0ffd0e",
+  "device_static_private" : "685a1b2149667f3f83f0056d54d86f2e773c02ad9ef7bd3f706dacde9e00454b",
+  "device_static_public" : "3c6fb2c7253562b25c69d82207f3a0acd1c3e0f03288a74f89004f464ffd5a06",
+  "frames" : [
+    {
+      "direction" : "device_to_receiver",
+      "stage" : "preamble",
+      "wire" : "45494e3101"
+    },
+    {
+      "direction" : "device_to_receiver",
+      "noise_message" : "65f118173802e2d176e393606ccbb66d42a386beee830ad2a7d2d2e13aa0b76f52f75ae2ce7b144c491af1da4b5f3a05ea93419d13a20afa6704ae37294508da71c277d3417247a63d3daca1e6a648789d5fbc02dc8c3a42dfd34ce6d2882d812fa8f6746185527e",
+      "payload" : "0000018bcfe56800",
+      "payload_text" : "",
+      "stage" : "handshake_1",
+      "wire" : "006865f118173802e2d176e393606ccbb66d42a386beee830ad2a7d2d2e13aa0b76f52f75ae2ce7b144c491af1da4b5f3a05ea93419d13a20afa6704ae37294508da71c277d3417247a63d3daca1e6a648789d5fbc02dc8c3a42dfd34ce6d2882d812fa8f6746185527e"
+    },
+    {
+      "direction" : "receiver_to_device",
+      "noise_message" : "c7aa7e3f03728b9a47616fe11d22ab065901136a96334f6ee09936ac9f475b27d3d7d706a6730ea0cbf93956581e46ac",
+      "payload" : "",
+      "payload_text" : "",
+      "stage" : "handshake_2",
+      "wire" : "0030c7aa7e3f03728b9a47616fe11d22ab065901136a96334f6ee09936ac9f475b27d3d7d706a6730ea0cbf93956581e46ac"
+    },
+    {
+      "direction" : "device_to_receiver",
+      "noise_message" : "c69caaaaea8e3cd2802ddbc125418272c4288d12dbcb5b30bbe685314ea84b5398b6c7f9a90d79ebd481e30a7e63afd41958e5bf53781d57b0c15b0e0bc40cb76e6e9466",
+      "payload" : "7b2274223a2268656c6c6f222c2276657273696f6e73223a5b315d2c2273646b223a2265726469676f2d746573742f312e30227d",
+      "payload_text" : "{\"t\":\"hello\",\"versions\":[1],\"sdk\":\"erdigo-test/1.0\"}",
+      "stage" : "hello",
+      "wire" : "0044c69caaaaea8e3cd2802ddbc125418272c4288d12dbcb5b30bbe685314ea84b5398b6c7f9a90d79ebd481e30a7e63afd41958e5bf53781d57b0c15b0e0bc40cb76e6e9466"
+    },
+    {
+      "direction" : "receiver_to_device",
+      "noise_message" : "6800c79739bb3e875c72a20cdad0febfae5aeb07cba6cdc7d4ad51bf4e00ec66a4af25453ae74f650c6faa9c9e65f8897f7043b0eb321e26819187e67e40f5dfe6689219c00aee5eda5bbffcad391b47555f847bfda3ed98470bf0b7edab07f0ffbd40be8e3ca175db187fdbd7af223d7628698f39a64838e9e42de9ce44dad1de70938b8a55c4064109ae492b70910dcd300a826b042bd88501136035915ae00e74b2e3d996714ceae8f524b1af09affd0f66a273fa58c53291c442959cd8df29d29907ad82cd69019d87e6fe272ec9f1f9f23669bff1fc8c76478877034db98e09a3a6ca7cebc693992313138ec775120801adf81876cbcc647e730379217066f77d51e390c294491f75ee82cbdb9a96d004893ca498fd03fca6a841970a44f2f0939a20cd94cba797ce2133e307e452d2157853ab",
+      "payload" : "7b2274223a2277656c636f6d65222c2276657273696f6e223a312c226c6173745f736571223a34312c226b696e6473223a5b2270696e222c22747261636b225d2c226c696d697473223a7b226974656d73223a3530302c2270686f746f73223a35302c2270686f746f5f6279746573223a313034383537362c226e6f74655f6279746573223a343039362c227469746c655f6368617273223a3230302c22747261636b5f706f696e7473223a333030302c226f70656e5f747261636b73223a352c22747261636b73223a3230302c226d7367735f7065725f73223a352c226d73675f6275727374223a32302c22706f696e74735f7065725f73223a312c22706f696e745f6275727374223a3130302c226469736b5f6279746573223a33313435373238307d7d",
+      "payload_text" : "{\"t\":\"welcome\",\"version\":1,\"last_seq\":41,\"kinds\":[\"pin\",\"track\"],\"limits\":{\"items\":500,\"photos\":50,\"photo_bytes\":1048576,\"note_bytes\":4096,\"title_chars\":200,\"track_points\":3000,\"open_tracks\":5,\"tracks\":200,\"msgs_per_s\":5,\"msg_burst\":20,\"points_per_s\":1,\"point_burst\":100,\"disk_bytes\":31457280}}",
+      "stage" : "welcome",
+      "wire" : "01366800c79739bb3e875c72a20cdad0febfae5aeb07cba6cdc7d4ad51bf4e00ec66a4af25453ae74f650c6faa9c9e65f8897f7043b0eb321e26819187e67e40f5dfe6689219c00aee5eda5bbffcad391b47555f847bfda3ed98470bf0b7edab07f0ffbd40be8e3ca175db187fdbd7af223d7628698f39a64838e9e42de9ce44dad1de70938b8a55c4064109ae492b70910dcd300a826b042bd88501136035915ae00e74b2e3d996714ceae8f524b1af09affd0f66a273fa58c53291c442959cd8df29d29907ad82cd69019d87e6fe272ec9f1f9f23669bff1fc8c76478877034db98e09a3a6ca7cebc693992313138ec775120801adf81876cbcc647e730379217066f77d51e390c294491f75ee82cbdb9a96d004893ca498fd03fca6a841970a44f2f0939a20cd94cba797ce2133e307e452d2157853ab"
+    },
+    {
+      "direction" : "device_to_receiver",
+      "noise_message" : "2dcfca20c87395aabeaf5bd4eb4c847d8ac814afc747cb59df7b1978915764cc35a85d9fb61446cdb27bd70327c67f5fbc2cc3bc282f662feae677bdfb9df6e74349b49927fd7a0ebdd8563c1e3b578fce1b8f1493869ce1e9fe3057b4803e12c283fbfa6fd69a233030fdd2f0f20a",
+      "payload" : "7b2274223a22707574222c22736571223a34322c226b696e64223a2270696e222c226964223a2267617465222c226c6174223a33372e353739362c226c6f6e223a3132362e3937372c227469746c65223a2250616c6163652067617465227d",
+      "payload_text" : "{\"t\":\"put\",\"seq\":42,\"kind\":\"pin\",\"id\":\"gate\",\"lat\":37.5796,\"lon\":126.977,\"title\":\"Palace gate\"}",
+      "stage" : "request",
+      "wire" : "006f2dcfca20c87395aabeaf5bd4eb4c847d8ac814afc747cb59df7b1978915764cc35a85d9fb61446cdb27bd70327c67f5fbc2cc3bc282f662feae677bdfb9df6e74349b49927fd7a0ebdd8563c1e3b578fce1b8f1493869ce1e9fe3057b4803e12c283fbfa6fd69a233030fdd2f0f20a"
+    },
+    {
+      "direction" : "receiver_to_device",
+      "noise_message" : "ab387dc73bb498e20f04d7c7b77af125c59e9a18de54b9e9b293d2698474e459fdf17418cf766d17f9b1844140043548",
+      "payload" : "7b2274223a2261636b222c22736571223a34322c22647570223a66616c73657d",
+      "payload_text" : "{\"t\":\"ack\",\"seq\":42,\"dup\":false}",
+      "stage" : "ack",
+      "wire" : "0030ab387dc73bb498e20f04d7c7b77af125c59e9a18de54b9e9b293d2698474e459fdf17418cf766d17f9b1844140043548"
+    }
+  ],
+  "handshake_hash" : "c23e067330ba1e1fbd0604bfefa4be29c258b238009060078cde09de98aa54e9",
+  "preamble_and_prologue" : "45494e3101",
+  "protocol_name" : "Noise_IK_25519_ChaChaPoly_SHA256",
+  "receiver_ephemeral_private" : "8a4fab51bdef101d7b79ba87a3285cdddfc89bf862ad0fc0ab4ed7b6e32ef6fc",
+  "receiver_fingerprint" : "61a262dfb9af8d6247ef8ecf537e73b6d182e8eb2ce070930e706186bd1bed22",
+  "receiver_static_private" : "aba90c7821543201a37c51e9e9a878e79956033fae8243029b566428ec436038",
+  "receiver_static_public" : "4d6697fe8fcf8538c371810352739f166fb21789fe423494c89b7ba3b4699601"
+}

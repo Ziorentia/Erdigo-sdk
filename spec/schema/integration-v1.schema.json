@@ -1,0 +1,317 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/schema/integration-v1.schema.json",
+  "title": "Erdigo integration protocol, version 1",
+  "description": "The shape of every message. Some rules cannot be expressed here, such as rejecting duplicate keys and invalid UTF-8. See spec/integration-v1.md.",
+  "oneOf": [
+    { "$ref": "#/$defs/hello" },
+    { "$ref": "#/$defs/pair_request" },
+    { "$ref": "#/$defs/ping" },
+    { "$ref": "#/$defs/put_pin" },
+    { "$ref": "#/$defs/put_marker" },
+    { "$ref": "#/$defs/put_note" },
+    { "$ref": "#/$defs/move" },
+    { "$ref": "#/$defs/delete" },
+    { "$ref": "#/$defs/delete_all" },
+    { "$ref": "#/$defs/photo_begin" },
+    { "$ref": "#/$defs/photo_chunk" },
+    { "$ref": "#/$defs/photo_end" },
+    { "$ref": "#/$defs/track_append" },
+    { "$ref": "#/$defs/track_finish" },
+    { "$ref": "#/$defs/welcome" },
+    { "$ref": "#/$defs/ack" },
+    { "$ref": "#/$defs/error" },
+    { "$ref": "#/$defs/pair_status_simple" },
+    { "$ref": "#/$defs/pair_status_approved" }
+  ],
+  "$defs": {
+    "seq": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+    "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+    "lon": { "type": "number", "minimum": -180, "maximum": 180 },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F\\u061C\\u200E\\u200F\\u202A-\\u202E\\u2066-\\u2069\\u2028\\u2029\\uFEFF]*$"
+    },
+    "note_text": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[^\\u0000-\\u0008\\u000B-\\u001F\\u007F-\\u009F\\u061C\\u200E\\u200F\\u202A-\\u202E\\u2066-\\u2069\\u2028\\u2029\\uFEFF]*$"
+    },
+    "kind": { "enum": ["pin", "marker", "note", "photo", "track"] },
+    "kinds": { "type": "array", "items": { "$ref": "#/$defs/kind" }, "uniqueItems": true },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": { "type": "integer", "minimum": 1, "maximum": 65535 }
+    },
+    "sdk": { "type": "string", "pattern": "^[A-Za-z0-9._/-]{1,64}$" },
+    "hello": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "versions", "sdk"],
+      "properties": {
+        "t": { "const": "hello" },
+        "versions": { "$ref": "#/$defs/versions" },
+        "sdk": { "$ref": "#/$defs/sdk" }
+      }
+    },
+    "pair_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "versions", "sdk", "name", "kinds"],
+      "properties": {
+        "t": { "const": "pair_request" },
+        "versions": { "$ref": "#/$defs/versions" },
+        "sdk": { "$ref": "#/$defs/sdk" },
+        "name": { "type": "string" },
+        "kinds": { "allOf": [{ "$ref": "#/$defs/kinds" }, { "minItems": 1 }] }
+      }
+    },
+    "ping": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq"],
+      "properties": { "t": { "const": "ping" }, "seq": { "$ref": "#/$defs/seq" } }
+    },
+    "put_pin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "kind", "id", "lat", "lon"],
+      "properties": {
+        "t": { "const": "put" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "kind": { "const": "pin" },
+        "id": { "$ref": "#/$defs/id" },
+        "lat": { "$ref": "#/$defs/lat" },
+        "lon": { "$ref": "#/$defs/lon" },
+        "title": { "$ref": "#/$defs/title" }
+      }
+    },
+    "put_marker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "kind", "id", "lat", "lon"],
+      "properties": {
+        "t": { "const": "put" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "kind": { "const": "marker" },
+        "id": { "$ref": "#/$defs/id" },
+        "lat": { "$ref": "#/$defs/lat" },
+        "lon": { "$ref": "#/$defs/lon" },
+        "title": { "$ref": "#/$defs/title" },
+        "color": { "enum": ["red", "orange", "yellow", "green", "blue", "purple", "gray"] }
+      }
+    },
+    "put_note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "kind", "id", "lat", "lon", "text"],
+      "properties": {
+        "t": { "const": "put" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "kind": { "const": "note" },
+        "id": { "$ref": "#/$defs/id" },
+        "lat": { "$ref": "#/$defs/lat" },
+        "lon": { "$ref": "#/$defs/lon" },
+        "text": { "$ref": "#/$defs/note_text" }
+      }
+    },
+    "move": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id", "lat", "lon"],
+      "properties": {
+        "t": { "const": "move" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" },
+        "lat": { "$ref": "#/$defs/lat" },
+        "lon": { "$ref": "#/$defs/lon" }
+      }
+    },
+    "delete": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id"],
+      "properties": {
+        "t": { "const": "delete" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "delete_all": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq"],
+      "properties": { "t": { "const": "delete_all" }, "seq": { "$ref": "#/$defs/seq" } }
+    },
+    "photo_begin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id", "lat", "lon", "type", "size", "sha256", "chunks"],
+      "properties": {
+        "t": { "const": "photo_begin" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" },
+        "lat": { "$ref": "#/$defs/lat" },
+        "lon": { "$ref": "#/$defs/lon" },
+        "title": { "$ref": "#/$defs/title" },
+        "type": { "enum": ["image/jpeg", "image/png"] },
+        "size": { "type": "integer", "minimum": 1, "maximum": 1048576 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "chunks": { "type": "integer", "minimum": 1, "maximum": 65535 }
+      }
+    },
+    "photo_chunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id", "index", "data"],
+      "properties": {
+        "t": { "const": "photo_chunk" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" },
+        "index": { "type": "integer", "minimum": 0, "maximum": 65534 },
+        "data": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64000,
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw]==|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=)?$"
+        }
+      }
+    },
+    "photo_end": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id"],
+      "properties": {
+        "t": { "const": "photo_end" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "track_point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lat", "lon"],
+      "properties": {
+        "lat": { "$ref": "#/$defs/lat" },
+        "lon": { "$ref": "#/$defs/lon" },
+        "ts": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "alt": { "type": "number", "minimum": -1000, "maximum": 100000 }
+      }
+    },
+    "track_append": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id", "points"],
+      "properties": {
+        "t": { "const": "track_append" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "$ref": "#/$defs/title" },
+        "points": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 100,
+          "items": { "$ref": "#/$defs/track_point" }
+        }
+      }
+    },
+    "track_finish": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "id"],
+      "properties": {
+        "t": { "const": "track_finish" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "id": { "$ref": "#/$defs/id" }
+      }
+    },
+    "positive_limit": { "type": "integer", "minimum": 1, "maximum": 1099511627776 },
+    "welcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "version", "last_seq", "kinds", "limits"],
+      "properties": {
+        "t": { "const": "welcome" },
+        "version": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "last_seq": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "kinds": { "$ref": "#/$defs/kinds" },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "items", "photos", "photo_bytes", "note_bytes", "title_chars", "track_points",
+            "open_tracks", "tracks", "msgs_per_s", "msg_burst", "points_per_s", "point_burst", "disk_bytes"
+          ],
+          "properties": {
+            "items": { "$ref": "#/$defs/positive_limit" },
+            "photos": { "$ref": "#/$defs/positive_limit" },
+            "photo_bytes": { "$ref": "#/$defs/positive_limit" },
+            "note_bytes": { "$ref": "#/$defs/positive_limit" },
+            "title_chars": { "$ref": "#/$defs/positive_limit" },
+            "track_points": { "$ref": "#/$defs/positive_limit" },
+            "open_tracks": { "$ref": "#/$defs/positive_limit" },
+            "tracks": { "$ref": "#/$defs/positive_limit" },
+            "msgs_per_s": { "$ref": "#/$defs/positive_limit" },
+            "msg_burst": { "$ref": "#/$defs/positive_limit" },
+            "points_per_s": { "$ref": "#/$defs/positive_limit" },
+            "point_burst": { "type": "integer", "minimum": 100, "maximum": 1099511627776 },
+            "disk_bytes": { "$ref": "#/$defs/positive_limit" }
+          }
+        }
+      }
+    },
+    "ack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "seq", "dup"],
+      "properties": {
+        "t": { "const": "ack" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "dup": { "type": "boolean" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "code"],
+      "properties": {
+        "t": { "const": "error" },
+        "code": { "type": "string", "pattern": "^[a-z_]{1,64}$" },
+        "seq": { "$ref": "#/$defs/seq" },
+        "last_seq": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "retry_after_ms": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+        "supported": {
+          "type": "array",
+          "maxItems": 16,
+          "items": { "type": "integer", "minimum": 1, "maximum": 65535 }
+        },
+        "fatal": { "type": "boolean" }
+      }
+    },
+    "pair_status_simple": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "status"],
+      "properties": {
+        "t": { "const": "pair_status" },
+        "status": { "enum": ["pending", "denied"] }
+      }
+    },
+    "pair_status_approved": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["t", "status", "kinds", "counter"],
+      "properties": {
+        "t": { "const": "pair_status" },
+        "status": { "const": "approved" },
+        "kinds": { "$ref": "#/$defs/kinds" },
+        "counter": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
+      }
+    }
+  }
+}

@@ -1,0 +1,302 @@
+{
+  "description" : "Requests a receiver must accept and must reject. 'code' is the error it must report.",
+  "invalid" : [
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"steal_everything\",\"seq\":1}",
+      "name" : "unknown type"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":1,\"extra\":true}",
+      "name" : "unknown field"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"uid\":\"someone-else\"}",
+      "name" : "identity field"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"name\":\"someone-else\"}",
+      "name" : "name field"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":1,\"seq\":2}",
+      "name" : "duplicate key"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":1} x",
+      "name" : "trailing data"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "[1,2,3]",
+      "name" : "not an object"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":0}",
+      "name" : "sequence number zero"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":9007199254740992}",
+      "name" : "sequence number too large"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":1.5}",
+      "name" : "sequence number as a fraction"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":\"1\"}",
+      "name" : "sequence number as text"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":NaN,\"lon\":1}",
+      "name" : "NaN literal"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1e999,\"lon\":1}",
+      "name" : "number too large to represent"
+    },
+    {
+      "code" : "invalid_coordinate",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":90.01,\"lon\":1}",
+      "name" : "latitude out of range"
+    },
+    {
+      "code" : "invalid_coordinate",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":-180.5}",
+      "name" : "longitude out of range"
+    },
+    {
+      "code" : "invalid_id",
+      "json" : "{\"t\":\"delete\",\"seq\":1,\"id\":\"\"}",
+      "name" : "empty id"
+    },
+    {
+      "code" : "invalid_id",
+      "json" : "{\"t\":\"delete\",\"seq\":1,\"id\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "name" : "id too long"
+    },
+    {
+      "code" : "invalid_id",
+      "json" : "{\"t\":\"delete\",\"seq\":1,\"id\":\"a/b\"}",
+      "name" : "id with a slash"
+    },
+    {
+      "code" : "invalid_id",
+      "json" : "{\"t\":\"delete\",\"seq\":1,\"id\":\"pïn\"}",
+      "name" : "non-ASCII id"
+    },
+    {
+      "code" : "invalid_text",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"title\":\"\"}",
+      "name" : "empty title"
+    },
+    {
+      "code" : "invalid_text",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"title\":\"a\\u0007b\"}",
+      "name" : "title with a control character"
+    },
+    {
+      "code" : "invalid_text",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"title\":\"a‮b\"}",
+      "name" : "title with a direction override"
+    },
+    {
+      "code" : "too_large",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"title\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "name" : "title too long"
+    },
+    {
+      "code" : "too_large",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"note\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"text\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}",
+      "name" : "note too long"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"photo\",\"id\":\"a\",\"lat\":1,\"lon\":1}",
+      "name" : "put of a photo"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"text\":\"x\"}",
+      "name" : "pin with note text"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"marker\",\"id\":\"a\",\"lat\":1,\"lon\":1,\"color\":\"#ff0000\"}",
+      "name" : "unknown colour"
+    },
+    {
+      "code" : "photo_invalid",
+      "json" : "{\"t\":\"photo_begin\",\"seq\":1,\"id\":\"a\",\"lat\":1,\"lon\":1,\"type\":\"image/heic\",\"size\":1,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"chunks\":1}",
+      "name" : "photo in a forbidden format"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"photo_begin\",\"seq\":1,\"id\":\"a\",\"lat\":1,\"lon\":1,\"type\":\"image/png\",\"size\":1,\"sha256\":\"AA00000000000000000000000000000000000000000000000000000000000000\",\"chunks\":1}",
+      "name" : "hash in uppercase"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"photo_chunk\",\"seq\":1,\"id\":\"a\",\"index\":0,\"data\":\"AAF=\"}",
+      "name" : "base64 that is not canonical"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"photo_chunk\",\"seq\":1,\"id\":\"a\",\"index\":0,\"data\":\"AA\\nEC\"}",
+      "name" : "base64 with a line break"
+    },
+    {
+      "code" : "too_large",
+      "json" : "{\"t\":\"photo_begin\",\"seq\":1,\"id\":\"a\",\"lat\":1,\"lon\":1,\"type\":\"image/png\",\"size\":1048577,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"chunks\":22}",
+      "name" : "photo larger than the limit"
+    },
+    {
+      "code" : "too_large",
+      "json" : "{\"t\":\"photo_begin\",\"seq\":1,\"id\":\"a\",\"lat\":1,\"lon\":1,\"type\":\"image/png\",\"size\":9007199254740991,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"chunks\":1}",
+      "name" : "enormous photo size"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"photo_begin\",\"seq\":1,\"id\":\"a\",\"lat\":1,\"lon\":1,\"type\":\"image/png\",\"size\":48001,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"chunks\":1}",
+      "name" : "chunk count that does not match the size"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"photo_chunk\",\"seq\":1,\"id\":\"a\",\"index\":0,\"data\":\"\"}",
+      "name" : "empty photo chunk"
+    },
+    {
+      "code" : "invalid_coordinate",
+      "json" : "{\"t\":\"put\",\"seq\":1,\"kind\":\"pin\",\"id\":\"a\",\"lat\":99999999999999999999,\"lon\":1}",
+      "name" : "coordinate as a very long integer"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":99999999999999999999}",
+      "name" : "sequence number as a very long integer"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"track_append\",\"seq\":1,\"id\":\"a\",\"points\":[]}",
+      "name" : "empty track append"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"track_append\",\"seq\":1,\"id\":\"a\",\"points\":[{\"lat\":1,\"lon\":1,\"speed\":3}]}",
+      "name" : "unknown field in a point"
+    },
+    {
+      "code" : "invalid_message",
+      "json" : "{\"t\":\"ping\",\"seq\":1,\"a\":[[[[[[[[[[1]]]]]]]]]]}",
+      "name" : "nesting too deep"
+    }
+  ],
+  "invalid_bytes" : [
+    {
+      "code" : "invalid_message",
+      "hex" : "efbbbf7b2274223a2270696e67222c22736571223a317d",
+      "name" : "byte order mark"
+    },
+    {
+      "code" : "invalid_message",
+      "hex" : "7b2274223a2270696e67222c22736571223a312c2261223a22c0af227d",
+      "name" : "overlong encoding"
+    },
+    {
+      "code" : "invalid_message",
+      "hex" : "7b2274223a2270696e67222c22736571223a312c2261223a22eda080227d",
+      "name" : "encoded surrogate"
+    },
+    {
+      "code" : "invalid_message",
+      "hex" : "7b2274223a2270696e67222c22736571223a312c2261223a22f4908080227d",
+      "name" : "above U+10FFFF"
+    },
+    {
+      "code" : "invalid_message",
+      "hex" : "7b2274223a2270696e67222c22736571223a312c2261223a225c7564383030227d",
+      "name" : "unpaired surrogate escape"
+    }
+  ],
+  "valid" : [
+    {
+      "json" : "{\"t\":\"ping\",\"seq\":1}",
+      "name" : "ping"
+    },
+    {
+      "json" : "{\"t\":\"put\",\"seq\":2,\"kind\":\"pin\",\"id\":\"gate-1\",\"lat\":37.5796,\"lon\":126.977,\"title\":\"Palace gate\"}",
+      "name" : "pin"
+    },
+    {
+      "json" : "{\"t\":\"put\",\"seq\":2,\"kind\":\"pin\",\"id\":\"gate_1\",\"lat\":-33.8568,\"lon\":151.2153}",
+      "name" : "pin without title"
+    },
+    {
+      "json" : "{\"t\":\"put\",\"seq\":2,\"kind\":\"pin\",\"id\":\"a\",\"lat\":-90,\"lon\":180}",
+      "name" : "pin at the extremes"
+    },
+    {
+      "json" : "{\"lon\":2.2945,\"lat\":48.8584,\"id\":\"tower\",\"kind\":\"pin\",\"seq\":3,\"t\":\"put\"}",
+      "name" : "fields in another order"
+    },
+    {
+      "json" : "{\"t\":\"put\",\"seq\":4,\"kind\":\"marker\",\"id\":\"m1\",\"lat\":40.7484,\"lon\":-73.9857,\"title\":\"Tower\",\"color\":\"blue\"}",
+      "name" : "marker"
+    },
+    {
+      "json" : "{\"t\":\"put\",\"seq\":5,\"kind\":\"note\",\"id\":\"n1\",\"lat\":37.5663,\"lon\":126.9779,\"text\":\"First line\\nSecond line\"}",
+      "name" : "note with line break"
+    },
+    {
+      "json" : "{\"t\":\"put\",\"seq\":6,\"kind\":\"pin\",\"id\":\"p6\",\"lat\":47.3779,\"lon\":8.5403,\"title\":\"Zürich Hauptbahnhof €\"}",
+      "name" : "non-ASCII title"
+    },
+    {
+      "json" : "{\"t\":\"move\",\"seq\":7,\"id\":\"gate-1\",\"lat\":37.58,\"lon\":126.98}",
+      "name" : "move"
+    },
+    {
+      "json" : "{\"t\":\"delete\",\"seq\":8,\"id\":\"gate-1\"}",
+      "name" : "delete"
+    },
+    {
+      "json" : "{\"t\":\"delete_all\",\"seq\":9}",
+      "name" : "delete all"
+    },
+    {
+      "json" : "{\"t\":\"photo_begin\",\"seq\":10,\"id\":\"ph1\",\"lat\":37.5663,\"lon\":126.9779,\"type\":\"image/jpeg\",\"size\":1000,\"sha256\":\"0000000000000000000000000000000000000000000000000000000000000000\",\"chunks\":1}",
+      "name" : "photo begin"
+    },
+    {
+      "json" : "{\"t\":\"photo_chunk\",\"seq\":11,\"id\":\"ph1\",\"index\":0,\"data\":\"AAEC\"}",
+      "name" : "photo chunk"
+    },
+    {
+      "json" : "{\"t\":\"photo_end\",\"seq\":12,\"id\":\"ph1\"}",
+      "name" : "photo end"
+    },
+    {
+      "json" : "{\"t\":\"track_append\",\"seq\":13,\"id\":\"walk\",\"title\":\"Morning walk\",\"points\":[{\"lat\":37.5663,\"lon\":126.9779,\"ts\":1700000000000,\"alt\":38.5},{\"lat\":37.5665,\"lon\":126.978}]}",
+      "name" : "track append"
+    },
+    {
+      "json" : "{\"t\":\"track_finish\",\"seq\":14,\"id\":\"walk\"}",
+      "name" : "track finish"
+    },
+    {
+      "json" : "{\"t\":\"ping\",\"seq\":9007199254740991}",
+      "name" : "largest safe sequence number"
+    }
+  ]
+}

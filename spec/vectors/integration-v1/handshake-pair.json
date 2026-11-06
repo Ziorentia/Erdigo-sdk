@@ -1,0 +1,63 @@
+{
+  "description" : "Pairing. All keys and the code here are test-only and derived from public labels.",
+  "device_ephemeral_private" : "032d0e8f847878058d56ac0b218f29ab5606de49799f526aa88532fc427724b0",
+  "device_static_private" : "685a1b2149667f3f83f0056d54d86f2e773c02ad9ef7bd3f706dacde9e00454b",
+  "device_static_public" : "3c6fb2c7253562b25c69d82207f3a0acd1c3e0f03288a74f89004f464ffd5a06",
+  "frames" : [
+    {
+      "direction" : "device_to_receiver",
+      "stage" : "preamble",
+      "wire" : "45494e3102"
+    },
+    {
+      "direction" : "device_to_receiver",
+      "noise_message" : "87d969232b5aa22fac525baa0be15762d5cd0f417d3de83bb56c0fd061bd9d3fb6e53f0d3ddabf4bfaa8231551649d83",
+      "payload" : "",
+      "payload_text" : "",
+      "stage" : "handshake_1",
+      "wire" : "003087d969232b5aa22fac525baa0be15762d5cd0f417d3de83bb56c0fd061bd9d3fb6e53f0d3ddabf4bfaa8231551649d83"
+    },
+    {
+      "direction" : "receiver_to_device",
+      "noise_message" : "09b097b31f04bfa813fba89c65776b02253536f76be3166bf005e2fb28359423ed59c8bd8fe0c3b9a02022011b0e6f93e9f7f76dffa84ea60b62568bc59d721e1a1dcd922e4e8963a6e5d5223bc9670ba8d3d69df55420f522cf8772b83208c7",
+      "payload" : "",
+      "payload_text" : "",
+      "stage" : "handshake_2",
+      "wire" : "006009b097b31f04bfa813fba89c65776b02253536f76be3166bf005e2fb28359423ed59c8bd8fe0c3b9a02022011b0e6f93e9f7f76dffa84ea60b62568bc59d721e1a1dcd922e4e8963a6e5d5223bc9670ba8d3d69df55420f522cf8772b83208c7"
+    },
+    {
+      "direction" : "device_to_receiver",
+      "noise_message" : "768454bf1da00ba7e1f56ad06d462c1b4538aa83bd752327c90202d894e08ef9e39900c6acf31b16217882b01742af9ff809d6ad9c687874f321c205d20ce1d44fb0da0ec988e3442e87251ca673eecd2473ac615e6726acf2c8fee3fd24fb14be65f9cf4ac90d32ae715a577e930ab5bb14880bec0aadece04a0666ae43c4bd055966364b032014d5c50544a3e8cfa91a0fc81008e4c44ce740692c7af45b0921ab53ca8d16ee64",
+      "payload" : "7b2274223a22706169725f72657175657374222c2276657273696f6e73223a5b315d2c2273646b223a2265726469676f2d746573742f312e30222c226e616d65223a225465737420646576696365222c226b696e6473223a5b2270696e222c22747261636b225d7d",
+      "payload_text" : "{\"t\":\"pair_request\",\"versions\":[1],\"sdk\":\"erdigo-test/1.0\",\"name\":\"Test device\",\"kinds\":[\"pin\",\"track\"]}",
+      "stage" : "handshake_3",
+      "wire" : "00a8768454bf1da00ba7e1f56ad06d462c1b4538aa83bd752327c90202d894e08ef9e39900c6acf31b16217882b01742af9ff809d6ad9c687874f321c205d20ce1d44fb0da0ec988e3442e87251ca673eecd2473ac615e6726acf2c8fee3fd24fb14be65f9cf4ac90d32ae715a577e930ab5bb14880bec0aadece04a0666ae43c4bd055966364b032014d5c50544a3e8cfa91a0fc81008e4c44ce740692c7af45b0921ab53ca8d16ee64"
+    },
+    {
+      "direction" : "receiver_to_device",
+      "noise_message" : "f74a134d0687740cf5898d2f6250754c0e0eb82f0ebbf56feed9d62a9fc6ebfd489f60e4d9541d2ea4d70084a63db6086d3da4f90bc7",
+      "payload" : "7b2274223a22706169725f737461747573222c22737461747573223a2270656e64696e67227d",
+      "payload_text" : "{\"t\":\"pair_status\",\"status\":\"pending\"}",
+      "stage" : "pair_status_pending",
+      "wire" : "0036f74a134d0687740cf5898d2f6250754c0e0eb82f0ebbf56feed9d62a9fc6ebfd489f60e4d9541d2ea4d70084a63db6086d3da4f90bc7"
+    },
+    {
+      "direction" : "receiver_to_device",
+      "noise_message" : "b8e4ab423a19d60fc72d1ed4a9651e26f5165302f84031451e15dcf62b9c443670319c6987b7a0efcfa4fc2efe035967cf729d762ca27af2bae48fda56a02b78527f6896aac68d659948a59c4430d3bcb5fd9c",
+      "payload" : "7b2274223a22706169725f737461747573222c22737461747573223a22617070726f766564222c226b696e6473223a5b2270696e225d2c22636f756e746572223a307d",
+      "payload_text" : "{\"t\":\"pair_status\",\"status\":\"approved\",\"kinds\":[\"pin\"],\"counter\":0}",
+      "stage" : "pair_status_approved",
+      "wire" : "0053b8e4ab423a19d60fc72d1ed4a9651e26f5165302f84031451e15dcf62b9c443670319c6987b7a0efcfa4fc2efe035967cf729d762ca27af2bae48fda56a02b78527f6896aac68d659948a59c4430d3bcb5fd9c"
+    }
+  ],
+  "handshake_hash" : "e607cf21c68877afde4411870094dd9f2087b57a1529f89b31cfae6cbea20899",
+  "pairing_code_as_typed" : "TEST0-0NLYC-0DE00-00000",
+  "pairing_code_canonical" : "TEST00N1YC0DE0000000",
+  "preamble_and_prologue" : "45494e3102",
+  "protocol_name" : "Noise_XXpsk0_25519_ChaChaPoly_SHA256",
+  "psk" : "bae8aed9be1e14a11dc610353309eb039af4e6dbc3adebd1c3ccbbee14fcd319",
+  "qr_text" : "erdigo-pair:1?code=TEST0-0N1YC-0DE00-00000&fp=61a262dfb9af8d6247ef8ecf537e73b6d182e8eb2ce070930e706186bd1bed22",
+  "receiver_ephemeral_private" : "a867191a3b2cd2d8d270df1d900d1994f15ba7b6f360595209ab8c00dde188d1",
+  "receiver_static_private" : "aba90c7821543201a37c51e9e9a878e79956033fae8243029b566428ec436038",
+  "receiver_static_public" : "4d6697fe8fcf8538c371810352739f166fb21789fe423494c89b7ba3b4699601"
+}

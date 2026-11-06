@@ -1,0 +1,29 @@
+# Build output
+.build/
+.swiftpm/
+DerivedData/
+*.xcodeproj/
+xcuserdata/
+
+# Python tools for the test vectors
+.venv/
+__pycache__/
+
+# macOS
+.DS_Store
+
+# Never commit key material or signing assets
+*.p8
+*.p12
+*.pem
+*.key
+*.cer
+*.mobileprovision
+*.provisionprofile
+ExportOptions*.plist
+.env
+.env.*
+
+# Local SDK state, in case someone points --state-dir at the checkout
+identity.json
+pairings.json
