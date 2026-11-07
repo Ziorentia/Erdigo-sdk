@@ -6,7 +6,7 @@
 // Do not generate vectors from real device or receiver keys.
 
 import CryptoKit
-@_spi(TestVectors) import ErdigoCore
+@_spi(TestVectors) @_spi(ErdigoInternal) import ErdigoCore
 import Foundation
 
 func testKey(_ label: String) -> Curve25519.KeyAgreement.PrivateKey {
@@ -83,8 +83,8 @@ func connectVector() throws -> [String: Any] {
     try require(initiator.readMessage(second).isEmpty)
     transcript.add(stage: "handshake_2", direction: "receiver_to_device", payload: Data(), noise: second)
 
-    var device = try initiator.split()
-    var receiver = try responder.split()
+    let device = try initiator.split()
+    let receiver = try responder.split()
     precondition(device.handshakeHash == receiver.handshakeHash)
 
     func toReceiver(_ stage: String, _ payload: Data) throws {
@@ -157,7 +157,7 @@ func pairVector() throws -> [String: Any] {
     transcript.add(stage: "handshake_3", direction: "device_to_receiver", payload: payload, noise: third)
 
     let device = try initiator.split()
-    var receiver = try responder.split()
+    let receiver = try responder.split()
     precondition(device.handshakeHash == receiver.handshakeHash)
 
     for (stage, status) in [("pair_status_pending", PairStatus.pending), ("pair_status_approved", .approved(kinds: [.pin], counter: 0))] {
@@ -172,7 +172,7 @@ func pairVector() throws -> [String: Any] {
         "pairing_code_as_typed": "TEST0-0NLYC-0DE00-00000",
         "pairing_code_canonical": code.canonical,
         "psk": hex(psk),
-        "qr_text": PairingTicket(code: code, fingerprint: fingerprint).uri,
+        "qr_text": PairingTicket(code: code, fingerprint: fingerprint).uri!,
         "device_static_private": hex(deviceStatic),
         "device_static_public": hexPublic(deviceStatic),
         "device_ephemeral_private": hex(deviceEphemeral),

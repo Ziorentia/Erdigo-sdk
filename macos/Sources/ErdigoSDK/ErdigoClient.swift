@@ -1,4 +1,5 @@
 import CryptoKit
+@_spi(ErdigoInternal) import ErdigoCore
 import Foundation
 import Network
 
@@ -21,7 +22,7 @@ public enum RetryPolicy: Equatable, Sendable {
 public actor ErdigoClient {
     private final class Session {
         let stream: ByteStream
-        var transport: NoiseTransport
+        let transport: NoiseTransport
         var lastSeq: UInt64
         let welcome: Welcome
 
@@ -472,7 +473,7 @@ public actor ErdigoClient {
             guard try handshake.readMessage(second).isEmpty else {
                 throw ErdigoError.protocolViolation("the handshake reply has an unexpected payload")
             }
-            var transport = try handshake.split()
+            let transport = try handshake.split()
 
             let hello = Hello(versions: [IntegrationV1.version], sdk: Pairing.sdkName)
             try await stream.sendFrame(try transport.seal(Wire.encode(hello)))

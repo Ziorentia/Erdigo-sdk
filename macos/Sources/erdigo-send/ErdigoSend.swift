@@ -11,6 +11,9 @@ Pairing
        [--host HOST --port PORT] [--code-file FILE] [--fingerprint HEX]
       The code is read from the keyboard, or from a file only you can read.
       It is never accepted as a command-line argument.
+      A bare code means you compare the receiver's key and type yes before the receiver is asked to pair.
+      That needs standard input and output to be a terminal, so a bare code is refused without one.
+      The QR text or --fingerprint compares the key for you, so nothing is asked.
   list
   forget --to LABEL
   identity
@@ -40,6 +43,7 @@ For pairing and writing commands
   --state-dir DIR   Keep state in DIR instead of Application Support.
   --keychain        Keep the device key in the login keychain instead of a 0600 file.
   --redact          Hide labels, keys and other identifying output, for pasting into a bug report.
+                    With pair, it needs the QR text or --fingerprint, because a hidden key cannot be compared.
 
 """
 
@@ -263,8 +267,19 @@ private func runPair(_ arguments: [String]) async throws {
         }
         ticket = PairingTicket(code: ticket.code, fingerprint: fingerprint)
     }
+    if ticket.fingerprint == nil, context.redact {
+        throw UsageError(message: "--redact hides the receiver's key, so it cannot be compared for a bare code. Use the QR text, or give the full 64-digit key with --fingerprint.")
+    }
+    // Only a person can compare the key. Whatever a pipe or a file holds was written before the key
+    // existed, so it is no answer, and a question sent to a file would be answered unseen. The
+    // receiver is not contacted when no answer is possible.
+    if ticket.fingerprint == nil, isatty(STDIN_FILENO) == 0 || isatty(STDOUT_FILENO) == 0 {
+        throw UsageError(message: "a bare code needs a person to compare the receiver's key, and standard input or output is not a terminal. Use the QR text, or give the full 64-digit key with --fingerprint.")
+    }
 
-    print("Waiting for the request to be confirmed on the receiver...")
+    let waiting = "Waiting for the request to be confirmed on the receiver..."
+    let personCompares = ticket.fingerprint == nil
+    print(personCompares ? "Checking the code with the receiver..." : waiting)
     let identity = try context.store.loadOrCreateIdentity()
     let pairing = try await Pairing.pair(
         target: where_,
@@ -272,17 +287,28 @@ private func runPair(_ arguments: [String]) async throws {
         identity: identity,
         deviceName: name,
         kinds: kinds,
-        label: label
+        label: label,
+        // A bare code proves only that the other side knows the code, and only a person can tell
+        // whether this is the right receiver. This runs before the receiver is asked to pair.
+        confirmKey: { key in
+            // Only an answer given after seeing the key counts, so anything typed before it is
+            // discarded. Standard input is a terminal here, because a bare code is refused otherwise.
+            tcflush(STDIN_FILENO, TCIFLUSH)
+            print("Receiver key: \(key)")
+            print("If this matches the key shown on the receiver, type yes: ", terminator: "")
+            fflush(stdout)
+            guard readLine()?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "yes" else {
+                print("")
+                return false
+            }
+            print(waiting)
+            return true
+        }
     )
     try context.store.save(pairing)
     print("Paired as '\(context.shown(pairing.label))'. Allowed: \(pairing.kinds.map(\.rawValue).joined(separator: ", ")).")
-    print("Receiver key: \(context.shown(IntegrationV1.shortFingerprint(pairing.fingerprint)))")
-    if ticket.fingerprint == nil {
-        if context.redact {
-            print("Run 'erdigo-send list' without --redact, and check the key matches the one shown on the receiver before relying on this pairing.")
-        } else {
-            print("Check this matches the key shown on the receiver. If it does not, someone else had the code: run 'erdigo-send forget --to \(pairing.label)' and pair again.")
-        }
+    if !personCompares {
+        print("Receiver key: \(context.shown(IntegrationV1.shortFingerprint(pairing.fingerprint)))")
     }
 }
 
@@ -407,16 +433,17 @@ private func runServe(_ arguments: [String]) async throws {
     }
 
     func publish(_ ticket: PairingTicket) throws {
+        guard let uri = ticket.uri else { throw UsageError(message: "the mock's key could not be put in the pairing text") }
         if let codeFile {
             let descriptor = open(codeFile, O_WRONLY | O_CREAT | O_TRUNC | O_NOFOLLOW | O_CLOEXEC, 0o600)
             guard descriptor >= 0 else { throw UsageError(message: "could not write the code file") }
             defer { close(descriptor) }
             guard fchmod(descriptor, 0o600) == 0 else { throw UsageError(message: "could not protect the code file") }
-            FileHandle(fileDescriptor: descriptor, closeOnDealloc: false).write(Data(ticket.uri.utf8))
+            FileHandle(fileDescriptor: descriptor, closeOnDealloc: false).write(Data(uri.utf8))
             print("Pairing text written to the code file. It is valid for 10 minutes.")
         } else {
             print("Pairing code (valid for 10 minutes): \(ticket.code.display)")
-            print("QR text: \(ticket.uri)")
+            print("QR text: \(uri)")
         }
     }
 

@@ -368,7 +368,8 @@ public struct PairingCode: Equatable, Sendable, CustomStringConvertible {
     public var description: String { "<pairing code>" }
 }
 
-/// What a person gives the SDK to pair: the code, optionally with the receiver's key fingerprint from the QR code.
+/// What a person gives the SDK to pair: the code, and the receiver's key fingerprint when it comes
+/// from the QR code. A typed code has no fingerprint, and the person then has to compare the key.
 public struct PairingTicket: Equatable, Sendable {
     public let code: PairingCode
     public let fingerprint: String?
@@ -379,7 +380,12 @@ public struct PairingTicket: Equatable, Sendable {
     }
 
     /// Accepts either a bare code or the QR form `erdigo-pair:1?code=...&fp=...`.
+    ///
+    /// The QR form needs exactly one code and exactly one valid fingerprint, because the key
+    /// comparison is what makes it stronger than a typed code. Nothing else may appear in it.
+    /// Text over 1024 bytes is refused before it is looked at, because it may come from anywhere.
     public init(parsing text: String) throws {
+        guard text.utf8.count <= Self.maxTextLength else { throw WireError(.invalidMessage, "the pairing text is too long") }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let prefix = "erdigo-pair:1?"
         guard trimmed.hasPrefix(prefix) else {
@@ -388,15 +394,16 @@ public struct PairingTicket: Equatable, Sendable {
         }
         var code: PairingCode?
         var fingerprint: String?
-        for part in trimmed.dropFirst(prefix.count).split(separator: "&") {
-            let pieces = part.split(separator: "=", maxSplits: 1).map(String.init)
+        // Empty pieces are kept, so that `&&`, a trailing `&` and a field starting with `=` are refused below.
+        for part in trimmed.dropFirst(prefix.count).split(separator: "&", omittingEmptySubsequences: false) {
+            let pieces = part.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false).map(String.init)
             guard pieces.count == 2 else { throw WireError(.invalidMessage, "the pairing text is malformed") }
             switch pieces[0] {
             case "code" where code == nil:
                 code = try PairingCode(parsing: pieces[1])
             case "fp" where fingerprint == nil:
                 let lowered = pieces[1].lowercased()
-                guard lowered.count == 64, Data(hexString: lowered) != nil else {
+                guard Self.isValidFingerprint(lowered) else {
                     throw WireError(.invalidMessage, "the fingerprint in the pairing text is malformed")
                 }
                 fingerprint = lowered
@@ -405,13 +412,24 @@ public struct PairingTicket: Equatable, Sendable {
             }
         }
         guard let code else { throw WireError(.invalidMessage, "the pairing text has no code") }
+        guard let fingerprint else { throw WireError(.invalidMessage, "the pairing text has no fingerprint") }
         self.init(code: code, fingerprint: fingerprint)
     }
 
-    public var uri: String {
-        var text = "erdigo-pair:1?code=\(code.display)"
-        if let fingerprint { text += "&fp=\(fingerprint)" }
-        return text
+    /// The text of the QR code, or nil without a valid fingerprint, because QR text without one
+    /// would look stronger than it is.
+    public var uri: String? {
+        guard let fingerprint, Self.isValidFingerprint(fingerprint) else { return nil }
+        return "erdigo-pair:1?code=\(code.display)&fp=\(fingerprint)"
+    }
+
+    /// Much longer than any valid text, which is 110 bytes without white space around it.
+    private static let maxTextLength = 1024
+
+    /// 64 lowercase hexadecimal digits, the one spelling a fingerprint has (spec section 3).
+    private static func isValidFingerprint(_ text: String) -> Bool {
+        let digits = Array(text.utf8)
+        return digits.count == 2 * Noise.hashLength && digits.allSatisfy { (0x30...0x39).contains($0) || (0x61...0x66).contains($0) }
     }
 }
 

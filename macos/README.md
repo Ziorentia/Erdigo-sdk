@@ -3,7 +3,7 @@
 A Swift package for writing pins, markers, notes, photos and tracks to an Erdigo receiver on the local network. It
 needs macOS 12 or later and has no dependencies beyond the system.
 
-> **Preview.** The Erdigo app does not yet accept these connections. Until it does, develop against the mock
+> **Preview.** The released Erdigo app does not yet accept these connections. Until it does, develop against the mock
 > receiver described below.
 
 ## Try it in two minutes
@@ -14,11 +14,15 @@ You need Xcode or the Swift command-line tools. In one terminal, start a mock re
 swift run erdigo-send serve --mock
 ```
 
-It prints a port and a pairing code. In another terminal, pair with it and send something:
+It prints a port, a pairing code and the receiver's key. In another terminal, pair with it. Type the code when asked.
+The tool then shows the key it found: if it matches the one the mock printed, type `yes`. The mock is not asked to pair,
+and no pairing is saved, until you do.
 
 ```bash
 swift run erdigo-send pair --host 127.0.0.1 --port PORT --name "My sensor" --kinds pin,track --label test
 ```
+
+Then send something:
 
 ```bash
 swift run erdigo-send pin --host 127.0.0.1 --port PORT --id city-hall --lat 37.5663 --lon 126.9779 --title "Seoul City Hall"
@@ -43,6 +47,7 @@ Pair once:
 
 ```swift
 import ErdigoSDK
+import Foundation
 
 let store = try FileDeviceStore(directory: FileDeviceStore.defaultDirectory())
 let identity = try store.loadOrCreateIdentity()
@@ -54,14 +59,25 @@ let pairing = try await Pairing.pair(
     ticket: ticket,
     identity: identity,
     deviceName: "Greenhouse sensor",
-    kinds: [.pin, .track]
+    kinds: [.pin, .track],
+    // Asked only for a typed code, which proves only that the other side knows the code.
+    confirmKey: { key in
+        guard isatty(STDIN_FILENO) == 1, isatty(STDOUT_FILENO) == 1 else { return false } // Nobody could see this and answer.
+        tcflush(STDIN_FILENO, TCIFLUSH) // Only an answer given after seeing the key counts.
+        print("Receiver key: \(key)")
+        print("If this matches the key shown on the receiver, type yes:")
+        return readLine()?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "yes"
+    }
 )
 try store.save(pairing)
 ```
 
-If the code was typed rather than scanned from the QR code, show the person
-`IntegrationV1.shortFingerprint(pairing.fingerprint)` and ask them to compare it with the key on the receiver's screen.
-A typed code proves only that the other side knows the code. The
+`confirmKey` runs before the receiver hears about this device, so the receiver still shows its key. If it returns false,
+`pair` throws `ErdigoError.keyNotConfirmed`, which a real program should catch. The receiver has heard nothing about this
+device, and the code stays valid. A typed code cannot pair without `confirmKey`. Text from the QR code carries the
+receiver's key, and `Pairing.pair` compares it and stops on a mismatch, so it asks the person nothing.
+`PairingTicket(parsing:)` refuses QR text without a valid fingerprint. The `isatty` line makes a pipe or a file count as
+a no, because nobody is there to see the key and answer, so a program with no terminal should use the QR text. The
 [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this matters.
 
 After that, write:
@@ -112,6 +128,7 @@ cannot be told apart, on purpose, because that silence is what keeps strangers f
 | `.noAnswer` | See above. Check the network and that the app is running. The first time, macOS may also be asking for Local Network permission. Allow it and try again. |
 | `.notPermitted(kind)` | The person did not allow this kind. Pair again to ask for more. |
 | `.rejected(error)` | The receiver refused this request. `error.code` is listed in the [specification](../spec/integration-v1.md#10-errors). |
+| `.keyNotConfirmed` | With a typed code, `confirmKey` returned false. The receiver was not asked to pair, and the code still works. |
 | `.pairingDenied`, `.pairingTimedOut` | The person declined, or did not answer in time. |
 | `.codeReused` | The code was already used. Ask for a new one. |
 | `.versionUnsupported` | Update the SDK. |
@@ -134,7 +151,17 @@ your `Info.plist`, and add `_erdigo-int._tcp` to `NSBonjourServices`.
 ## The `erdigo-send` tool
 
 Run `swift run erdigo-send help` for every command. Add `--redact` to a command when pasting its output into a bug
-report.
+report. To pair with `--redact`, use the QR text or `--fingerprint`, because a hidden key cannot be compared.
+
+`pair` asks you to compare the receiver's key and type `yes` when it has only a bare code. It asks before the receiver
+hears any request, so the receiver still shows its key. At the end of input or on any other answer it exits with an
+error. No pairing is saved and the receiver is not asked to pair, although this device's own key may be in the state
+folder by then. The receiver never sees that key. With the QR text or `--fingerprint` it compares the key itself and
+asks nothing.
+
+Only a person can answer that question, so `pair` refuses a bare code when standard input or output is not a terminal,
+as in a pipe or a script. It stops before it contacts the receiver. Use the QR text there, or `--fingerprint` with the
+full 64-digit key, which is part of the QR text.
 
 ## Tests
 

@@ -5,7 +5,7 @@ Official Erdigo SDK by Ziorentia LLC.
 Put pins, markers, notes, photos and tracks on an Erdigo map from your own devices and programs: a sensor, a drone, a
 Raspberry Pi, a script. They talk to the Erdigo app on the same local network.
 
-> **Preview.** The Erdigo app in release does not yet accept these connections. Until it does, develop and test
+> **Preview.** The released Erdigo app does not yet accept these connections. Until it does, develop and test
 > against the mock receiver included with each SDK. The wire format may still change.
 
 ## How it works
@@ -33,7 +33,8 @@ You need Xcode or the Swift command-line tools. In one terminal, start a mock re
 swift run erdigo-send serve --mock
 ```
 
-It prints a port and a pairing code. In another terminal, replace `PORT` with that port, and type the code when asked:
+It prints a port, a pairing code and the receiver's key. In another terminal, replace `PORT` with that port, type the
+code when asked, and type `yes` if the key shown matches the one the mock printed:
 
 ```bash
 swift run erdigo-send pair --host 127.0.0.1 --port PORT --name "My sensor" --kinds pin,track --label test
@@ -59,8 +60,8 @@ The mock prints each request it accepts.
 ## Status of the security work
 
 The cryptography follows the standard [Noise Protocol Framework](https://noiseprotocol.org/) and passes the official
-test vectors. **It has not had an independent security audit**, and it has not yet been tested against a real
-receiver in the Erdigo app.
+test vectors. **It has not had an independent security audit**, and the released Erdigo app does not yet include a
+receiver.
 
 ## License
 
