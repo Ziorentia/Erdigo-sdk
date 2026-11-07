@@ -1,5 +1,5 @@
 import CryptoKit
-@_spi(TestVectors) import ErdigoCore
+@_spi(TestVectors) @_spi(ErdigoInternal) import ErdigoCore
 import Foundation
 import XCTest
 
@@ -81,8 +81,8 @@ final class NoiseVectorTests: XCTestCase {
         }
         XCTAssertTrue(responder.isComplete)
 
-        var initiatorTransport = try initiator.split()
-        var responderTransport = try responder.split()
+        let initiatorTransport = try initiator.split()
+        let responderTransport = try responder.split()
         if let hash = vector["handshake_hash"] as? String {
             XCTAssertEqual(initiatorTransport.handshakeHash.hexString, hash, name)
             XCTAssertEqual(responderTransport.handshakeHash.hexString, hash, name)
@@ -129,14 +129,14 @@ final class NoiseBehaviourTests: XCTestCase {
     }
 
     func testTamperedTransportMessageIsRejected() throws {
-        var (device, receiver) = try establishedPair()
+        let (device, receiver) = try establishedPair()
         var sealed = try device.seal(Data("hello".utf8))
         sealed[sealed.startIndex] ^= 0x01
         XCTAssertThrowsError(try receiver.open(sealed)) { XCTAssertEqual($0 as? NoiseError, .decryptionFailed) }
     }
 
     func testReplayedTransportMessageIsRejected() throws {
-        var (device, receiver) = try establishedPair()
+        let (device, receiver) = try establishedPair()
         let sealed = try device.seal(Data("hello".utf8))
         XCTAssertEqual(try receiver.open(sealed), Data("hello".utf8))
         XCTAssertThrowsError(try receiver.open(sealed))

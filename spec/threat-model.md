@@ -81,7 +81,11 @@ be, which devices without a reliable clock could not meet.
 **A typed code does not prove who answered.** The code proves only that the other side knows it. If someone else saw
 the code, a device could end up paired with them instead of your receiver, and would send them its items until it is
 paired again. Your receiver might show no warning. To be sure, scan the QR code, which carries the receiver's
-fingerprint, or compare the fingerprint the tool shows with the one on the receiver's screen.
+fingerprint, or compare the fingerprint the tool shows with the one on the receiver's screen. The SDK's tools ask you
+this before they send the receiver anything about the device, and save no pairing and send no items unless you confirm
+that it matches. With no terminal to ask on, they refuse a typed code, so use the QR text there. A program that calls the
+SDK with a typed code has to supply that question, or the SDK does not pair, and it is responsible for a person answering
+it (spec 4.1).
 
 **Someone on the same network can disturb the service.** Devices may then get no answer, and items may not arrive.
 This cannot reveal or change anything.
@@ -120,9 +124,9 @@ later could read it.
 **Image decoders can have bugs.** The checks narrow what reaches the system decoder, but do not eliminate the risk.
 
 **The mock receiver is a test tool.** It listens on the loopback interface by default. It follows the protocol's rules,
-with these differences: it allows every pairing request unless started with `--ask`, it keeps everything in memory, so a
-restart forgets devices and counters, it keeps no last-connection time, and it prints the pairing code. It has not been
-hardened for a hostile network.
+with these differences: it allows every pairing request unless started with `--ask`; it keeps everything in memory, so a
+restart forgets devices, counters, sequence numbers and items, and the recording rule in spec 7 does not apply to it; it
+keeps no last-connection time; and it prints the pairing code. It has not been hardened for a hostile network.
 
 ## What has and has not been checked
 
@@ -132,4 +136,4 @@ hardened for a hostile network.
 - Silence (bytes and timing), removal, replay, code reuse, pause and the limits in spec 11 have tests against the mock
   receiver, over real TCP.
 - **No independent security audit has been done.**
-- **The protocol has not yet been tested against the Erdigo app, which does not yet implement a receiver.**
+- **The released Erdigo app does not yet include a receiver, so nothing here has been checked against a release of it.**

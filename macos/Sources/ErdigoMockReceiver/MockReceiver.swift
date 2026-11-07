@@ -1,5 +1,5 @@
 import CryptoKit
-import ErdigoCore
+@_spi(ErdigoInternal) import ErdigoCore
 import Foundation
 import Network
 
@@ -97,7 +97,7 @@ public actor MockReceiver {
     /// send a closing message from outside the connection's own task.
     private final class LiveConnection {
         let stream: ByteStream
-        var transport: NoiseTransport
+        let transport: NoiseTransport
 
         init(stream: ByteStream, transport: NoiseTransport) {
             self.stream = stream
@@ -354,6 +354,13 @@ public actor MockReceiver {
         return PairingTicket(code: code, fingerprint: fingerprint)
     }
 
+    /// Opens a window with a code chosen by a test, to play a second receiver holding the same code.
+    @_spi(TestVectors) public func openPairingWindow(code: PairingCode) -> PairingTicket {
+        window = PairingWindow(code: code, expiresAt: Self.now() + options.pairingWindow)
+        record(.pairingWindowOpened)
+        return PairingTicket(code: code, fingerprint: fingerprint)
+    }
+
     public func closePairingWindow() {
         if case .pending(_, _, let race)? = window?.use { race.finish(.deny) }
         window = nil
@@ -603,7 +610,7 @@ public actor MockReceiver {
             }
 
             try await stream.sendFrame(try handshake.writeMessage())
-            var transport = try handshake.split()
+            let transport = try handshake.split()
 
             // The hello proves the device holds its key, because a replayed first message
             // cannot produce it. Only now may an older connection be replaced.
@@ -693,7 +700,7 @@ public actor MockReceiver {
             try await stream.sendFrame(try handshake.writeMessage())
             let third = try await stream.readFrame(maxLength: IntegrationV1.maxHandshakeFrameLength)
             let payload = try handshake.readMessage(third)
-            var transport = try handshake.split()
+            let transport = try handshake.split()
             // X25519 ignores the top bit of a key, so without this one key could pose as two devices.
             guard let key = handshake.remoteStaticKey, Noise.isCanonicalPublicKey(key) else {
                 stream.cancel()

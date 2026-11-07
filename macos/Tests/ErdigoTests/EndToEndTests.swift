@@ -1,7 +1,7 @@
 import CoreGraphics
 import CryptoKit
-@_spi(TestVectors) import ErdigoCore
-import ErdigoMockReceiver
+@_spi(TestVectors) @_spi(ErdigoInternal) import ErdigoCore
+@_spi(TestVectors) import ErdigoMockReceiver
 import ErdigoSDK
 import Foundation
 import ImageIO
@@ -659,8 +659,248 @@ final class EndToEndTests: XCTestCase {
         } catch {
             XCTAssertEqual(error as? ErdigoError, .fingerprintMismatch)
         }
+        try await assertHeardNoRequest(receiver)
+    }
+
+    /// Waits first, because a request sent a moment ago would still be on its way.
+    private func assertHeardNoRequest(_ receiver: MockReceiver, file: StaticString = #filePath, line: UInt = #line) async throws {
+        try await Task.sleep(nanoseconds: 500_000_000)
         let events = await receiver.events
-        XCTAssertFalse(events.contains { if case .pairingRequested = $0 { return true } else { return false } })
+        XCTAssertFalse(events.contains { if case .pairingRequested = $0 { return true } else { return false } }, file: file, line: line)
+        let devices = await receiver.pairedDevices()
+        XCTAssertEqual(devices.count, 0, file: file, line: line)
+    }
+
+    /// Records what a person was shown, and answers as told.
+    private final class KeyQuestion: @unchecked Sendable {
+        private let lock = NSLock()
+        private var asked: [String] = []
+        private let answer: Bool
+        private let duringQuestion: (@Sendable () async -> Void)?
+
+        init(answer: Bool, duringQuestion: (@Sendable () async -> Void)? = nil) {
+            self.answer = answer
+            self.duringQuestion = duringQuestion
+        }
+
+        var shown: [String] {
+            lock.lock()
+            defer { lock.unlock() }
+            return asked
+        }
+
+        private func record(_ key: String) {
+            lock.lock()
+            defer { lock.unlock() }
+            asked.append(key)
+        }
+
+        @Sendable func callAsFunction(_ key: String) async -> Bool {
+            record(key)
+            await duringQuestion?()
+            return answer
+        }
+    }
+
+    func testATypedCodeAsksBeforeTheReceiverHearsAnything() async throws {
+        let (receiver, port) = try await startReceiver()
+        let target = ReceiverTarget.address(host: "127.0.0.1", port: port)
+        let code = try await receiver.openPairingWindow().code
+        let receiverFingerprint = await receiver.fingerprint
+        let shortKey = IntegrationV1.shortFingerprint(receiverFingerprint)
+
+        // Nothing has reached the person at the receiver while the question is on the screen.
+        let mock = receiver
+        let yes = KeyQuestion(answer: true) {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            let events = await mock.events
+            XCTAssertFalse(events.contains { if case .pairingRequested = $0 { return true } else { return false } })
+            let devices = await mock.pairedDevices()
+            XCTAssertEqual(devices.count, 0)
+        }
+        let identity = DeviceIdentity.generate()
+        let pairing = try await Pairing.pair(
+            target: target,
+            ticket: PairingTicket(code: code),
+            identity: identity,
+            deviceName: "Careful",
+            kinds: [.pin],
+            handshakeTimeout: 1,
+            confirmKey: yes.callAsFunction
+        )
+
+        XCTAssertEqual(yes.shown, [shortKey])
+        XCTAssertEqual(pairing.fingerprint, receiverFingerprint)
+        // Only the key that really pairs is known to the receiver.
+        let devices = await receiver.pairedDevices()
+        XCTAssertEqual(devices.map(\.fingerprint), [identity.fingerprint])
+    }
+
+    func testSayingNoLeavesNothingBehindAndTheCodeStillWorks() async throws {
+        let (receiver, port) = try await startReceiver()
+        let target = ReceiverTarget.address(host: "127.0.0.1", port: port)
+        let code = try await receiver.openPairingWindow().code
+        let shortKey = IntegrationV1.shortFingerprint(await receiver.fingerprint)
+
+        let no = KeyQuestion(answer: false)
+        for _ in 0..<2 {
+            do {
+                _ = try await Pairing.pair(
+                    target: target, ticket: PairingTicket(code: code), identity: .generate(), deviceName: "Careful",
+                    kinds: [.pin], handshakeTimeout: 1, confirmKey: no.callAsFunction
+                )
+                XCTFail("expected a refusal")
+            } catch {
+                XCTAssertEqual(error as? ErdigoError, .keyNotConfirmed)
+            }
+        }
+        XCTAssertEqual(no.shown, [shortKey, shortKey])
+        try await assertHeardNoRequest(receiver)
+
+        // The person looks again and says yes, and the same code works.
+        let yes = KeyQuestion(answer: true)
+        let pairing = try await Pairing.pair(
+            target: target, ticket: PairingTicket(code: code), identity: .generate(), deviceName: "Careful",
+            kinds: [.pin], handshakeTimeout: 1, confirmKey: yes.callAsFunction
+        )
+        XCTAssertEqual(IntegrationV1.shortFingerprint(pairing.fingerprint), shortKey)
+    }
+
+    func testSayingNoWhenPairingAgainLeavesTheReceiversRecordAlone() async throws {
+        let (receiver, port) = try await startReceiver()
+        let target = ReceiverTarget.address(host: "127.0.0.1", port: port)
+        let identity = DeviceIdentity.generate()
+        let first = try await receiver.openPairingWindow()
+        _ = try await Pairing.pair(
+            target: target, ticket: first, identity: identity, deviceName: "Careful", kinds: [.pin, .marker], handshakeTimeout: 1
+        )
+
+        let second = try await receiver.openPairingWindow().code
+        let no = KeyQuestion(answer: false)
+        do {
+            _ = try await Pairing.pair(
+                target: target, ticket: PairingTicket(code: second), identity: identity, deviceName: "Careful",
+                kinds: [.pin], handshakeTimeout: 1, confirmKey: no.callAsFunction
+            )
+            XCTFail("expected a refusal")
+        } catch {
+            XCTAssertEqual(error as? ErdigoError, .keyNotConfirmed)
+        }
+        try await Task.sleep(nanoseconds: 500_000_000)
+        let devices = await receiver.pairedDevices()
+        XCTAssertEqual(devices.map(\.kinds), [[.pin, .marker]])
+    }
+
+    func testATypedCodeCannotPairWithoutTheQuestion() async throws {
+        let (receiver, port) = try await startReceiver()
+        let code = try await receiver.openPairingWindow().code
+        do {
+            _ = try await Pairing.pair(
+                target: .address(host: "127.0.0.1", port: port), ticket: PairingTicket(code: code), identity: .generate(),
+                deviceName: "Careless", kinds: [.pin], handshakeTimeout: 1
+            )
+            XCTFail("expected a refusal")
+        } catch {
+            guard case .invalidArgument = error as? ErdigoError else { return XCTFail("unexpected \(error)") }
+        }
+        try await assertHeardNoRequest(receiver)
+    }
+
+    func testATicketWithAFingerprintAsksNothing() async throws {
+        let (receiver, port) = try await startReceiver()
+        let ticket = try await receiver.openPairingWindow()
+        let question = KeyQuestion(answer: false)
+        let pairing = try await Pairing.pair(
+            target: .address(host: "127.0.0.1", port: port), ticket: ticket, identity: .generate(), deviceName: "Scanner",
+            kinds: [.pin], handshakeTimeout: 1, confirmKey: question.callAsFunction
+        )
+        XCTAssertEqual(question.shown, [])
+        XCTAssertEqual(pairing.fingerprint, ticket.fingerprint)
+    }
+
+    /// Someone else who knows the code takes the receiver's place between the question and the pairing.
+    func testAKeyOtherThanTheOneConfirmedDoesNotPair() async throws {
+        let code = try PairingCode(parsing: "TEST0-0NLYC-0DE00-00000")
+        let (real, port) = try await startReceiver()
+        _ = await real.openPairingWindow(code: code)
+        var impostorOptions = fastOptions()
+        impostorOptions.port = port
+        let impostor = try MockReceiver(options: impostorOptions)
+        receivers.append(impostor)
+        _ = await impostor.openPairingWindow(code: code)
+
+        let swap = KeyQuestion(answer: true) {
+            await real.stop()
+            // The port takes a moment to come free.
+            for _ in 0..<100 {
+                if (try? await impostor.start()) != nil { return }
+                try? await Task.sleep(nanoseconds: 50_000_000)
+            }
+            XCTFail("the second receiver could not take over the port")
+        }
+        do {
+            _ = try await Pairing.pair(
+                target: .address(host: "127.0.0.1", port: port), ticket: PairingTicket(code: code), identity: .generate(),
+                deviceName: "Careful", kinds: [.pin], handshakeTimeout: 1, confirmKey: swap.callAsFunction
+            )
+            XCTFail("expected a mismatch")
+        } catch {
+            XCTAssertEqual(error as? ErdigoError, .fingerprintMismatch)
+        }
+        XCTAssertEqual(swap.shown.count, 1)
+        try await assertHeardNoRequest(impostor)
+    }
+
+    func testNobodyAnswersForTheWrongCodeOrWithNoWindowAndNothingIsAsked() async throws {
+        let (receiver, port) = try await startReceiver()
+        let target = ReceiverTarget.address(host: "127.0.0.1", port: port)
+        let wrong = try PairingCode(parsing: "TEST0-0NLYC-0DE00-00000")
+        let question = KeyQuestion(answer: true)
+
+        // No window is open at first, and then one with another code.
+        for _ in 0..<2 {
+            do {
+                _ = try await Pairing.pair(
+                    target: target, ticket: PairingTicket(code: wrong), identity: .generate(), deviceName: "Careful",
+                    kinds: [.pin], handshakeTimeout: 1, confirmKey: question.callAsFunction
+                )
+                XCTFail("expected no answer")
+            } catch {
+                XCTAssertEqual(error as? ErdigoError, .noAnswer)
+            }
+            _ = try await receiver.openPairingWindow()
+        }
+        XCTAssertEqual(question.shown, [])
+        try await assertHeardNoRequest(receiver)
+    }
+
+    func testQRTextFromTheReceiverPairsAndAChangedOneIsRefused() async throws {
+        let (receiver, port) = try await startReceiver()
+        let target = ReceiverTarget.address(host: "127.0.0.1", port: port)
+
+        let first = try await receiver.openPairingWindow()
+        let scanned = try PairingTicket(parsing: try XCTUnwrap(first.uri))
+        XCTAssertEqual(scanned, first)
+        let pairing = try await Pairing.pair(
+            target: target, ticket: scanned, identity: .generate(), deviceName: "Scanner", kinds: [.pin], handshakeTimeout: 1
+        )
+        let receiverFingerprint = await receiver.fingerprint
+        XCTAssertEqual(pairing.fingerprint, receiverFingerprint)
+
+        let second = try await receiver.openPairingWindow()
+        let changed = try PairingTicket(parsing: "erdigo-pair:1?code=\(second.code.display)&fp=\(String(repeating: "0", count: 64))")
+        do {
+            _ = try await Pairing.pair(
+                target: target, ticket: changed, identity: .generate(), deviceName: "Scanner", kinds: [.pin], handshakeTimeout: 1
+            )
+            XCTFail("expected a mismatch")
+        } catch {
+            XCTAssertEqual(error as? ErdigoError, .fingerprintMismatch)
+        }
+        // A request sent a moment ago would still be on its way.
+        try await Task.sleep(nanoseconds: 500_000_000)
+        let devices = await receiver.pairedDevices()
+        XCTAssertEqual(devices.count, 1, "only the correct QR text may lead to a pairing")
     }
 
     // MARK: Removing a device
@@ -863,7 +1103,7 @@ final class EndToEndTests: XCTestCase {
         let old = try await authenticated(device, receiver: receiver, port: port)
         try await device.client.ping()
 
-        var transport = old.transport
+        let transport = old.transport
         let frame = try await old.stream.readFrame()
         let message = try Wire.decodeReceiverMessage(try transport.open(frame))
         guard case .error(let error) = message else { return XCTFail("expected an error") }
@@ -901,7 +1141,7 @@ final class EndToEndTests: XCTestCase {
         // An SDK that only speaks a version the receiver has dropped gets a clear answer.
         let raw = try await authenticated(identity: identity, receiverKey: pairing.receiverKey, port: flexiblePort, versions: [99], expectWelcome: false)
         let frame = try await raw.stream.readFrame()
-        var transport = raw.transport
+        let transport = raw.transport
         guard case .error(let error) = try Wire.decodeReceiverMessage(try transport.open(frame)) else {
             return XCTFail("expected an error")
         }
@@ -954,7 +1194,7 @@ final class EndToEndTests: XCTestCase {
         defer { peer.shut() }
         try peer.writeAll(first)
         _ = try handshake.readMessage(try peer.readFrame())
-        var transport = try handshake.split()
+        let transport = try handshake.split()
         try peer.writeAll(try ByteStream.frame(try transport.seal(Wire.encode(Hello(versions: [1], sdk: "test/1")))))
         _ = try peer.readFrame()
 
@@ -2052,7 +2292,7 @@ final class EndToEndTests: XCTestCase {
         let held = try await rawConnect(port)
         try await held.send(message)
         _ = try handshake.readMessage(try await held.readFrame())
-        var heldTransport = try handshake.split()
+        let heldTransport = try handshake.split()
 
         // Connection A earns the penalty.
         let raw = try await authenticated(identity: device.identity, receiverKey: await receiver.publicKey, port: port)
@@ -2208,7 +2448,7 @@ final class EndToEndTests: XCTestCase {
 
     private final class RawSession {
         let stream: ByteStream
-        var transport: NoiseTransport
+        let transport: NoiseTransport
         var welcome: Welcome?
 
         init(stream: ByteStream, transport: NoiseTransport) {
@@ -2249,7 +2489,7 @@ final class EndToEndTests: XCTestCase {
         let stream = try await rawConnect(port)
         try await stream.send(message)
         _ = try handshake.readMessage(try await stream.readFrame())
-        var transport = try handshake.split()
+        let transport = try handshake.split()
         try await stream.sendFrame(try transport.seal(Wire.encode(Hello(versions: versions, sdk: "test/1"))))
         let session = RawSession(stream: stream, transport: transport)
         if expectWelcome {
@@ -2352,10 +2592,136 @@ final class ModelTests: XCTestCase {
         let fingerprint = String(repeating: "ab", count: 32)
         let ticket = try PairingTicket(parsing: "erdigo-pair:1?code=TEST0-0NLYC-0DE00-00000&fp=\(fingerprint)")
         XCTAssertEqual(ticket.fingerprint, fingerprint)
-        XCTAssertEqual(try PairingTicket(parsing: ticket.uri), ticket)
+        XCTAssertEqual(try PairingTicket(parsing: try XCTUnwrap(ticket.uri)), ticket)
         XCTAssertThrowsError(try PairingTicket(parsing: "erdigo-pair:1?fp=\(fingerprint)"))
         XCTAssertThrowsError(try PairingTicket(parsing: "erdigo-pair:1?code=TEST0-0NLYC-0DE00-00000&fp=zz"))
         XCTAssertThrowsError(try PairingTicket(parsing: "erdigo-pair:1?code=TEST0-0NLYC-0DE00-00000&host=192.0.2.1"))
+    }
+
+    func testQRTextNeedsExactlyOneCodeAndOneValidFingerprint() throws {
+        let code = "TEST0-0NLYC-0DE00-00000"
+        let fingerprint = String(repeating: "ab", count: 32)
+        let other = String(repeating: "cd", count: 32)
+        let cases: [(name: String, text: String)] = [
+            ("nothing after the prefix", "erdigo-pair:1?"),
+            ("no fingerprint", "erdigo-pair:1?code=\(code)"),
+            ("no code", "erdigo-pair:1?fp=\(fingerprint)"),
+            ("empty fingerprint", "erdigo-pair:1?code=\(code)&fp="),
+            ("fingerprint without an equals sign", "erdigo-pair:1?code=\(code)&fp"),
+            ("empty code", "erdigo-pair:1?code=&fp=\(fingerprint)"),
+            ("code without an equals sign", "erdigo-pair:1?code&fp=\(fingerprint)"),
+            ("fingerprint one digit short", "erdigo-pair:1?code=\(code)&fp=\(fingerprint.dropLast())"),
+            ("fingerprint one digit long", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)a"),
+            ("fingerprint of half the length", "erdigo-pair:1?code=\(code)&fp=\(fingerprint.prefix(32))"),
+            ("fingerprint that is not hexadecimal", "erdigo-pair:1?code=\(code)&fp=\(String(repeating: "zz", count: 32))"),
+            ("fingerprint with an equals sign", "erdigo-pair:1?code=\(code)&fp=\(fingerprint.dropLast())="),
+            ("fingerprint in other digits", "erdigo-pair:1?code=\(code)&fp=\(String(repeating: "\u{FF11}", count: 64))"),
+            ("fingerprint with a line break", "erdigo-pair:1?code=\(code)&fp=\(fingerprint.prefix(32))\n\(fingerprint.prefix(31))"),
+            ("repeated fingerprint", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&fp=\(fingerprint)"),
+            ("two fingerprints", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&fp=\(other)"),
+            ("repeated code", "erdigo-pair:1?code=\(code)&code=\(code)&fp=\(fingerprint)"),
+            ("repeated code after the fingerprint", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&code=\(code)"),
+            ("an address", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&host=192.0.2.1"),
+            ("an unknown field in front", "erdigo-pair:1?x=1&code=\(code)&fp=\(fingerprint)"),
+            ("an unknown field with no value", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&x"),
+            ("a field with no name", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&=1"),
+            ("an equals sign before the code", "erdigo-pair:1?=code=\(code)&fp=\(fingerprint)"),
+            ("an equals sign before the fingerprint", "erdigo-pair:1?code=\(code)&=fp=\(fingerprint)"),
+            ("an equals sign before both", "erdigo-pair:1?=code=\(code)&=fp=\(fingerprint)"),
+            ("two equals signs before the fingerprint", "erdigo-pair:1?code=\(code)&==fp=\(fingerprint)"),
+            ("several equals signs before both", "erdigo-pair:1?===code=\(code)&===fp=\(fingerprint)"),
+            ("nothing but an equals sign", "erdigo-pair:1?="),
+            ("an empty field in the middle", "erdigo-pair:1?code=\(code)&&fp=\(fingerprint)"),
+            ("an empty field in front", "erdigo-pair:1?&code=\(code)&fp=\(fingerprint)"),
+            ("a trailing separator", "erdigo-pair:1?code=\(code)&fp=\(fingerprint)&"),
+            ("only separators", "erdigo-pair:1?&&"),
+            ("field names in capitals", "erdigo-pair:1?CODE=\(code)&FP=\(fingerprint)"),
+            ("another version", "erdigo-pair:2?code=\(code)&fp=\(fingerprint)"),
+            ("no question mark", "erdigo-pair:1code=\(code)&fp=\(fingerprint)"),
+            ("a prefix in capitals", "ERDIGO-PAIR:1?code=\(code)&fp=\(fingerprint)"),
+        ]
+        for (name, text) in cases {
+            XCTAssertThrowsError(try PairingTicket(parsing: text), name) {
+                XCTAssertEqual(($0 as? WireError)?.code, .invalidMessage, name)
+            }
+        }
+    }
+
+    func testPairingTextOverTheLimitIsRefusedBeforeItIsRead() throws {
+        let code = "TEST0-0NLYC-0DE00-00000"
+        let fingerprint = String(repeating: "ab", count: 32)
+        let limit = 1024
+        let qr = "erdigo-pair:1?code=\(code)&fp=\(fingerprint)"
+        XCTAssertEqual(qr.utf8.count, 110, "the length the limit's comment gives")
+
+        // White space is the one thing a reader tolerates, so it shows exactly where the limit is.
+        for text in [qr, code] {
+            let atTheLimit = text + String(repeating: " ", count: limit - text.utf8.count)
+            XCTAssertNoThrow(try PairingTicket(parsing: atTheLimit))
+            XCTAssertThrowsError(try PairingTicket(parsing: atTheLimit + " ")) {
+                XCTAssertEqual(($0 as? WireError)?.code, .invalidMessage)
+            }
+        }
+
+        // The limit counts bytes, not characters.
+        let wide = String(repeating: "\u{3000}", count: limit / 3 + 1)
+        XCTAssertLessThan(wide.count, limit)
+        XCTAssertThrowsError(try PairingTicket(parsing: code + wide))
+
+        // Valid text with something huge inside it is not valid.
+        let huge = 2_000_000
+        XCTAssertThrowsError(try PairingTicket(parsing: "erdigo-pair:1?code=\(String(repeating: "-", count: huge))\(code)&fp=\(fingerprint)"))
+        XCTAssertThrowsError(try PairingTicket(parsing: "erdigo-pair:1?\(String(repeating: "&", count: huge))"))
+    }
+
+    func testValidQRTextWorksAndRoundTrips() throws {
+        let code = try PairingCode(parsing: "TEST0-0NLYC-0DE00-00000")
+        let fingerprint = String(repeating: "ab", count: 32)
+
+        let ticket = try PairingTicket(parsing: "  erdigo-pair:1?code=\(code.display)&fp=\(fingerprint)\n")
+        XCTAssertEqual(ticket, PairingTicket(code: code, fingerprint: fingerprint))
+        XCTAssertEqual(ticket.uri, "erdigo-pair:1?code=\(code.display)&fp=\(fingerprint)")
+        XCTAssertEqual(try PairingTicket(parsing: try XCTUnwrap(ticket.uri)), ticket)
+
+        // The two fields may come in either order, and digits are read as lowercase.
+        XCTAssertEqual(try PairingTicket(parsing: "erdigo-pair:1?fp=\(fingerprint)&code=\(code.display)"), ticket)
+        let capitals = try PairingTicket(parsing: "erdigo-pair:1?code=\(code.display)&fp=\(fingerprint.uppercased())")
+        XCTAssertEqual(capitals, ticket)
+        XCTAssertEqual(capitals.uri, ticket.uri)
+    }
+
+    func testABareCodeStaysTheTypedPath() throws {
+        let code = try PairingCode(parsing: "TEST0-0NLYC-0DE00-00000")
+        for typed in ["TEST0-0NLYC-0DE00-00000", "test0 0nlyc 0de00 00000", " TEST00NLYC0DE0000000\n"] {
+            let ticket = try PairingTicket(parsing: typed)
+            XCTAssertEqual(ticket.code, code, typed)
+            XCTAssertNil(ticket.fingerprint, typed)
+        }
+        XCTAssertThrowsError(try PairingTicket(parsing: ""))
+        XCTAssertThrowsError(try PairingTicket(parsing: "TEST0"))
+    }
+
+    func testOnlyAValidFingerprintBecomesQRText() throws {
+        let code = try PairingCode(parsing: "TEST0-0NLYC-0DE00-00000")
+        let fingerprint = String(repeating: "ab", count: 32)
+
+        // A typed code can still be represented, but it does not become QR text.
+        XCTAssertNil(PairingTicket(code: code).uri)
+        XCTAssertNil(try PairingTicket(parsing: code.display).uri)
+
+        let malformed = [
+            "",
+            String(fingerprint.dropLast()),
+            fingerprint + "a",
+            fingerprint.uppercased(),
+            String(repeating: "zz", count: 32),
+            String(fingerprint.dropLast(10)) + "&host=x",
+            String(repeating: "\u{FF11}", count: 64),
+        ]
+        for text in malformed {
+            XCTAssertNil(PairingTicket(code: code, fingerprint: text).uri, text)
+        }
+        XCTAssertNotNil(PairingTicket(code: code, fingerprint: fingerprint).uri)
     }
 
     func testCoordinatesAreValidated() {

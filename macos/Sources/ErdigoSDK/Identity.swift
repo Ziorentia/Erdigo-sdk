@@ -74,6 +74,8 @@ public enum ErdigoError: Error, Equatable, Sendable {
     case noAnswer
     /// The receiver's key does not match the fingerprint supplied for pairing.
     case fingerprintMismatch
+    /// The person did not confirm the receiver's key, so the receiver was not asked to pair.
+    case keyNotConfirmed
     /// The person at the receiver declined the request.
     case pairingDenied
     /// The person at the receiver did not answer in time.
@@ -103,6 +105,8 @@ extension ErdigoError: LocalizedError {
             return "No receiver answered. It may be off, asleep or on another network, the pairing code may be wrong or expired, or this device may have been removed. The first time, macOS may also be asking for Local Network permission."
         case .fingerprintMismatch:
             return "The receiver's key does not match the expected fingerprint. Pairing was stopped."
+        case .keyNotConfirmed:
+            return "The receiver's key was not confirmed. No pairing was saved, no items were sent, and the receiver was not asked to pair."
         case .pairingDenied:
             return "The request was declined on the receiver."
         case .pairingTimedOut:

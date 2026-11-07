@@ -1,3 +1,4 @@
+@_spi(ErdigoInternal) import ErdigoCore
 import Foundation
 import Network
 
@@ -13,6 +14,15 @@ public enum Pairing {
     ///   - kinds: what this device wants to send. The person may allow fewer.
     ///   - label: a local name for the receiver. Defaults to the start of its fingerprint.
     ///   - approvalTimeout: how long to wait for the person to confirm.
+    ///   - confirmKey: shows a person the receiver's key, and returns whether it matches the key on the
+    ///     receiver's screen. It gets the key in the form the receiver shows it. Needed for a typed code,
+    ///     because a code proves only that the other side knows it, and not called for any other ticket.
+    ///
+    /// A ticket with a fingerprint is compared here, and pairing stops on a mismatch. For a typed code,
+    /// `confirmKey` runs before the receiver hears anything about this device, so the receiver still
+    /// shows its key. If it returns false, this throws `ErdigoError.keyNotConfirmed`, the code stays
+    /// valid, and the receiver has seen neither this device's key nor its name. If it returns true,
+    /// the key the person confirmed is compared as if it came from a QR code.
     public static func pair(
         target: ReceiverTarget = .discover,
         ticket: PairingTicket,
@@ -21,12 +31,23 @@ public enum Pairing {
         kinds: Set<ItemKind>,
         label: String? = nil,
         handshakeTimeout: TimeInterval = 5,
-        approvalTimeout: TimeInterval = 120
+        approvalTimeout: TimeInterval = 120,
+        confirmKey: (@Sendable (_ receiverKey: String) async -> Bool)? = nil
     ) async throws -> ReceiverPairing {
         let name = TextRules.sanitizeDeviceName(deviceName)
         guard !name.isEmpty else { throw ErdigoError.invalidArgument("the device name cannot be empty") }
         guard !kinds.isEmpty else { throw ErdigoError.invalidArgument("choose at least one item kind") }
         if let label { try validateLabel(label) }
+
+        var ticket = ticket
+        if ticket.fingerprint == nil {
+            guard let confirmKey else {
+                throw ErdigoError.invalidArgument("a typed code needs confirmKey, because a person has to compare the receiver's key")
+            }
+            let found = try await receiverFingerprint(target: target, code: ticket.code, handshakeTimeout: handshakeTimeout)
+            guard await confirmKey(IntegrationV1.shortFingerprint(found)) else { throw ErdigoError.keyNotConfirmed }
+            ticket = PairingTicket(code: ticket.code, fingerprint: found)
+        }
 
         let request = PairRequest(
             versions: [IntegrationV1.version],
@@ -60,6 +81,35 @@ public enum Pairing {
         throw lastError
     }
 
+    /// Finds the key of the receiver that holds this code, and stops there, so that a person can
+    /// compare it. This runs the exchange up to message 2, as spec 4.1 describes.
+    private static func receiverFingerprint(
+        target: ReceiverTarget,
+        code: PairingCode,
+        handshakeTimeout: TimeInterval
+    ) async throws -> String {
+        // The handshake needs a key, but uses it only in message 3, which is never sent here.
+        let unused = DeviceIdentity.generate()
+        var lastError: ErdigoError = .noAnswer
+        for endpoint in try await Discovery.candidates(target: target) {
+            let stream = ByteStream(endpoint: endpoint)
+            defer { stream.cancel() }
+            do {
+                let (_, receiverKey) = try await readReceiverKey(
+                    from: stream, code: code, identity: unused, handshakeTimeout: handshakeTimeout
+                )
+                return IntegrationV1.fingerprint(of: receiverKey)
+            } catch ErdigoError.noAnswer {
+                try Task.checkCancellation()
+                continue
+            } catch let error as ErdigoError {
+                lastError = error
+                break
+            }
+        }
+        throw lastError
+    }
+
     static func validateLabel(_ label: String) throws {
         do {
             try TextRules.validateTitle(label)
@@ -68,18 +118,13 @@ public enum Pairing {
         }
     }
 
-    private static func attempt(
-        endpoint: NWEndpoint,
-        ticket: PairingTicket,
+    /// Runs the handshake up to the receiver's answer. This device's key and name have not been sent yet.
+    private static func readReceiverKey(
+        from stream: ByteStream,
+        code: PairingCode,
         identity: DeviceIdentity,
-        request: PairRequest,
-        label: String?,
-        handshakeTimeout: TimeInterval,
-        approvalTimeout: TimeInterval
-    ) async throws -> ReceiverPairing {
-        let stream = ByteStream(endpoint: endpoint)
-        defer { stream.cancel() }
-
+        handshakeTimeout: TimeInterval
+    ) async throws -> (handshake: NoiseHandshake, receiverKey: Data) {
         let prologue = IntegrationV1.preamble(.pair)
         let handshake: NoiseHandshake
         let first: Data
@@ -90,7 +135,7 @@ public enum Pairing {
                 isInitiator: true,
                 prologue: prologue,
                 staticKey: identity.privateKey,
-                psk: ticket.code.presharedKey()
+                psk: code.presharedKey()
             )
             first = try handshake.writeMessage()
             stream.armDeadline(handshakeTimeout)
@@ -115,12 +160,30 @@ public enum Pairing {
         guard let receiverKey = handshake.remoteStaticKey, Noise.isCanonicalPublicKey(receiverKey) else {
             throw ErdigoError.protocolViolation("the receiver sent an unusable key")
         }
+        return (handshake, receiverKey)
+    }
+
+    private static func attempt(
+        endpoint: NWEndpoint,
+        ticket: PairingTicket,
+        identity: DeviceIdentity,
+        request: PairRequest,
+        label: String?,
+        handshakeTimeout: TimeInterval,
+        approvalTimeout: TimeInterval
+    ) async throws -> ReceiverPairing {
+        let stream = ByteStream(endpoint: endpoint)
+        defer { stream.cancel() }
+
+        let (handshake, receiverKey) = try await readReceiverKey(
+            from: stream, code: ticket.code, identity: identity, handshakeTimeout: handshakeTimeout
+        )
         let fingerprint = IntegrationV1.fingerprint(of: receiverKey)
         if let expected = ticket.fingerprint, expected != fingerprint {
             throw ErdigoError.fingerprintMismatch
         }
 
-        var transport: NoiseTransport
+        let transport: NoiseTransport
         do {
             let third = try handshake.writeMessage(payload: Wire.encode(request))
             try await stream.sendFrame(third)

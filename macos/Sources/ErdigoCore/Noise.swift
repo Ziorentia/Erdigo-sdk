@@ -11,11 +11,17 @@ public enum NoiseError: Error, Equatable, Sendable {
     case messageTooLarge
     case wrongHandshakeState
     case missingKey
+    /// `NoiseHandshake.split()` was called a second time. A second pair of cipher states would
+    /// repeat the first one's keys and nonces.
+    case alreadySplit
 }
 
 /// A Noise handshake pattern, limited to the DH, cipher and hash functions used by
 /// integration-v1: `25519`, `ChaChaPoly` and `SHA256`.
-public struct NoisePattern: Sendable {
+///
+/// Internal to the SDK, like the rest of the handshake and transport machinery. Programs use
+/// `Pairing` and `ErdigoClient`, which pick the pattern themselves.
+@_spi(ErdigoInternal) public struct NoisePattern: Sendable {
     @_spi(TestVectors) public enum Token: Sendable { case e, s, ee, es, se, ss, psk }
 
     let name: String
@@ -55,9 +61,10 @@ struct NoiseCipherState {
 
     var hasKey: Bool { key != nil }
 
-    mutating func initialize(key raw: Data) {
+    /// `counter` is not zero only in tests of what happens as the counter runs out.
+    mutating func initialize(key raw: Data, counter start: UInt64 = 0) {
         key = SymmetricKey(data: raw)
-        counter = 0
+        counter = start
     }
 
     private func nonce() throws -> ChaChaPoly.Nonce {
@@ -205,7 +212,16 @@ struct NoiseSymmetricState {
 }
 
 /// Encrypts and decrypts messages after a handshake has finished.
-public struct NoiseTransport: Sendable {
+///
+/// A handshake yields one transport, because `NoiseHandshake.split()` succeeds only once. This is a
+/// reference type, so every reference shares the same cipher states, and a lock covers each whole
+/// operation, including the nonce increment. Whichever thread or reference calls it, no key and
+/// nonce pair is used twice, and a message that has been opened cannot be opened again.
+///
+/// The lock orders the sealing, not the sending. The caller still has to send frames in the order
+/// they were sealed, because the peer can only open them in that order.
+@_spi(ErdigoInternal) public final class NoiseTransport: @unchecked Sendable {
+    private let lock = NSLock()
     private var sendCipher: NoiseCipherState
     private var receiveCipher: NoiseCipherState
     public let handshakeHash: Data
@@ -216,21 +232,23 @@ public struct NoiseTransport: Sendable {
         self.handshakeHash = handshakeHash
     }
 
-    public mutating func seal(_ plaintext: Data) throws -> Data {
+    public func seal(_ plaintext: Data) throws -> Data {
         guard plaintext.count + Noise.tagLength <= Noise.maxMessageLength else { throw NoiseError.messageTooLarge }
+        lock.lock()
+        defer { lock.unlock() }
         return try sendCipher.encrypt(associatedData: Data(), plaintext: plaintext)
     }
 
-    public mutating func open(_ ciphertext: Data) throws -> Data {
+    public func open(_ ciphertext: Data) throws -> Data {
         guard ciphertext.count <= Noise.maxMessageLength else { throw NoiseError.messageTooLarge }
+        lock.lock()
+        defer { lock.unlock() }
         return try receiveCipher.decrypt(associatedData: Data(), ciphertext: ciphertext)
     }
 }
 
-extension NoiseCipherState: @unchecked Sendable {}
-
 /// The Noise handshake state machine.
-public final class NoiseHandshake {
+@_spi(ErdigoInternal) public final class NoiseHandshake {
     private let pattern: NoisePattern
     private let isInitiator: Bool
     private var symmetric: NoiseSymmetricState
@@ -241,6 +259,8 @@ public final class NoiseHandshake {
     private var remoteEphemeralKey: Data?
     private var psks: [Data]
     private var messageIndex = 0
+    private let splitLock = NSLock()
+    private var hasSplit = false
 
     public var isComplete: Bool { messageIndex == pattern.messages.count }
     public var handshakeHash: Data { symmetric.hash }
@@ -403,9 +423,14 @@ public final class NoiseHandshake {
         return payload
     }
 
-    /// Call once `isComplete` is true.
+    /// Call once `isComplete` is true. This succeeds only once, even if called from several threads,
+    /// because a second transport would have the same keys and start from the same nonces.
     public func split() throws -> NoiseTransport {
         guard isComplete else { throw NoiseError.wrongHandshakeState }
+        splitLock.lock()
+        defer { splitLock.unlock() }
+        guard !hasSplit else { throw NoiseError.alreadySplit }
+        hasSplit = true
         let (first, second) = symmetric.split()
         return NoiseTransport(
             sendCipher: isInitiator ? first : second,

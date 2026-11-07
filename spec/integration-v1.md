@@ -1,6 +1,6 @@
 # Erdigo integration protocol, version 1
 
-**Status: draft.** The wire format may still change before the first release of a receiver. The Erdigo
+**Status: draft.** The wire format may still change before the first release of a receiver. The released Erdigo
 app does not yet accept these connections. Until it does, use the mock receiver that comes with each SDK.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as described in RFC 2119.
@@ -97,6 +97,9 @@ its key fingerprint, for 10 minutes.
   `0`, and reads `I` and `L` as `1`. Anything else, or any length but 20, is an error.
 - The QR code holds `erdigo-pair:1?code=XXXXX-XXXXX-XXXXX-XXXXX&fp=<receiver fingerprint>`. No other field is
   allowed. In particular it never holds an address.
+- A reader MUST refuse QR text without exactly one code and exactly one valid `fp`, which is 64 hexadecimal digits. It
+  MUST also refuse a repeated field, an unknown field and an empty field. A tool MUST NOT write QR text without a
+  valid fingerprint. A bare typed code has no `fp`, and is handled as "Checking the receiver" describes.
 
 The Noise pre-shared key is `HKDF-SHA256(ikm = the 20 characters as ASCII, salt = "erdigo-integration-v1/pairing-psk", info = empty, length = 32)`.
 
@@ -104,9 +107,21 @@ An SDK's tools MUST NOT accept a code as a command-line argument, because argume
 and shell history. They MAY read it from the keyboard or from a file only its owner can read.
 
 **Checking the receiver.** A typed code proves only that the other side knows the code, not that it is this
-receiver. The fingerprint in the QR code proves that. After pairing
-with a typed code, a tool MUST show the receiver's fingerprint and tell the person to compare it with the one on
-the receiver's screen.
+receiver. The fingerprint in the QR code proves that, and needs no further step from the person. With a typed code, a
+tool MUST ask the person before it sends message 3 (section 4.2), because the receiver stops showing its fingerprint
+once the person there has decided:
+
+1. The tool runs the exchange up to message 2, which gives it the receiver's fingerprint, and closes the connection.
+2. It shows the fingerprint, and asks the person to compare it with the one on the receiver's screen. Anything typed
+   before the fingerprint appeared is not an answer. End of input, or any other answer, counts as no.
+3. On a no it stops. The receiver has then seen neither the device's key nor its name.
+4. On a yes it connects again and pairs, comparing the fingerprint as if it came from a QR code.
+
+A tool MUST NOT save a pairing or send items before that yes. A tool that cannot show the fingerprint MUST refuse a
+typed code. A tool whose standard input is not a terminal cannot ask the person, because what arrives there may have
+been written before the fingerprint existed, so it MUST refuse a typed code too. A program that calls an SDK with its
+own question, such as `Pairing.pair` with its own `confirmKey`, remains responsible for a person answering it, as the
+threat model says.
 
 ### 4.2 The exchange
 
@@ -176,6 +191,7 @@ white space, cuts it to 40 characters and lets the person edit it. An empty resu
 |---|---|
 | No window is open, or the window expired | Silence (section 5.2). No dialog. |
 | Wrong code | Silence. The code stays valid, so a stranger cannot spoil it. The address is delayed as in section 5.2. |
+| A handshake that ends after message 2 | Nothing is stored, and the person is asked nothing. The code stays valid, because a device stops here while its person compares the fingerprint. The address is delayed as in section 5.2. |
 | A first message with an ephemeral key already seen in this window | Silence. It is a replay. A receiver remembers at least the latest 4096 keys of a window. It MUST NOT go silent because this list is full, since that would let a holder of the code hide its misuse from the real device. |
 | A device key that is not canonical | Closes the connection. Nothing is stored. |
 | The same device uses the code again | Answers as it did the first time, because the device may have lost the connection. |
@@ -341,6 +357,11 @@ closes the connection.
 
 A request that runs and fails still uses up its number, and a resend gets the same error. These do **not** use up
 a number: a message that does not parse, `rate_limited`, `paused` and `internal_error`.
+
+**Before answering,** a receiver MUST record a change together with `last_seq`, the message hash and the answer, in
+storage that survives the receiver's own process ending. An `ack` therefore means the change is not lost if the receiver
+crashes. This does not promise that it survives a power failure. If the receiver cannot record it, it answers
+`internal_error`, which does not use up the number, and has not applied the change, so a resend is safe.
 
 **After a lost answer,** the device reconnects and sends the same bytes with the same number. It is applied at most once.
 
