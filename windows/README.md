@@ -12,8 +12,9 @@ SDKs and their mock receivers work with each other.
 
 ## Try it in two minutes
 
-You need the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0). In the `windows` folder, start a mock
-receiver in one terminal:
+You need the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or a later one; the libraries target
+.NET 8 either way. Run the tests from a full clone, since they read the shared vectors in `spec/`. In the `windows`
+folder, start a mock receiver in one terminal:
 
 ```powershell
 dotnet run --project src/erdigo-send -- serve --mock
