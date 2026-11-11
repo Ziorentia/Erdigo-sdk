@@ -701,6 +701,7 @@ public sealed class MockReceiver : IDisposable
         stream.ArmDeadline(TimeSpan.FromSeconds(2));
         _ = Task.Run(async () =>
         {
+            var sent = false;
             try
             {
                 await connection.SendLock.WaitAsync().ConfigureAwait(false);
@@ -708,6 +709,7 @@ public sealed class MockReceiver : IDisposable
                 {
                     var sealedMessage = connection.Transport.Seal(Wire.Encode(message));
                     await stream.SendFrameAsync(sealedMessage).ConfigureAwait(false);
+                    sent = true;
                 }
                 finally
                 {
@@ -719,7 +721,16 @@ public sealed class MockReceiver : IDisposable
             }
             finally
             {
-                stream.Cancel();
+                // Once the error is out, end the stream gracefully and let the deadline above close the socket.
+                // Closing it at once resets the connection on Windows, which can lose the error before it is read.
+                if (sent)
+                {
+                    stream.FinishSending();
+                }
+                else
+                {
+                    stream.Cancel();
+                }
             }
         });
     }

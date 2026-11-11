@@ -152,6 +152,24 @@ public sealed class ByteStream : IDisposable
         }
     }
 
+    /// <summary>
+    /// Stops sending once everything already sent has gone out, so the peer can read it before the stream ends.
+    /// Closing a socket that still has a read pending makes Windows reset the connection, and a reset can discard
+    /// data the peer has received but not yet read. The connection itself still closes on <see cref="Cancel"/> or
+    /// when an armed deadline passes.
+    /// </summary>
+    public void FinishSending()
+    {
+        try
+        {
+            socket.Shutdown(SocketShutdown.Send);
+        }
+        catch (Exception error) when (error is SocketException or ObjectDisposedException)
+        {
+            Cancel();
+        }
+    }
+
     /// <summary>Closes the connection. Pending reads and writes fail.</summary>
     public void Cancel()
     {
