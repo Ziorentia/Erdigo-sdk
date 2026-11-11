@@ -910,14 +910,26 @@ public sealed class EndToEndTests : EndToEndBase
         var oversized = new byte[] { 0xFF, 0xFF };
         Task<double> Measure(byte[] bytes) => SecondsUntilCloseAsync(port, bytes);
 
+        // A busy machine can only make a close look later, never earlier, so the shortest of a few tries is the
+        // receiver's own deadline. Shared CI runners otherwise fail this now and then.
+        async Task<double> MeasureDeadline(byte[] bytes)
+        {
+            var shortest = double.MaxValue;
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                shortest = Math.Min(shortest, await Measure(bytes));
+            }
+            return shortest;
+        }
+
         // A preamble and then nothing: the deadline in every state.
-        var quiet = new List<double> { await Measure(pair) };
+        var quiet = new List<double> { await MeasureDeadline(pair) };
         receiver.OpenPairingWindow();
-        quiet.Add(await Measure(pair));
+        quiet.Add(await MeasureDeadline(pair));
         receiver.ClosePairingWindow();
-        quiet.Add(await Measure(connect));
+        quiet.Add(await MeasureDeadline(connect));
         receiver.SetPaused(true);
-        quiet.Add(await Measure(connect));
+        quiet.Add(await MeasureDeadline(connect));
         receiver.SetPaused(false);
         Assert.All(quiet, seconds => Assert.InRange(seconds, 0.15, 0.65));
 
