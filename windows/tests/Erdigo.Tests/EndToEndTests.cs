@@ -1020,12 +1020,20 @@ public sealed class EndToEndTests : EndToEndBase
         options.AddressPenaltyBase = TimeSpan.FromSeconds(30);
         options.HandshakeTimeout = TimeSpan.FromSeconds(1);
         options.PenalisedHandshakeTimeout = TimeSpan.FromSeconds(0.05);
-        var (_, port) = await StartReceiverAsync(options);
+        var (receiver, port) = await StartReceiverAsync(options);
         var first = await RawConnectAsync(port);
         await first.SendAsync(Encoding.ASCII.GetBytes("EI"));
         await Task.Delay(50);
         first.Cancel();
-        await Task.Delay(100);
+        // The receiver notes the penalty when it sees the connection end, which a busy machine can take longer than a
+        // fixed pause to do. Wait for that, then measure.
+        var waited = DateTime.UtcNow;
+        while (!receiver.Events.Any(happened => happened is Receiver.Event.SilentlyDropped)
+               && DateTime.UtcNow - waited < TimeSpan.FromSeconds(5))
+        {
+            await Task.Delay(20);
+        }
+        Assert.Contains(receiver.Events, happened => happened is Receiver.Event.SilentlyDropped);
         Assert.True(await SecondsUntilCloseAsync(port, Array.Empty<byte>()) < 0.5);
     }
 
