@@ -1,0 +1,11 @@
+# .NET build output
+bin/
+obj/
+TestResults/
+*.user
+.vs/
+*.nupkg
+
+# Local SDK state, in case someone points --state-dir at the checkout
+identity.key
+identity.dpapi

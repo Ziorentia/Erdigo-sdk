@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Erdigo.Core</RootNamespace>
+    <Description>The integration-v1 wire format, strict JSON and Noise handshakes used by the Erdigo SDK.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BouncyCastle.Cryptography" />
+  </ItemGroup>
+
+  <!-- The handshake and transport machinery is internal, as in the Swift SDK. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="Erdigo.Sdk" />
+    <InternalsVisibleTo Include="Erdigo.MockReceiver" />
+    <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+</Project>
