@@ -344,6 +344,20 @@ public sealed class EndToEndTests : EndToEndBase
     }
 
     [Fact]
+    public async Task SameDeviceRetryingPairingIsNotAnAlarm()
+    {
+        var (receiver, port) = await StartReceiverAsync();
+        var ticket = receiver.OpenPairingWindow();
+        var identity = DeviceIdentity.Generate();
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            var pairing = await PairAsync(port, ticket, identity, "Retry");
+            Assert.Equal(new[] { ItemKind.Pin }, pairing.Kinds);
+        }
+        Assert.DoesNotContain(receiver.Events, happened => happened is Receiver.Event.CodeReusedAlarm);
+    }
+
+    [Fact]
     public async Task AStuckRetryLoopOnOneDeviceIsNotAnAlarm()
     {
         var (receiver, port) = await StartReceiverAsync();

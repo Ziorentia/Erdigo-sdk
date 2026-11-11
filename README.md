@@ -23,7 +23,7 @@ Raspberry Pi, a script. They talk to the Erdigo app on the same local network.
 | Platform | Where | Status |
 |---|---|---|
 | macOS 12 or later (Swift) | [`macos/`](macos/README.md) | Preview |
-| Windows | | In progress |
+| Windows 10 or later (.NET 8) | [`windows/`](windows/README.md) | Preview |
 
 ## Try it in two minutes
 
@@ -48,9 +48,15 @@ swift run erdigo-send pin --host 127.0.0.1 --port PORT --id city-hall --lat 37.5
 
 The mock prints each request it accepts.
 
+On Windows, install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and do the same from the
+`windows` folder with `dotnet run --project src/erdigo-send --` in place of `swift run erdigo-send`, for example
+`dotnet run --project src/erdigo-send -- serve --mock`. The two SDKs and their mock receivers work with each other. See
+the [Windows SDK guide](windows/README.md).
+
 ## Documentation
 
 - [macOS SDK guide](macos/README.md)
+- [Windows SDK guide](windows/README.md)
 - [Protocol specification](spec/integration-v1.md), for building an SDK in another language or a receiver
 - [Threat model](spec/threat-model.md): what this protects against, and what it does not
 - [Test vectors](spec/vectors/README.md)
