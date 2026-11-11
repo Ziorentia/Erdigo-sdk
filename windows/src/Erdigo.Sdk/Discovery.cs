@@ -146,12 +146,35 @@ internal static class Discovery
         stop.CancelAfter(window);
         try
         {
-            var listeners = sockets.Select(socket => ListenAsync(socket, id, records, stop.Token)).ToArray();
+            var listeners = sockets.Select(socket => ListenAsync(socket.Socket, id, records, stop.Token)).ToArray();
+            // Asked again a little later, like a browser that keeps watching, so that a receiver that has only just
+            // started advertising is found too.
+            foreach (var delay in new[] { TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(750) })
+            {
+                try
+                {
+                    await Task.Delay(delay, stop.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                foreach (var (socket, destination) in sockets)
+                {
+                    try
+                    {
+                        socket.SendTo(query, destination);
+                    }
+                    catch (Exception error) when (error is SocketException or ObjectDisposedException)
+                    {
+                    }
+                }
+            }
             await Task.WhenAll(listeners).ConfigureAwait(false);
         }
         finally
         {
-            foreach (var socket in sockets)
+            foreach (var (socket, _) in sockets)
             {
                 socket.Dispose();
             }
@@ -187,9 +210,20 @@ internal static class Discovery
             {
                 continue;
             }
-            var found = message.AllRecords.Select(record => record.Address is { IsIPv6LinkLocal: true } address
-                ? record with { Address = new IPAddress(address.GetAddressBytes(), from.Address.ScopeId) }
-                : record);
+            // An IPv6 link-local address works only on the interface it was learned on, which is known only when the
+            // answer itself came over IPv6.
+            var found = new List<DnsRecord>();
+            foreach (var record in message.AllRecords)
+            {
+                if (record.Address is not { IsIPv6LinkLocal: true } address)
+                {
+                    found.Add(record);
+                }
+                else if (from.AddressFamily == AddressFamily.InterNetworkV6)
+                {
+                    found.Add(record with { Address = new IPAddress(address.GetAddressBytes(), from.Address.ScopeId) });
+                }
+            }
             lock (records)
             {
                 records.AddRange(found);
@@ -197,9 +231,10 @@ internal static class Discovery
         }
     }
 
-    private static List<Socket> OpenSockets(byte[] query)
+    /// <summary>Opens one socket per interface and address family, sends the query on each, and returns them with where they sent it.</summary>
+    private static List<(Socket Socket, IPEndPoint Destination)> OpenSockets(byte[] query)
     {
-        var sockets = new List<Socket>();
+        var sockets = new List<(Socket, IPEndPoint)>();
         foreach (var networkInterface in LocalNetwork.UpInterfaces())
         {
             if (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback || !networkInterface.SupportsMulticast)
@@ -228,8 +263,9 @@ internal static class Discovery
                     socket.Bind(new IPEndPoint(unicast.Address, 0));
                     socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastInterface, unicast.Address.GetAddressBytes());
                     socket.SetSocketOption(SocketOptionLevel.IP, SocketOptionName.MulticastTimeToLive, 255);
-                    socket.SendTo(query, new IPEndPoint(DnsWire.MulticastV4, DnsWire.MdnsPort));
-                    sockets.Add(socket);
+                    var destination = new IPEndPoint(DnsWire.MulticastV4, DnsWire.MdnsPort);
+                    socket.SendTo(query, destination);
+                    sockets.Add((socket, destination));
                     socket = null;
                 }
                 catch (SocketException)
@@ -250,8 +286,9 @@ internal static class Discovery
                     socket.Bind(new IPEndPoint(IPAddress.IPv6Any, 0));
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastInterface, index);
                     socket.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.MulticastTimeToLive, 255);
-                    socket.SendTo(query, new IPEndPoint(new IPAddress(DnsWire.MulticastV6.GetAddressBytes(), index), DnsWire.MdnsPort));
-                    sockets.Add(socket);
+                    var destination = new IPEndPoint(new IPAddress(DnsWire.MulticastV6.GetAddressBytes(), index), DnsWire.MdnsPort);
+                    socket.SendTo(query, destination);
+                    sockets.Add((socket, destination));
                     socket = null;
                 }
                 catch (Exception error) when (error is SocketException or NetworkInformationException or PlatformNotSupportedException)

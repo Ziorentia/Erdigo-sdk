@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>erdigo-example-quickstart</AssemblyName>
+    <RootNamespace>Erdigo.Examples.Quickstart</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
+  </ItemGroup>
+</Project>
