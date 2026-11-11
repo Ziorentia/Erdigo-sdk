@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Erdigo.MockReceiver</RootNamespace>
+    <Description>An in-memory stand-in for the receiver side of integration-v1, for developing and testing without the Erdigo app.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Erdigo.Core\Erdigo.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+</Project>
