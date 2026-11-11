@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>erdigo-send</AssemblyName>
+    <RootNamespace>Erdigo.Send</RootNamespace>
+    <Description>Writes pins, markers, notes, photos and tracks to a paired Erdigo receiver, and runs a mock receiver for testing.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Erdigo.Sdk\Erdigo.Sdk.csproj" />
+    <ProjectReference Include="..\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj" />
+  </ItemGroup>
+</Project>

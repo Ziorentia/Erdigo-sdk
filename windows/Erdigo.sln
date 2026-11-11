@@ -1,0 +1,66 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DA2B2890-ABC5-4181-9108-6A9DF2FBCEF4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Erdigo.Core", "src\Erdigo.Core\Erdigo.Core.csproj", "{77C45FC9-5582-4A63-8703-AE2D056BED4E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Erdigo.Sdk", "src\Erdigo.Sdk\Erdigo.Sdk.csproj", "{F7192633-CB17-4A44-BC89-3436BE5687CB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Erdigo.MockReceiver", "src\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj", "{6D450E0A-530C-4A8E-8DB1-D2F47B5BA15A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "erdigo-send", "src\erdigo-send\erdigo-send.csproj", "{2A30A190-AECB-476D-9C9A-5CEE5753BC4D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{3E139DBF-AABA-46EF-8332-BBE6DBA1F65D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Quickstart", "examples\Quickstart\Quickstart.csproj", "{A209152A-E841-4B34-878B-EBEA392D13E5}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A517872E-D965-4CB6-9D75-90304B1DC9DA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Erdigo.Tests", "tests\Erdigo.Tests\Erdigo.Tests.csproj", "{C4DC4B5B-A4C4-4479-91D6-5AE4AB838564}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77C45FC9-5582-4A63-8703-AE2D056BED4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C45FC9-5582-4A63-8703-AE2D056BED4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77C45FC9-5582-4A63-8703-AE2D056BED4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77C45FC9-5582-4A63-8703-AE2D056BED4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F7192633-CB17-4A44-BC89-3436BE5687CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F7192633-CB17-4A44-BC89-3436BE5687CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F7192633-CB17-4A44-BC89-3436BE5687CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F7192633-CB17-4A44-BC89-3436BE5687CB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D450E0A-530C-4A8E-8DB1-D2F47B5BA15A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D450E0A-530C-4A8E-8DB1-D2F47B5BA15A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D450E0A-530C-4A8E-8DB1-D2F47B5BA15A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D450E0A-530C-4A8E-8DB1-D2F47B5BA15A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A30A190-AECB-476D-9C9A-5CEE5753BC4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A30A190-AECB-476D-9C9A-5CEE5753BC4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A30A190-AECB-476D-9C9A-5CEE5753BC4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A30A190-AECB-476D-9C9A-5CEE5753BC4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A209152A-E841-4B34-878B-EBEA392D13E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A209152A-E841-4B34-878B-EBEA392D13E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A209152A-E841-4B34-878B-EBEA392D13E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A209152A-E841-4B34-878B-EBEA392D13E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4DC4B5B-A4C4-4479-91D6-5AE4AB838564}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4DC4B5B-A4C4-4479-91D6-5AE4AB838564}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4DC4B5B-A4C4-4479-91D6-5AE4AB838564}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4DC4B5B-A4C4-4479-91D6-5AE4AB838564}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{77C45FC9-5582-4A63-8703-AE2D056BED4E} = {DA2B2890-ABC5-4181-9108-6A9DF2FBCEF4}
+		{F7192633-CB17-4A44-BC89-3436BE5687CB} = {DA2B2890-ABC5-4181-9108-6A9DF2FBCEF4}
+		{6D450E0A-530C-4A8E-8DB1-D2F47B5BA15A} = {DA2B2890-ABC5-4181-9108-6A9DF2FBCEF4}
+		{2A30A190-AECB-476D-9C9A-5CEE5753BC4D} = {DA2B2890-ABC5-4181-9108-6A9DF2FBCEF4}
+		{A209152A-E841-4B34-878B-EBEA392D13E5} = {3E139DBF-AABA-46EF-8332-BBE6DBA1F65D}
+		{C4DC4B5B-A4C4-4479-91D6-5AE4AB838564} = {A517872E-D965-4CB6-9D75-90304B1DC9DA}
+	EndGlobalSection
+EndGlobal
