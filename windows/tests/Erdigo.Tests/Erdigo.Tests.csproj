@@ -13,6 +13,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Erdigo.Core\Erdigo.Core.csproj" />
+    <ProjectReference Include="..\..\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
+    <ProjectReference Include="..\..\src\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj" />
   </ItemGroup>
 
   <ItemGroup>

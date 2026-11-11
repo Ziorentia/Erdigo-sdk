@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>Erdigo.Sdk</RootNamespace>
+    <Description>Writes pins, markers, notes, photos and tracks to an Erdigo receiver on the local network.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Erdigo.Core\Erdigo.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Used only on Windows, where it protects the device key. Elsewhere it is never called. -->
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+</Project>
