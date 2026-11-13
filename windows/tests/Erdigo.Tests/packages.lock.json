@@ -109,6 +109,13 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "erdigo-send": {
+        "type": "Project",
+        "dependencies": {
+          "Erdigo.MockReceiver": "[0.1.0, )",
+          "Erdigo.Sdk": "[0.1.0, )"
+        }
+      },
       "erdigo.core": {
         "type": "Project",
         "dependencies": {

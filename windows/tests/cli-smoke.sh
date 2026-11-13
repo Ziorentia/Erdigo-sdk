@@ -178,6 +178,28 @@ expect_ok "several sends keep working in sequence" "$BIN" ping "${STATE[@]}" --t
 
 printf 'not an image' >"$WORK/fake.jpg"
 expect_refused "a file that is not an image" "JPEG or PNG" "$BIN" photo "${STATE[@]}" --id p --lat 1 --lon 1 --file "$WORK/fake.jpg"
+
+# Files over the limit are refused before the receiver is contacted, without being read in full.
+connections() {
+    grep -c '^\[mock\] connected' "$WORK/mock.log"
+}
+perl -e 'print "a" x 4096' >"$WORK/note-at-limit.txt"
+perl -e 'print "a" x 4097' >"$WORK/note-over-limit.txt"
+printf 'caf\xe9' >"$WORK/note-latin1.txt"
+perl -e 'open(my $f, ">", $ARGV[0]) or die; truncate($f, 256 * 1024 * 1024) or die' "$WORK/huge.jpg"
+expect_ok "a note file at the limit" "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/note-at-limit.txt"
+BEFORE_CONNECTIONS="$(connections)"
+expect_refused "a note file one byte over the limit" "at most 4096 bytes" \
+    "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/note-over-limit.txt"
+expect_refused "a note file that is not UTF-8" "not UTF-8 text" \
+    "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/note-latin1.txt"
+expect_refused "a missing note file" "the note file does not exist" \
+    "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/no-such-note.txt"
+expect_refused "a photo file far over the limit" "at most 1048576 bytes" \
+    "$BIN" photo "${STATE[@]}" --id p --lat 1 --lon 1 --file "$WORK/huge.jpg"
+expect_refused "a missing photo file" "the photo file does not exist" \
+    "$BIN" photo "${STATE[@]}" --id p --lat 1 --lon 1 --file "$WORK/no-such.jpg"
+check "files that were refused never reached the receiver" test "$(connections)" = "$BEFORE_CONNECTIONS"
 expect_refused "a bad id" "item id" "$BIN" pin "${STATE[@]}" --id "bad id" --lat 1 --lon 1
 expect_refused "a bad latitude" "latitude" "$BIN" pin "${STATE[@]}" --id a --lat 91 --lon 1
 expect_refused "NaN" "must be a number" "$BIN" pin "${STATE[@]}" --id a --lat nan --lon 1

@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Erdigo.Sdk\Erdigo.Sdk.csproj" />
     <ProjectReference Include="..\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj" />
   </ItemGroup>

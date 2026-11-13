@@ -15,6 +15,8 @@
     <ProjectReference Include="..\..\src\Erdigo.Core\Erdigo.Core.csproj" />
     <ProjectReference Include="..\..\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
     <ProjectReference Include="..\..\src\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj" />
+    <!-- For the command-line tool's own helpers, such as how it reads files. -->
+    <ProjectReference Include="..\..\src\erdigo-send\erdigo-send.csproj" />
   </ItemGroup>
 
   <ItemGroup>
