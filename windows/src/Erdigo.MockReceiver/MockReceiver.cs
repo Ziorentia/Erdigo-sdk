@@ -27,7 +27,12 @@ public sealed class MockReceiver : IDisposable
         /// <summary>0 asks the system for a free port.</summary>
         public ushort Port { get; set; }
 
-        /// <summary>Accept connections from the local network instead of this computer only.</summary>
+        /// <summary>
+        /// Accept connections from the local network instead of this computer only. Anyone there who has a valid code
+        /// can then ask to pair, and unless <see cref="SetApprovalHandler"/> is used every request is allowed, so give
+        /// it a handler that asks a person, as <c>erdigo-send serve --mock --lan</c> does, unless the test runs
+        /// unattended on a network you control.
+        /// </summary>
         public bool AcceptsLocalNetwork { get; set; }
 
         /// <summary>Advertise over multicast DNS with a random name that changes every hour.</summary>

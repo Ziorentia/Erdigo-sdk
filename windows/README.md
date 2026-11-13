@@ -36,8 +36,17 @@ dotnet run --project src/erdigo-send -- pin --host 127.0.0.1 --port PORT --id ci
 
 The mock prints each request it accepts. Type `devices` and then `items 1` in its terminal to see what it holds.
 
-The mock allows every pairing request by default. Start it with `--ask` to answer each one yourself, as a person
-would in the app.
+On this computer alone the mock allows every pairing request by default. Start it with `--ask` to answer each one
+yourself, as a person would in the app. With `--lan` anyone on the network can reach it, so it asks you about each
+request by default. Add `--auto-approve` only for a test that runs unattended on a network you control. A question
+nobody can answer, because standard input has ended, is answered no at once.
+
+The mock prints the pairing code and the QR text, which are good for ten minutes. Where its output is saved, captured
+or shared, start it with `--code-file FILE` to have them written to a file only you can read instead, and add
+`--redact` to hide keys, device names and what items hold. Its log says what each request did, never where an item is
+or what it is called; only the `items` command shows that, and not with `--redact`. A pairing question still names
+the device and its address, because that is what you decide on, and it goes to standard error so that a saved
+standard output does not hold it.
 
 ## Use it in your code
 
@@ -254,6 +263,8 @@ used only when no address is given.
   marker, and, for a PNG, every chunk checksum and the size of the inflated image data. It then stores the image data
   without any metadata segment or chunk, so EXIF location, colour profiles and comments are gone, but it does not
   decode, rescale or re-encode the pixels. A real receiver must still do what spec section 8 says.
+- `serve --mock --lan` asks about each pairing request unless `--auto-approve` is given. The Swift tool's mock still
+  allows them unless `--ask` is given.
 - `serve --mock --bonjour` advertises with a small multicast DNS responder of its own, on IPv4. It gives the computer a
   random host name for the advertisement, so the computer's own network name is not announced with it.
 - Public methods are asynchronous and take a `CancellationToken`, as is usual in .NET.

@@ -44,10 +44,15 @@ Writing
       Options: --to LABEL (needed with several receivers), --host HOST --port PORT, --retry-for SECONDS
 
 Testing without the Erdigo app
-  serve --mock [--port PORT] [--lan] [--bonjour] [--code-file FILE] [--ask] [--redact]
+  serve --mock [--port PORT] [--lan] [--bonjour] [--code-file FILE] [--ask | --auto-approve] [--redact]
       Runs an in-memory receiver. By default only this computer can reach it, and it allows every
       pairing request. Use --ask to answer each request yourself, as a person would in the app.
+      With --lan anyone on the network can reach it, so it asks you about each request unless
+      --auto-approve is given, for a test that runs unattended.
       --bonjour advertises it on the local network with multicast DNS.
+      Where its output is saved or shared, use --code-file FILE, which only you can read, instead of
+      showing the pairing code, and --redact to hide codes, keys, device names and what items hold.
+      Pairing questions go to standard error and always show the device's name and address.
       Type 'help' while it runs to see its commands.
 
 For pairing and writing commands
@@ -67,7 +72,7 @@ Elsewhere it is kept in a file of mode 0600.
     /// </summary>
     private static readonly HashSet<string> KnownOptions = new(StringComparer.Ordinal)
     {
-        "alt", "ask", "bonjour", "code-file", "color", "file", "fingerprint", "host", "id", "keychain", "kinds", "label", "lan",
+        "alt", "ask", "auto-approve", "bonjour", "code-file", "color", "file", "fingerprint", "host", "id", "keychain", "kinds", "label", "lan",
         "lat", "lon", "mock", "name", "port", "profile", "redact", "retry-for", "state-dir", "text", "text-file", "title", "to", "ts", "yes",
     };
 
@@ -504,9 +509,23 @@ Elsewhere it is kept in a file of mode 0600.
         Console.WriteLine("OK");
     }
 
+    /// <summary>
+    /// Whether the mock asks a person about each pairing request. Anyone who can reach a mock on the network and has a
+    /// code could pair, so there a person decides unless the test says it runs unattended. On this computer alone,
+    /// allowing every request stays the default.
+    /// </summary>
+    internal static bool AsksAboutPairing(bool localNetwork, bool ask, bool autoApprove)
+    {
+        if (ask && autoApprove)
+        {
+            throw new UsageException("--ask and --auto-approve cannot be used together");
+        }
+        return ask || (localNetwork && !autoApprove);
+    }
+
     private static async Task RunServeAsync(IReadOnlyList<string> arguments)
     {
-        var options = new Options(arguments, new[] { "mock", "lan", "bonjour", "ask", "redact" });
+        var options = new Options(arguments, new[] { "mock", "lan", "bonjour", "ask", "auto-approve", "redact" });
         if (!options.Flag("mock"))
         {
             throw new UsageException("'serve' only runs a mock receiver for testing, so --mock is required");
@@ -521,10 +540,12 @@ Elsewhere it is kept in a file of mode 0600.
         {
             throw new UsageException("--bonjour needs --lan, because a loopback-only receiver cannot be reached from the network");
         }
-        var ask = options.Flag("ask");
+        var askGiven = options.Flag("ask");
+        var autoApprove = options.Flag("auto-approve");
         var redact = options.Flag("redact");
         var codeFile = options.Optional("code-file");
         options.Finish();
+        var ask = AsksAboutPairing(settings.AcceptsLocalNetwork, askGiven, autoApprove);
         if (redact && codeFile is null)
         {
             throw new UsageException("--redact hides the pairing code, so it needs --code-file to give you the code another way");
@@ -571,15 +592,17 @@ Elsewhere it is kept in a file of mode 0600.
             }
         });
 
-        var console = new MockConsole();
+        var console = new MockConsole(Console.In);
         if (ask)
         {
             receiver.SetApprovalHandler(async (request, cancellationToken) =>
             {
                 var kinds = string.Join(", ", request.RequestedKinds.Select(kind => kind.ToWire()));
-                var address = Shown(request.Address ?? "an unknown address");
+                var address = request.Address ?? "an unknown address";
                 var note = request.WasRemovedBefore ? " You removed this device earlier." : string.Empty;
-                Console.WriteLine($"[mock] '{Shown(request.DeviceName)}' at {address} wants to put {kinds} on your map.{note} Allow? Type 'y' or 'n':");
+                // The name and address are what a person decides on, so --redact does not hide them here. The question
+                // goes to standard error, so that standard output saved to a file does not hold them.
+                Console.Error.WriteLine($"[mock] '{request.DeviceName}' at {address} wants to put {kinds} on your map.{note} Allow? Type 'y' or 'n':");
                 var answer = await console.NextDecisionAsync(cancellationToken).ConfigureAwait(false);
                 return answer ? Mock.ApprovalDecision.Allow(request.RequestedKinds) : Mock.ApprovalDecision.Deny;
             });
@@ -619,6 +642,11 @@ Elsewhere it is kept in a file of mode 0600.
         Console.WriteLine("This is a mock receiver for testing. It stores nothing on disk and draws no map.");
         Console.WriteLine($"Listening on {(settings.AcceptsLocalNetwork ? "the local network" : "127.0.0.1")}, port {port}");
         Console.WriteLine($"Receiver key: {Shown(IntegrationV1.ShortFingerprint(receiver.Fingerprint))}");
+        Console.WriteLine(ask
+            ? "Each pairing request is asked about here."
+            : settings.AcceptsLocalNetwork
+                ? "Every pairing request with a valid code is allowed without asking, from anywhere on the network."
+                : "Every pairing request with a valid code is allowed without asking.");
         Publish(receiver.OpenPairingWindow());
         Console.WriteLine("Type 'help' for commands.");
 
@@ -862,22 +890,25 @@ Elsewhere it is kept in a file of mode 0600.
 /// <summary>Standard input for the mock's commands, shared with the <c>--ask</c> prompt.</summary>
 internal sealed class MockConsole
 {
+    private const string NobodyCanAnswer = "[mock] nothing more can be typed here, so the request was denied.";
+
     private readonly object sync = new();
     private readonly LinkedList<TaskCompletionSource<bool>> pendingDecisions = new();
     private readonly System.Threading.Channels.Channel<string> lines = System.Threading.Channels.Channel.CreateUnbounded<string>();
+    private bool inputEnded;
 
-    public MockConsole()
+    public MockConsole(TextReader input)
     {
         var reader = new Thread(() =>
         {
-            while (Console.In.ReadLine() is { } line)
+            while (input.ReadLine() is { } line)
             {
                 if (!AnswerPending(line))
                 {
                     lines.Writer.TryWrite(line);
                 }
             }
-            lines.Writer.TryComplete();
+            EndInput();
         })
         {
             IsBackground = true,
@@ -890,7 +921,8 @@ internal sealed class MockConsole
 
     /// <summary>
     /// Waits for 'y' or 'n'. If the request expires first, the answer is no, and the next line typed is an ordinary
-    /// command rather than an answer to a prompt that has gone.
+    /// command rather than an answer to a prompt that has gone. Once nothing more can be typed, as when the mock was
+    /// started from a script, every answer is no at once.
     /// </summary>
     public async Task<bool> NextDecisionAsync(CancellationToken cancellationToken)
     {
@@ -898,6 +930,11 @@ internal sealed class MockConsole
         LinkedListNode<TaskCompletionSource<bool>> node;
         lock (sync)
         {
+            if (inputEnded)
+            {
+                Console.WriteLine(NobodyCanAnswer);
+                return false;
+            }
             node = pendingDecisions.AddLast(decision);
         }
         using (cancellationToken.Register(() =>
@@ -919,6 +956,25 @@ internal sealed class MockConsole
         {
             return await decision.Task.ConfigureAwait(false);
         }
+    }
+
+    private void EndInput()
+    {
+        List<TaskCompletionSource<bool>> waiting;
+        lock (sync)
+        {
+            inputEnded = true;
+            waiting = pendingDecisions.ToList();
+            pendingDecisions.Clear();
+        }
+        foreach (var decision in waiting)
+        {
+            if (decision.TrySetResult(false))
+            {
+                Console.WriteLine(NobodyCanAnswer);
+            }
+        }
+        lines.Writer.TryComplete();
     }
 
     private bool AnswerPending(string line)
