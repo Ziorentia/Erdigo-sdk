@@ -12,6 +12,14 @@ namespace Erdigo.Sdk;
 /// How long a request keeps trying while the receiver cannot be reached, for example while the computer is asleep or
 /// the app is closed.
 /// </summary>
+/// <remarks>
+/// The time allowed covers one outage: it counts from when the connection was lost, and starts again once a connection
+/// is made. Time spent connected, such as waiting to stay within the receiver's limits, does not count. So this limits
+/// how long a request waits for a receiver that cannot be reached, not how long it takes in all: if connections keep
+/// being made and then lost before the answer arrives, the request keeps going, and requests made meanwhile wait
+/// their turn. To limit the whole time, pass a <see cref="System.Threading.CancellationToken"/> that is cancelled after
+/// it, for example from <c>new CancellationTokenSource(TimeSpan.FromMinutes(2))</c>.
+/// </remarks>
 public abstract class RetryPolicy
 {
     private RetryPolicy()
@@ -24,7 +32,10 @@ public abstract class RetryPolicy
     /// <summary>Keep trying until the request is cancelled.</summary>
     public static RetryPolicy Forever { get; } = new RetryForever();
 
-    /// <summary>Keep trying for this long, counted from when the connection was lost.</summary>
+    /// <summary>
+    /// Keep trying for this long, counted from when the connection was lost. The count starts again each time a
+    /// connection is made.
+    /// </summary>
     public static RetryPolicy UpTo(TimeSpan time) => new RetryUpTo(time);
 
     internal sealed class NoRetry : RetryPolicy
@@ -101,6 +112,16 @@ public sealed class ErdigoClient : IDisposable
     private TokenBucket? messageBucket;
     private TokenBucket? pointBucket;
 
+    /// <param name="identity">This device's key.</param>
+    /// <param name="pairing">The receiver to write to.</param>
+    /// <param name="store">Where the connection counter and the receiver's last address are kept.</param>
+    /// <param name="target">Where to look for the receiver. By default the last known address, then the local network.</param>
+    /// <param name="retry">
+    /// How long each outage may last before a request fails with <see cref="ErdigoErrorKind.NoAnswer"/>. By default
+    /// 30 seconds. This does not limit a request's total time; see <see cref="RetryPolicy"/>.
+    /// </param>
+    /// <param name="connectTimeout">How long one attempt to connect may take. By default 5 seconds.</param>
+    /// <param name="ackTimeout">How long to wait for the answer to one message. By default 15 seconds.</param>
     public ErdigoClient(
         DeviceIdentity identity,
         ReceiverPairing pairing,

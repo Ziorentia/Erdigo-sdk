@@ -17,6 +17,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Erdigo.Core;
 using Erdigo.Sdk;
@@ -35,6 +36,11 @@ try
 catch (Exception error) when (error is ErdigoException or WireException)
 {
     Console.WriteLine($"Failed: {error.Message}");
+    return 1;
+}
+catch (OperationCanceledException)
+{
+    Console.WriteLine("Failed: the receiver did not confirm everything within two minutes.");
     return 1;
 }
 
@@ -87,12 +93,17 @@ static async Task RunAsync(ReceiverTarget target)
 
     using var client = new ErdigoClient(identity, pairing, store, target);
 
+    // Each request keeps trying for 30 seconds after a connection is lost, and that time starts again whenever a
+    // connection is made. A deadline limits the whole run, however the connection behaves.
+    using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+    var cancellationToken = deadline.Token;
+
     var cityHall = new Coordinate(37.5663, 126.9779);
-    await client.PutPinAsync("city-hall", cityHall, "Seoul City Hall");
+    await client.PutPinAsync("city-hall", cityHall, "Seoul City Hall", cancellationToken);
 
     var palace = new Coordinate(37.5796, 126.9770);
-    await client.PutMarkerAsync("palace", palace, "Gyeongbokgung Palace", MarkerColor.Red);
-    await client.PutNoteAsync("meeting-point", palace, "Meet at the main gate.");
+    await client.PutMarkerAsync("palace", palace, "Gyeongbokgung Palace", MarkerColor.Red, cancellationToken);
+    await client.PutNoteAsync("meeting-point", palace, "Meet at the main gate.", cancellationToken);
 
     // Walk from the palace to City Hall in a straight line.
     var points = Enumerable.Range(0, 5).Select(step =>
@@ -102,8 +113,8 @@ static async Task RunAsync(ReceiverTarget target)
             palace.Latitude + (cityHall.Latitude - palace.Latitude) * fraction,
             palace.Longitude + (cityHall.Longitude - palace.Longitude) * fraction));
     }).ToArray();
-    await client.AppendTrackAsync("walk", points, "Walk to City Hall");
-    await client.FinishTrackAsync("walk");
+    await client.AppendTrackAsync("walk", points, "Walk to City Hall", cancellationToken);
+    await client.FinishTrackAsync("walk", cancellationToken);
 
     client.Close();
     Console.WriteLine("Done.");
