@@ -74,79 +74,50 @@ internal static class Discovery
     public static async Task<IReadOnlyList<ReceiverEndpoint>> BrowseAsync(TimeSpan? duration = null, int limit = 8, CancellationToken cancellationToken = default)
     {
         var window = duration ?? TimeSpan.FromSeconds(2);
-        var records = await QueryAsync(new[] { new DnsQuestion(DnsWire.ServiceName, DnsType.Ptr) }, window, cancellationToken).ConfigureAwait(false);
-
-        var instances = records
-            .Where(record => record.Type == DnsType.Ptr && DnsWire.NamesEqual(record.Name, DnsWire.ServiceName) && record.Target is not null && record.Ttl > 0)
-            .Select(record => record.Target!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Take(limit)
-            .ToList();
-        if (instances.Count == 0)
+        var found = new DiscoveredServices(limit);
+        await QueryAsync(new[] { new DnsQuestion(DnsWire.ServiceName, DnsType.Ptr) }, window, found, cancellationToken).ConfigureAwait(false);
+        // Answers to the questions below only fill in what this first one found.
+        found.CloseInstances();
+        if (found.Instances.Count == 0)
         {
             return Array.Empty<ReceiverEndpoint>();
         }
 
         // A responder normally sends the service and its addresses along with the answer. Ask for whatever it did not.
-        var missingServices = instances.Where(instance => !records.Any(record => record.Type == DnsType.Srv && DnsWire.NamesEqual(record.Name, instance))).ToList();
+        var missingServices = found.InstancesWithoutService();
         if (missingServices.Count > 0)
         {
-            records.AddRange(await QueryAsync(missingServices.Select(instance => new DnsQuestion(instance, DnsType.Srv)).ToList(), TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false));
+            await QueryAsync(missingServices.Select(instance => new DnsQuestion(instance, DnsType.Srv)).ToList(), TimeSpan.FromSeconds(1), found, cancellationToken).ConfigureAwait(false);
         }
-        var targets = instances
-            .Select(instance => records.FirstOrDefault(record => record.Type == DnsType.Srv && DnsWire.NamesEqual(record.Name, instance)))
-            .Where(record => record?.Target is not null)
-            .Select(record => record!.Target!)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-        var missingAddresses = targets.Where(target => !records.Any(record => record.Address is not null && DnsWire.NamesEqual(record.Name, target))).ToList();
+        var missingAddresses = found.HostsWithoutAddress();
         if (missingAddresses.Count > 0)
         {
             var questions = missingAddresses.SelectMany(target => new[] { new DnsQuestion(target, DnsType.A), new DnsQuestion(target, DnsType.Aaaa) }).ToList();
-            records.AddRange(await QueryAsync(questions, TimeSpan.FromSeconds(1), cancellationToken).ConfigureAwait(false));
+            await QueryAsync(questions, TimeSpan.FromSeconds(1), found, cancellationToken).ConfigureAwait(false);
         }
-
-        var endpoints = new List<ReceiverEndpoint>();
-        foreach (var instance in instances)
-        {
-            var service = records.FirstOrDefault(record => record.Type == DnsType.Srv && DnsWire.NamesEqual(record.Name, instance));
-            if (service?.Target is null || service.Port == 0)
-            {
-                continue;
-            }
-            // IPv4 first, because an IPv6 link-local address needs the right interface to work.
-            var address = records
-                .Where(record => record.Address is not null && DnsWire.NamesEqual(record.Name, service.Target))
-                .Select(record => record.Address!)
-                .OrderBy(candidate => candidate.AddressFamily == AddressFamily.InterNetwork ? 0 : 1)
-                .FirstOrDefault();
-            if (address is not null)
-            {
-                endpoints.Add(new ReceiverEndpoint(address.ToString(), service.Port));
-            }
-        }
-        return endpoints;
+        return found.Endpoints();
     }
 
     /// <summary>
-    /// Sends one query on every interface that can carry it, and collects every record in the answers that arrive
-    /// within <paramref name="window"/>. Answers from beyond the local network are ignored.
+    /// Sends one query on every interface that can carry it, and hands <paramref name="found"/> the records in the
+    /// answers that arrive within <paramref name="window"/>. Answers from beyond the local network are ignored.
     /// </summary>
-    private static async Task<List<DnsRecord>> QueryAsync(IReadOnlyList<DnsQuestion> questions, TimeSpan window, CancellationToken cancellationToken)
+    private static async Task QueryAsync(IReadOnlyList<DnsQuestion> questions, TimeSpan window, DiscoveredServices found, CancellationToken cancellationToken)
     {
+        // Checked first as well, so that a browse that was cancelled stops even where no interface can send a query.
+        cancellationToken.ThrowIfCancellationRequested();
         var id = (ushort)RandomNumberGenerator.GetInt32(1, 65536);
         var query = DnsWire.Encode(new DnsMessage(id, false, false, questions, Array.Empty<DnsRecord>(), Array.Empty<DnsRecord>()));
         var sockets = OpenSockets(query);
-        var records = new List<DnsRecord>();
         if (sockets.Count == 0)
         {
-            return records;
+            return;
         }
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         stop.CancelAfter(window);
         try
         {
-            var listeners = sockets.Select(socket => ListenAsync(socket.Socket, id, records, stop.Token)).ToArray();
+            var listeners = sockets.Select(socket => ListenAsync(socket.Socket, id, found, stop.Token)).ToArray();
             // Asked again a little later, like a browser that keeps watching, so that a receiver that has only just
             // started advertising is found too.
             foreach (var delay in new[] { TimeSpan.FromMilliseconds(250), TimeSpan.FromMilliseconds(750) })
@@ -180,13 +151,9 @@ internal static class Discovery
             }
         }
         cancellationToken.ThrowIfCancellationRequested();
-        lock (records)
-        {
-            return records.ToList();
-        }
     }
 
-    private static async Task ListenAsync(Socket socket, ushort id, List<DnsRecord> records, CancellationToken stop)
+    private static async Task ListenAsync(Socket socket, ushort id, DiscoveredServices found, CancellationToken stop)
     {
         var buffer = new byte[9000];
         var any = socket.AddressFamily == AddressFamily.InterNetwork ? (EndPoint)new IPEndPoint(IPAddress.Any, 0) : new IPEndPoint(IPAddress.IPv6Any, 0);
@@ -210,24 +177,7 @@ internal static class Discovery
             {
                 continue;
             }
-            // An IPv6 link-local address works only on the interface it was learned on, which is known only when the
-            // answer itself came over IPv6.
-            var found = new List<DnsRecord>();
-            foreach (var record in message.AllRecords)
-            {
-                if (record.Address is not { IsIPv6LinkLocal: true } address)
-                {
-                    found.Add(record);
-                }
-                else if (from.AddressFamily == AddressFamily.InterNetworkV6)
-                {
-                    found.Add(record with { Address = new IPAddress(address.GetAddressBytes(), from.Address.ScopeId) });
-                }
-            }
-            lock (records)
-            {
-                records.AddRange(found);
-            }
+            found.Add(message.AllRecords, from.Address);
         }
     }
 
@@ -333,5 +283,169 @@ internal static class Discovery
             throw new ErdigoException(ErdigoErrorKind.InvalidArgument, "the port must be between 1 and 65535");
         }
         return new ReceiverEndpoint(host, port);
+    }
+}
+
+/// <summary>
+/// What the answers to one browse have said, kept to what the browse can use. Each answer is read in order of
+/// dependence: service instances, then their services, then the addresses of those services' hosts. So a later answer
+/// can complete an earlier one, and a record nothing has asked about is not kept. However many answers arrive, and
+/// however often they repeat themselves, this holds at most <c>limit</c> instances, one service for each, and a few
+/// addresses for each of their hosts.
+/// </summary>
+/// <remarks>
+/// A service or address that arrives before the record that leads to it is not kept. The follow-up questions in
+/// <see cref="Discovery.BrowseAsync"/> ask for whatever is still missing by name.
+/// </remarks>
+internal sealed class DiscoveredServices
+{
+    /// <summary>Addresses kept for each host and address family. A receiver has one or two of each.</summary>
+    internal const int AddressesPerFamily = 4;
+
+    private static readonly StringComparer Names = StringComparer.OrdinalIgnoreCase;
+
+    private readonly object sync = new();
+    private readonly int limit;
+    private readonly List<string> instances = new();
+    private readonly Dictionary<string, (string Target, ushort Port)> services = new(Names);
+    private readonly Dictionary<string, List<IPAddress>> addresses = new(Names);
+    private bool instancesClosed;
+
+    public DiscoveredServices(int limit)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(limit);
+        this.limit = limit;
+    }
+
+    /// <summary>The service instances found, in the order they were first seen.</summary>
+    public IReadOnlyList<string> Instances
+    {
+        get
+        {
+            lock (sync)
+            {
+                return instances.ToArray();
+            }
+        }
+    }
+
+    /// <summary>How many records are kept, for checking that this stays bounded.</summary>
+    internal int KeptRecords
+    {
+        get
+        {
+            lock (sync)
+            {
+                return instances.Count + services.Count + addresses.Values.Sum(list => list.Count);
+            }
+        }
+    }
+
+    private static string Key(string name) => name.TrimEnd('.');
+
+    /// <summary>Takes the records of one answer, which came from <paramref name="sender"/>.</summary>
+    public void Add(IEnumerable<DnsRecord> records, IPAddress sender)
+    {
+        // An IPv6 link-local address works only on the interface it was learned on, which is known only when the
+        // answer itself came over IPv6.
+        var usable = new List<DnsRecord>();
+        foreach (var record in records)
+        {
+            if (record.Address is not { IsIPv6LinkLocal: true } address)
+            {
+                usable.Add(record);
+            }
+            else if (sender.AddressFamily == AddressFamily.InterNetworkV6)
+            {
+                usable.Add(record with { Address = new IPAddress(address.GetAddressBytes(), sender.ScopeId) });
+            }
+        }
+
+        lock (sync)
+        {
+            if (!instancesClosed)
+            {
+                foreach (var record in usable)
+                {
+                    if (instances.Count < limit && record.Type == DnsType.Ptr && DnsWire.NamesEqual(record.Name, DnsWire.ServiceName)
+                        && record.Target is { } instance && record.Ttl > 0 && !instances.Contains(Key(instance), Names))
+                    {
+                        instances.Add(Key(instance));
+                    }
+                }
+            }
+            foreach (var record in usable)
+            {
+                // The first usable service for an instance stands, as a resolver would keep the first it heard.
+                if (record.Type == DnsType.Srv && record.Target is { } target && record.Port != 0
+                    && instances.Contains(Key(record.Name), Names) && !services.ContainsKey(Key(record.Name)))
+                {
+                    services[Key(record.Name)] = (Key(target), record.Port);
+                }
+            }
+            var hosts = new HashSet<string>(services.Values.Select(service => service.Target), Names);
+            foreach (var record in usable)
+            {
+                if (record.Address is not { } address || !hosts.Contains(Key(record.Name)))
+                {
+                    continue;
+                }
+                if (!addresses.TryGetValue(Key(record.Name), out var known))
+                {
+                    known = new List<IPAddress>();
+                    addresses[Key(record.Name)] = known;
+                }
+                // The same address with another interface is another way to reach the host, so it is kept as well.
+                if (!known.Contains(address) && known.Count(each => each.AddressFamily == address.AddressFamily) < AddressesPerFamily)
+                {
+                    known.Add(address);
+                }
+            }
+        }
+    }
+
+    /// <summary>From now on no new instances are taken, only what completes the ones already found.</summary>
+    public void CloseInstances()
+    {
+        lock (sync)
+        {
+            instancesClosed = true;
+        }
+    }
+
+    public IReadOnlyList<string> InstancesWithoutService()
+    {
+        lock (sync)
+        {
+            return instances.Where(instance => !services.ContainsKey(instance)).ToList();
+        }
+    }
+
+    public IReadOnlyList<string> HostsWithoutAddress()
+    {
+        lock (sync)
+        {
+            return services.Values.Select(service => service.Target).Distinct(Names).Where(host => !addresses.ContainsKey(host)).ToList();
+        }
+    }
+
+    /// <summary>One address for each instance that has a service and an address, in the order the instances were found.</summary>
+    public IReadOnlyList<ReceiverEndpoint> Endpoints()
+    {
+        lock (sync)
+        {
+            var endpoints = new List<ReceiverEndpoint>();
+            foreach (var instance in instances)
+            {
+                if (!services.TryGetValue(instance, out var service) || !addresses.TryGetValue(service.Target, out var known))
+                {
+                    continue;
+                }
+                // IPv4 first, because an IPv6 link-local address needs the right interface to work.
+                var address = known.OrderBy(candidate => candidate.AddressFamily == AddressFamily.InterNetwork ? 0 : 1).First();
+                endpoints.Add(new ReceiverEndpoint(address.ToString(), service.Port));
+            }
+            return endpoints;
+        }
     }
 }
