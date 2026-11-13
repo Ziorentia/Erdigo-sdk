@@ -178,8 +178,8 @@ public sealed class CommandFileTests : IDisposable
         var stream = new GrowingStream(claimed, saysItsLength);
         var before = GC.GetAllocatedBytesForCurrentThread();
         Refused("too large", () => CommandFiles.ReadAtMost(stream, 4096, "too large"));
-        // It read at most one chunk past the limit, and never held more than the limit allows.
-        Assert.InRange(stream.Given, 4097, 4096 + 1000);
+        // It read one byte past the limit, and never held more than the limit allows.
+        Assert.Equal(4097, stream.Given);
         Assert.True(GC.GetAllocatedBytesForCurrentThread() - before < 128 * 1024);
     }
 
@@ -189,9 +189,49 @@ public sealed class CommandFileTests : IDisposable
         var stream = new GrowingStream(0, saysItsLength: false);
         var before = GC.GetAllocatedBytesForCurrentThread();
         Refused(CommandFiles.PhotoTooLarge, () => CommandFiles.ReadAtMost(stream, Limits.V1.PhotoBytes, CommandFiles.PhotoTooLarge));
-        Assert.InRange(stream.Given, Limits.V1.PhotoBytes + 1, Limits.V1.PhotoBytes + 1000);
-        // The buffer doubles on its way to the limit, so all of it together is under three times the limit.
-        Assert.True(GC.GetAllocatedBytesForCurrentThread() - before < 3L * Limits.V1.PhotoBytes);
+        Assert.Equal(Limits.V1.PhotoBytes + 1, stream.Given);
+        // The buffer doubles on its way to the limit, so all of it together is under twice the limit, and a little.
+        Assert.True(GC.GetAllocatedBytesForCurrentThread() - before < 2L * Limits.V1.PhotoBytes + 256 * 1024);
+    }
+
+    [Fact]
+    public void AFileOfTheSizeItSaysIsReadIntoOneBuffer()
+    {
+        var data = new byte[Limits.V1.PhotoBytes];
+        new Random(11).NextBytes(data);
+        using var stream = new MemoryStream(data);
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        Assert.Equal(data, CommandFiles.ReadAtMost(stream, Limits.V1.PhotoBytes, "too large"));
+        Assert.True(GC.GetAllocatedBytesForCurrentThread() - before < Limits.V1.PhotoBytes + 64 * 1024);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(4095)]
+    [InlineData(4096)]
+    public void InputWithoutALengthIsReadUpToTheLimit(int length)
+    {
+        var data = Enumerable.Range(0, length).Select(index => (byte)index).ToArray();
+        using var stream = new UnseekableStream(data);
+        Assert.Equal(data, CommandFiles.ReadAtMost(stream, 4096, "too large"));
+    }
+
+    [Fact]
+    public void InputWithoutALengthOneByteOverIsRefused()
+    {
+        using var stream = new UnseekableStream(new byte[4097]);
+        Refused("too large", () => CommandFiles.ReadAtMost(stream, 4096, "too large"));
+    }
+
+    private sealed class UnseekableStream : MemoryStream
+    {
+        public UnseekableStream(byte[] data)
+            : base(data)
+        {
+        }
+
+        public override bool CanSeek => false;
     }
 
     [Fact]

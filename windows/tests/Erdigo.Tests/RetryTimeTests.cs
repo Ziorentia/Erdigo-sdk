@@ -40,8 +40,10 @@ public sealed class RetryTimeTests : EndToEndBase
         // Well past the half second the policy allows for each outage, because each new connection starts it again.
         Assert.True(watch.Elapsed > TimeSpan.FromSeconds(2.5), $"ended after {watch.Elapsed}");
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(10), $"ended after {watch.Elapsed}");
-        Assert.True(Connections(receiver) >= 3, $"{Connections(receiver)} connections");
-        Assert.Equal(Connections(receiver), Volatile.Read(ref sent));
+        var connections = Connections(receiver);
+        Assert.True(connections >= 3, $"{connections} connections");
+        // The same request on each, except perhaps the last, if the deadline came before it was sent there.
+        Assert.InRange(Volatile.Read(ref sent), connections - 1, connections);
 
         // The cancelled request leaves nothing behind.
         receiver.SetAnswerOverride(null);

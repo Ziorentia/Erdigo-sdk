@@ -64,7 +64,8 @@ internal static class CommandFiles
     /// <summary>
     /// Reads what is left of <paramref name="stream"/>, refusing it with <paramref name="tooLarge"/> if that is more
     /// than <paramref name="maxBytes"/>. A stream that gives its length is refused by that alone. Otherwise, or if it
-    /// grows past what it said, the first byte over the limit settles it, so at most one byte more is ever read.
+    /// grows past what it said, the first byte over the limit settles it, so at most one byte more is ever read and
+    /// the buffer never holds more than the limit.
     /// </summary>
     internal static byte[] ReadAtMost(Stream stream, int maxBytes, string tooLarge)
     {
@@ -79,32 +80,34 @@ internal static class CommandFiles
             }
         }
 
-        var limit = maxBytes + 1;
-        // Room for what the stream says it holds and the byte that would show it holds more, or a modest start when
-        // it does not say. The buffer grows only while data keeps coming, and never past the limit.
-        var buffer = new byte[remaining is { } known ? (int)known + 1 : Math.Min(limit, 64 * 1024)];
+        // Room for what the stream says it holds, or a modest start when it does not say. The buffer grows only while
+        // data keeps coming, and never past the limit.
+        var buffer = new byte[remaining is { } known ? (int)known : Math.Min(maxBytes, 64 * 1024)];
         var filled = 0;
         while (true)
         {
             if (filled == buffer.Length)
             {
-                if (buffer.Length == limit)
+                // Full: see whether there is more before making room for it.
+                var next = stream.ReadByte();
+                if (next == -1)
                 {
-                    break;
+                    return buffer;
                 }
-                Array.Resize(ref buffer, (int)Math.Min(limit, (long)buffer.Length * 2));
+                if (filled == maxBytes)
+                {
+                    throw new UsageException(tooLarge);
+                }
+                Array.Resize(ref buffer, (int)Math.Min(maxBytes, Math.Max(16L, (long)buffer.Length * 2)));
+                buffer[filled++] = (byte)next;
+                continue;
             }
             var read = stream.Read(buffer, filled, buffer.Length - filled);
             if (read == 0)
             {
-                break;
+                return buffer.AsSpan(0, filled).ToArray();
             }
             filled += read;
         }
-        if (filled > maxBytes)
-        {
-            throw new UsageException(tooLarge);
-        }
-        return buffer.AsSpan(0, filled).ToArray();
     }
 }
