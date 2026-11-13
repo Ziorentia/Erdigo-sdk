@@ -217,6 +217,9 @@ check "--redact hides the label and key" bash -c '[[ "$0" != *home* && "$0" == *
 # The code must never reach the mock's log or this tool's output.
 CODE_TEXT="$(sed -E 's/.*code=([^&]*).*/\1/' "$WORK/code")"
 check "the code is not in the log" bash -c '! grep -q "$0" "$1"' "$CODE_TEXT" "$WORK/mock.log"
+# The log says what was done, not where or what it was called. Only the 'items' command shows that.
+check "the log holds no titles, places or notes" \
+    bash -c '! grep -qE "Palace gate|37\.5796|126\.977|-33\.8568|Meet at the gate" "$0"' "$WORK/mock.log"
 
 # With --redact the mock keeps the code and the receiver's key out of its output.
 expect_refused "--redact without a code file is refused" "--code-file" "$BIN" serve --mock --redact
@@ -232,6 +235,100 @@ check "the redacted log holds no code" bash -c '! grep -qE "Pairing code|QR text
 check "the redacted log holds no key" bash -c 'grep -q "Receiver key: <redacted>" "$0"' "$WORK/mock2.log"
 kill "$MOCK2_PID" 2>/dev/null
 exec 4>&-
+
+# Waits up to ten seconds for a line matching PATTERN in FILE.
+wait_for() {
+    for _ in $(seq 1 100); do
+        grep -q "$1" "$2" 2>/dev/null && return 0
+        sleep 0.1
+    done
+    return 1
+}
+EXTRA_PIDS=()
+port_in() {
+    grep -oE 'port [0-9]+' "$1" | head -1 | awk '{print $2}'
+}
+
+# A mock that asks. The question goes to standard error and names the device even with --redact, and
+# nothing that identifies the device or what it sent reaches standard output.
+expect_refused "--ask and --auto-approve together are refused" "cannot be used together" \
+    "$BIN" serve --mock --ask --auto-approve
+mkfifo "$WORK/commands4"
+"$BIN" serve --mock --ask --redact --code-file "$WORK/code4" <"$WORK/commands4" >"$WORK/mock4.out" 2>"$WORK/mock4.err" &
+EXTRA_PIDS+=($!)
+exec 6>"$WORK/commands4"
+wait_for 'Type .help' "$WORK/mock4.out" || failed "the asking mock did not start"
+PORT4="$(port_in "$WORK/mock4.out")"
+check "an asking mock says so" grep -q "asked about here" "$WORK/mock4.out"
+limited "$BIN" pair --state-dir "$WORK/state4" --host 127.0.0.1 --port "$PORT4" --name "Asked device" --kinds pin \
+    --code-file "$WORK/code4" >"$WORK/pair4.out" 2>&1 &
+PAIR_PID=$!
+wait_for "Allow?" "$WORK/mock4.err" || failed "the asking mock did not ask"
+check "the question names the device even with --redact" grep -q "'Asked device' at " "$WORK/mock4.err"
+echo "n" >&6
+wait "$PAIR_PID"
+check "a request answered no is refused" test "$?" != "0"
+check "the device is told it was declined" grep -q "declined" "$WORK/pair4.out"
+check "a declined device keeps no pairing" test ! -e "$WORK/state4/pairings.json"
+echo "code" >&6
+for _ in $(seq 1 50); do
+    [ "$(grep -c 'Pairing text written' "$WORK/mock4.out")" -ge 2 ] && break
+    sleep 0.1
+done
+limited "$BIN" pair --state-dir "$WORK/state4" --host 127.0.0.1 --port "$PORT4" --name "Asked device" --kinds pin \
+    --code-file "$WORK/code4" >"$WORK/pair4.out" 2>&1 &
+PAIR_PID=$!
+for _ in $(seq 1 100); do
+    [ "$(grep -c 'Allow?' "$WORK/mock4.err")" -ge 2 ] && break
+    sleep 0.1
+done
+echo "y" >&6
+wait "$PAIR_PID"
+check "a request answered yes pairs" test "$?" = "0"
+expect_ok "the approved device writes" "$BIN" pin --state-dir "$WORK/state4" --id secret --lat 12.3456 --lon 65.4321 --title "Secret title"
+echo "items 1" >&6
+wait_for "^pin " "$WORK/mock4.out" || failed "the asking mock did not list items"
+check "with --redact, items hides places and titles" grep -q "^pin <redacted> at <redacted> title=<redacted>" "$WORK/mock4.out"
+check "with --redact, standard output names nothing" \
+    bash -c '! grep -qE "Asked device|Secret title|12\.3456|65\.4321|erdigo-pair|Pairing code" "$0"' "$WORK/mock4.out"
+exec 6>&-
+
+# When nothing more can be typed, as when started from a script, a question is answered no at once.
+"$BIN" serve --mock --ask --code-file "$WORK/code5" </dev/null >"$WORK/mock5.log" 2>&1 &
+EXTRA_PIDS+=($!)
+wait_for 'Type .help' "$WORK/mock5.log" || failed "the mock without input did not start"
+expect_refused "a question nobody can answer is declined" "declined" \
+    "$BIN" pair --state-dir "$WORK/state5" --host 127.0.0.1 --port "$(port_in "$WORK/mock5.log")" --name Unanswered \
+    --kinds pin --code-file "$WORK/code5"
+check "the mock says why it declined" grep -q "nothing more can be typed" "$WORK/mock5.log"
+
+# On the local network the mock asks unless told the test runs unattended. These listen on every
+# interface, which a desktop firewall may ask about, so outside Linux they run only when asked for.
+if [ "$(uname -s)" = "Linux" ] || [ "${ERDIGO_LAN_CHECKS:-}" = "1" ]; then
+    "$BIN" serve --mock --lan --code-file "$WORK/code6" </dev/null >"$WORK/mock6.log" 2>&1 &
+    EXTRA_PIDS+=($!)
+    wait_for 'Type .help' "$WORK/mock6.log" || failed "the network mock did not start"
+    check "on the network the mock asks by default" grep -q "asked about here" "$WORK/mock6.log"
+    expect_refused "on the network, a request nobody answers is declined" "declined" \
+        "$BIN" pair --state-dir "$WORK/state6" --host 127.0.0.1 --port "$(port_in "$WORK/mock6.log")" --name "Lan device" \
+        --kinds pin --code-file "$WORK/code6"
+
+    "$BIN" serve --mock --lan --auto-approve --code-file "$WORK/code7" </dev/null >"$WORK/mock7.log" 2>&1 &
+    EXTRA_PIDS+=($!)
+    wait_for 'Type .help' "$WORK/mock7.log" || failed "the unattended network mock did not start"
+    check "--auto-approve says that anyone may pair" grep -q "allowed without asking, from anywhere on the network" "$WORK/mock7.log"
+    check "the unattended mock's code file is private" test "$(mode_of "$WORK/code7")" = "600"
+    expect_ok "on the network, --auto-approve pairs unattended" \
+        "$BIN" pair --state-dir "$WORK/state7" --host 127.0.0.1 --port "$(port_in "$WORK/mock7.log")" --name "Lan device" \
+        --kinds pin --code-file "$WORK/code7"
+    CODE7="$(sed -E 's/.*code=([^&]*).*/\1/' "$WORK/code7")"
+    check "the unattended mock's log holds no code" bash -c '! grep -qE "$0|erdigo-pair|Pairing code" "$1"' "$CODE7" "$WORK/mock7.log"
+else
+    echo "skip  mocks on the local network (set ERDIGO_LAN_CHECKS=1 to run them)"
+fi
+for pid in "${EXTRA_PIDS[@]}"; do
+    kill "$pid" 2>/dev/null
+done
 
 # Removing the device on the receiver must lock it out.
 # Two devices are paired by now, and removing the first leaves the other as number 1.
