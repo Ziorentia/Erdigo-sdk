@@ -23,4 +23,7 @@ jobs:
       - name: Test
         run: swift test
       - name: Command-line checks
+        env:
+          # Also run the mocks that listen on the local network; nobody is there to see a firewall question.
+          ERDIGO_LAN_CHECKS: "1"
         run: macos/Tests/cli-smoke.sh

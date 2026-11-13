@@ -36,8 +36,17 @@ swift run erdigo-send pin --host 127.0.0.1 --port PORT --id city-hall --lat 37.5
 
 The mock prints each request it accepts. Type `devices` and then `items 1` in its terminal to see what it holds.
 
-The mock allows every pairing request by default. Start it with `--ask` to answer each one yourself, as a person
-would in the app.
+On this computer alone the mock allows every pairing request by default. Start it with `--ask` to answer each one
+yourself, as a person would in the app. With `--lan` anyone on the network can reach it, so it asks you about each
+request by default. Add `--auto-approve` only for a test that runs unattended on a network you control. A question
+nobody can answer, because standard input has ended, is answered no at once.
+
+The mock prints the pairing code and the QR text, which are good for ten minutes. Where its output is saved, captured
+or shared, start it with `--code-file FILE` to have them written to a file only you can read instead, and add
+`--redact` to hide keys, device names and what items hold. Its log says what each request did, never where an item is
+or what it is called; only the `items` command shows that, and not with `--redact`. A pairing question still names
+the device and its address, because that is what you decide on, and it goes to standard error so that a saved
+standard output does not hold it.
 
 ## Use it in your code
 
@@ -181,3 +190,6 @@ macos/Tests/cli-smoke.sh
 
 The tests use the official Noise vectors and run the SDK against the mock receiver over real TCP, including the cases
 that must fail: strangers, replays, reused codes, removed devices, limits and disguised images.
+
+The command-line checks skip the mocks that listen on the local network, because the macOS firewall may ask about
+them. Run them with `ERDIGO_LAN_CHECKS=1 macos/Tests/cli-smoke.sh`; CI always does.

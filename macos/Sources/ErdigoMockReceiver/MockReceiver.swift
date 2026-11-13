@@ -12,7 +12,10 @@ public actor MockReceiver {
     public struct Options: Sendable {
         /// 0 asks the system for a free port.
         public var port: UInt16 = 0
-        /// Accept connections from the local network instead of this computer only.
+        /// Accept connections from the local network instead of this computer only. Anyone there who has a
+        /// valid code can then ask to pair, and unless `setApprovalHandler` is used every request is allowed,
+        /// so give it a handler that asks a person, as `erdigo-send serve --mock --lan` does, unless the test
+        /// runs unattended on a network you control.
         public var acceptsLocalNetwork = false
         /// Advertise over Bonjour with a random name that changes every hour.
         public var advertises = false
