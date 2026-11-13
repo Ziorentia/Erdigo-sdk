@@ -124,10 +124,36 @@ Every method takes an optional `CancellationToken`. A cancelled request throws `
 - **Survives a sleeping computer or a closed app.** If the connection fails, it reconnects with growing delays and
   resends with the same sequence number, so nothing is applied twice. Choose how long with `retry:`
   (`RetryPolicy.None`, `RetryPolicy.UpTo(time)` or `RetryPolicy.Forever`). The default is 30 seconds, counted from
-  when the connection was lost.
+  when the connection was lost. See [How long a request can take](#how-long-a-request-can-take).
 - **Paces itself** by the limits the receiver announces, and waits when told to slow down. Waiting as told is never
   held against a device.
 - **Splits large uploads.** Photos go in chunks, and a long list of track points goes in batches.
+
+## How long a request can take
+
+The retry policy limits each outage, not the request as a whole. Its time counts from when the connection was lost
+and starts again once a connection is made, and time spent connected, such as waiting to stay within the receiver's
+limits, never counts. So a receiver that keeps accepting connections and losing them before it answers keeps a
+request going past 30 seconds, and the requests behind it wait. When a request must end within a fixed time, give it
+a deadline:
+
+```csharp
+using var deadline = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+try
+{
+    await client.PutPinAsync("sensor-1", spot, "Greenhouse", cancellationToken: deadline.Token);
+}
+catch (OperationCanceledException)
+{
+    // Not confirmed in time. See below.
+}
+```
+
+Cancelling a request that is waiting its turn frees its place at once, and the ones behind it go ahead. A request
+cancelled after it was sent may already have been applied, because the receiver may have acted on it before the
+answer was lost. Sending it again is safe for the `Put…Async` methods, `MoveAsync` and the deletes, which give the
+same result when repeated. `AppendTrackAsync` would add its points a second time, and a long one may have sent some
+of its batches already.
 
 ## When something goes wrong
 
