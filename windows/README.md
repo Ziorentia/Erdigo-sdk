@@ -245,6 +245,13 @@ never passes it a key.
 Every version is pinned in [`Directory.Packages.props`](Directory.Packages.props) and every project has a lock file.
 [`nuget.config`](nuget.config) allows nuget.org and nothing else.
 
+Restoring checks every package, including the ones packages bring with them (`NuGetAuditMode=all`), against
+nuget.org's list of known vulnerabilities. A vulnerability of any severity is an error, and so is a list that cannot
+be fetched, in CI and on your computer alike, so nothing builds unchecked. When one appears, update the package in
+`Directory.Packages.props` and the lock files (`dotnet restore Erdigo.sln --force-evaluate`). If it cannot affect this
+code, suppress that one advisory with `<NuGetAuditSuppress Include="advisory URL" />` and say why beside it. The check
+covers what the advisory database covers, not the .NET runtime a program runs on, which needs its own updates.
+
 Discovery uses no package. It sends one-shot multicast DNS queries
 ([RFC 6762, section 5.1](https://www.rfc-editor.org/rfc/rfc6762#section-5.1)) from an ordinary port and reads the
 answers with a small, bounds-checked DNS reader in this repository. Receivers answer such a query directly, so it needs
