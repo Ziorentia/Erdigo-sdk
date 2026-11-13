@@ -753,7 +753,7 @@ Elsewhere it is kept in a file of mode 0600.
                     var text = (inline, file) switch
                     {
                         ({ } value, null) => value,
-                        (null, { } path) => Text.StrictUtf8.GetString(File.ReadAllBytes(path)),
+                        (null, { } path) => CommandFiles.ReadNote(path),
                         _ => throw new UsageException("give either --text or --text-file"),
                     };
                     return client => client.PutNoteAsync(id, at, text);
@@ -764,12 +764,7 @@ Elsewhere it is kept in a file of mode 0600.
                     var id = options.Required("id");
                     var at = ParseCoordinate(options);
                     var title = options.Optional("title");
-                    var path = options.Required("file");
-                    if (new FileInfo(path).Length > Limits.V1.PhotoBytes)
-                    {
-                        throw new UsageException($"a photo is at most {Limits.V1.PhotoBytes} bytes");
-                    }
-                    var data = File.ReadAllBytes(path);
+                    var data = CommandFiles.ReadPhoto(options.Required("file"));
                     return client => client.PutPhotoAsync(id, at, data, title);
                 });
             case "track-add":
