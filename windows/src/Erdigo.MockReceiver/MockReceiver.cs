@@ -409,6 +409,7 @@ public sealed class MockReceiver : IDisposable
     private int preAuthTotal;
     private Action<Event>? eventHandler;
     private Func<ApprovalRequest, CancellationToken, Task<ApprovalDecision>>? approvalHandler;
+    private Func<RequestEnvelope, ReceiverMessage?>? answerOverride;
 
     public MockReceiver(Options? options = null)
     {
@@ -480,6 +481,20 @@ public sealed class MockReceiver : IDisposable
         lock (sync)
         {
             approvalHandler = handler;
+        }
+    }
+
+    /// <summary>
+    /// For tests of how a device takes answers this receiver would not give by itself. The handler sees every request
+    /// that parses, after authentication. An answer it returns is sent instead, and the request does not run; null
+    /// lets the request run as usual. The connection closes after a fatal answer, as after any other. It runs while
+    /// the receiver holds its lock, so it must not call back into the receiver.
+    /// </summary>
+    internal void SetAnswerOverride(Func<RequestEnvelope, ReceiverMessage?>? handler)
+    {
+        lock (sync)
+        {
+            answerOverride = handler;
         }
     }
 
@@ -1530,7 +1545,7 @@ public sealed class MockReceiver : IDisposable
                 Step step;
                 lock (sync)
                 {
-                    step = Process(plaintext, device);
+                    step = OverriddenAnswer(plaintext) ?? Process(plaintext, device);
                 }
                 ReceiverMessage reply;
                 if (step.Job is { } job)
@@ -1604,6 +1619,24 @@ public sealed class MockReceiver : IDisposable
         public RetryLaterException(double seconds) => Seconds = seconds;
 
         public double Seconds { get; }
+    }
+
+    private Step? OverriddenAnswer(byte[] plaintext)
+    {
+        if (answerOverride is not { } handler)
+        {
+            return null;
+        }
+        RequestEnvelope envelope;
+        try
+        {
+            envelope = Wire.DecodeRequest(plaintext, options.Limits);
+        }
+        catch (Exception error) when (error is WireException or ArgumentException or FormatException or System.Text.DecoderFallbackException)
+        {
+            return null;
+        }
+        return handler(envelope) is { } answer ? Step.Reply(answer) : null;
     }
 
     /// <summary>Counts a rejection against the device, and penalises it if there have been too many.</summary>

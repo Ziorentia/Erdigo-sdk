@@ -216,6 +216,19 @@ public abstract class EndToEndBase : IDisposable
         return (DateTime.UtcNow - started).TotalSeconds;
     }
 
+    /// <summary>
+    /// Waits until the receiver has recorded a matching event. A fixed pause is not enough on a busy machine.
+    /// </summary>
+    private protected static async Task WaitForEventAsync(Receiver receiver, Func<Receiver.Event, bool> matches, double timeout = 5)
+    {
+        var started = DateTime.UtcNow;
+        while (!receiver.Events.Any(matches) && DateTime.UtcNow - started < TimeSpan.FromSeconds(timeout))
+        {
+            await Task.Delay(20);
+        }
+        Assert.Contains(receiver.Events, happened => matches(happened));
+    }
+
     /// <summary>Waits first, because a request sent a moment ago would still be on its way.</summary>
     private protected static async Task AssertHeardNoRequestAsync(Receiver receiver)
     {
