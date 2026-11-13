@@ -344,17 +344,27 @@ public actor ErdigoClient {
                 }
                 session.lastSeq = seq
                 return
-            case .error(let error) where error.code == ErrorCode.rateLimited.rawValue:
-                rateLimitedAnswers += 1
-                guard rateLimitedAnswers <= Self.maxRateLimitedAnswers else {
-                    dropSession()
-                    throw ErdigoError.rejected(error)
-                }
-                let wait = Double(error.retryAfterMS ?? 1000) / 1000
-                try await Self.sleep(seconds: max(wait, Self.minimumRateLimitWait))
             case .error(let error):
-                try handle(error, seq: seq, session: session)
-                return
+                let endsConnection = Self.endsConnection(error)
+                // An answer about one request must be about this one. An answer that ends the connection is
+                // about the connection, so it ends it whatever number it carries.
+                let answersThisRequest = error.seq.map { $0 == seq } ?? true
+                if !endsConnection && !answersThisRequest {
+                    dropSession()
+                    throw ErdigoError.protocolViolation("the error answers a different sequence number")
+                }
+                // Only an answer the receiver will keep the connection open after is worth waiting for.
+                if !endsConnection && error.code == ErrorCode.rateLimited.rawValue {
+                    rateLimitedAnswers += 1
+                    guard rateLimitedAnswers <= Self.maxRateLimitedAnswers else {
+                        dropSession()
+                        throw ErdigoError.rejected(error)
+                    }
+                    let wait = Double(error.retryAfterMS ?? 1000) / 1000
+                    try await Self.sleep(seconds: max(wait, Self.minimumRateLimitWait))
+                    continue
+                }
+                try handle(error, seq: seq, answersThisRequest: answersThisRequest, endsConnection: endsConnection, session: session)
             default:
                 dropSession()
                 throw ErdigoError.protocolViolation("unexpected message in answer to a request")
@@ -362,23 +372,27 @@ public actor ErdigoClient {
         }
     }
 
-    private func handle(_ error: ReceiverError, seq: UInt64, session: Session) throws {
-        if let last = error.lastSeq { session.lastSeq = max(session.lastSeq, last) }
+    /// Whether the receiver closes the connection after this answer. `paused` and `replaced` always do,
+    /// even if a receiver leaves out the flag.
+    private static func endsConnection(_ error: ReceiverError) -> Bool {
+        error.fatal || error.code == ErrorCode.paused.rawValue || error.code == ErrorCode.replaced.rawValue
+    }
+
+    /// Turns an error answer into the error the caller sees.
+    private func handle(_ error: ReceiverError, seq: UInt64, answersThisRequest: Bool, endsConnection: Bool, session: Session) throws -> Never {
+        // A number from an answer to some other request says nothing about where this connection stands.
+        if answersThisRequest, let last = error.lastSeq { session.lastSeq = max(session.lastSeq, last) }
+        if endsConnection { dropSession() }
 
         switch error.code {
         case ErrorCode.paused.rawValue:
-            dropSession()
             throw Interruption.connectionLost
         case ErrorCode.replaced.rawValue:
-            dropSession()
             throw ErdigoError.replaced
         case ErrorCode.staleSeq.rawValue, ErrorCode.seqConflict.rawValue:
-            if error.fatal { dropSession() }
             throw ErdigoError.sequenceConflict(lastSeq: session.lastSeq)
         default:
-            if error.fatal {
-                dropSession()
-            } else if error.seq == seq, let code = ErrorCode(rawValue: error.code), !code.isRetryable {
+            if !endsConnection, error.seq == seq, let code = ErrorCode(rawValue: error.code), !code.isRetryable {
                 // The receiver used up this number on the failed request.
                 session.lastSeq = seq
             }

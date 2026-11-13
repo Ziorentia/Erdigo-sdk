@@ -237,6 +237,7 @@ public actor MockReceiver {
     public private(set) var events: [Event] = []
     private var eventHandler: (@Sendable (Event) -> Void)?
     private var approvalHandler: (@Sendable (ApprovalRequest) async -> ApprovalDecision)?
+    private var answerOverride: (@Sendable (RequestEnvelope) -> ReceiverMessage?)?
 
     public init(options: Options = Options()) throws {
         self.options = options
@@ -261,6 +262,14 @@ public actor MockReceiver {
     /// If the handler takes longer than `approvalTimeout`, the answer is no and its task is cancelled.
     public func setApprovalHandler(_ handler: (@Sendable (ApprovalRequest) async -> ApprovalDecision)?) {
         approvalHandler = handler
+    }
+
+    /// For tests of how a device takes answers this receiver would not give by itself. The handler sees
+    /// every request that parses, after authentication. An answer it returns is sent instead, and the
+    /// request does not run; nil lets the request run as usual. The connection closes after a fatal
+    /// answer, as after any other. It runs on the receiver's actor, so it must not wait for anything.
+    @_spi(TestVectors) public func setAnswerOverride(_ handler: (@Sendable (RequestEnvelope) -> ReceiverMessage?)?) {
+        answerOverride = handler
     }
 
     /// Starts listening and returns the port.
@@ -909,7 +918,7 @@ public actor MockReceiver {
                 let plaintext = try connection.transport.open(frame)
 
                 let reply: ReceiverMessage
-                switch process(plaintext, device: device) {
+                switch overriddenAnswer(plaintext) ?? process(plaintext, device: device) {
                 case .answer(let answer):
                     reply = answer
                 case .decodePhoto(let job):
@@ -950,6 +959,14 @@ public actor MockReceiver {
         let data: Data
         let seq: UInt64
         let digest: Data
+    }
+
+    private func overriddenAnswer(_ plaintext: Data) -> Step? {
+        guard let handler = answerOverride,
+              let envelope = try? Wire.decodeRequest(plaintext, limits: options.limits),
+              let answer = handler(envelope)
+        else { return nil }
+        return .answer(answer)
     }
 
     /// Counts a rejection against the device, and penalises it if there have been too many.
