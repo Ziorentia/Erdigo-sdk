@@ -33,9 +33,15 @@ Writing
       Options: --to LABEL (needed with several receivers), --host HOST --port PORT, --retry-for SECONDS
 
 Testing without the Erdigo app
-  serve --mock [--port PORT] [--lan] [--bonjour] [--code-file FILE] [--ask] [--redact]
+  serve --mock [--port PORT] [--lan] [--bonjour] [--code-file FILE] [--ask | --auto-approve] [--redact]
       Runs an in-memory receiver. By default only this computer can reach it, and it allows every
       pairing request. Use --ask to answer each request yourself, as a person would in the app.
+      With --lan anyone on the network can reach it, so it asks you about each request unless
+      --auto-approve is given, for a test that runs unattended.
+      --bonjour advertises it on the local network with Bonjour.
+      Where its output is saved or shared, use --code-file FILE, which only you can read, instead of
+      showing the pairing code, and --redact to hide codes, keys, device names and what items hold.
+      Pairing questions go to standard error and always show the device's name and address.
       Type 'help' while it runs to see its commands.
 
 For pairing and writing commands
@@ -55,7 +61,7 @@ private struct UsageError: Error, LocalizedError {
 /// Every option the tool has. Errors name an option only if it is on this list, because
 /// anything else that was typed might be a pairing code.
 private let knownOptions: Set<String> = [
-    "alt", "ask", "bonjour", "code-file", "color", "file", "fingerprint", "host", "id", "keychain", "kinds", "label", "lan",
+    "alt", "ask", "auto-approve", "bonjour", "code-file", "color", "file", "fingerprint", "host", "id", "keychain", "kinds", "label", "lan",
     "lat", "lon", "mock", "name", "port", "profile", "redact", "retry-for", "state-dir", "text", "text-file", "title", "to", "ts", "yes",
 ]
 
@@ -371,8 +377,18 @@ private func runWrite(
     print("OK")
 }
 
+/// Whether the mock asks a person about each pairing request. Anyone who can reach a mock on the network
+/// and has a code could pair, so there a person decides unless the test says it runs unattended. On this
+/// computer alone, allowing every request stays the default.
+func asksAboutPairing(localNetwork: Bool, ask: Bool, autoApprove: Bool) throws -> Bool {
+    if ask, autoApprove {
+        throw UsageError(message: "--ask and --auto-approve cannot be used together")
+    }
+    return ask || (localNetwork && !autoApprove)
+}
+
 private func runServe(_ arguments: [String]) async throws {
-    var options = try Options(arguments, flags: ["mock", "lan", "bonjour", "ask", "redact"])
+    var options = try Options(arguments, flags: ["mock", "lan", "bonjour", "ask", "auto-approve", "redact"])
     guard options.flag("mock") else {
         throw UsageError(message: "'serve' only runs a mock receiver for testing, so --mock is required")
     }
@@ -383,10 +399,12 @@ private func runServe(_ arguments: [String]) async throws {
     if settings.advertises, !settings.acceptsLocalNetwork {
         throw UsageError(message: "--bonjour needs --lan, because a loopback-only receiver cannot be reached from the network")
     }
-    let ask = options.flag("ask")
+    let askGiven = options.flag("ask")
+    let autoApprove = options.flag("auto-approve")
     let redact = options.flag("redact")
     let codeFile = options.optional("code-file")
     try options.finish()
+    let ask = try asksAboutPairing(localNetwork: settings.acceptsLocalNetwork, ask: askGiven, autoApprove: autoApprove)
     if redact, codeFile == nil {
         throw UsageError(message: "--redact hides the pairing code, so it needs --code-file to give you the code another way")
     }
@@ -424,9 +442,11 @@ private func runServe(_ arguments: [String]) async throws {
     if ask {
         await receiver.setApprovalHandler { request in
             let kinds = request.requestedKinds.map(\.rawValue).joined(separator: ", ")
-            let address = shown(request.address ?? "an unknown address")
+            let address = request.address ?? "an unknown address"
             let note = request.wasRemovedBefore ? " You removed this device earlier." : ""
-            print("[mock] '\(shown(request.deviceName))' at \(address) wants to put \(kinds) on your map.\(note) Allow? Type 'y' or 'n':")
+            // The name and address are what a person decides on, so --redact does not hide them here. The
+            // question goes to standard error, so that standard output saved to a file does not hold them.
+            fputs("[mock] '\(request.deviceName)' at \(address) wants to put \(kinds) on your map.\(note) Allow? Type 'y' or 'n':\n", stderr)
             let answer = await Console.shared.nextDecision()
             return answer ? .allow(kinds: request.requestedKinds, name: nil) : .deny
         }
@@ -451,6 +471,13 @@ private func runServe(_ arguments: [String]) async throws {
     print("This is a mock receiver for testing. It stores nothing on disk and draws no map.")
     print("Listening on \(settings.acceptsLocalNetwork ? "the local network" : "127.0.0.1"), port \(port)")
     print("Receiver key: \(shown(IntegrationV1.shortFingerprint(await receiver.fingerprint)))")
+    if ask {
+        print("Each pairing request is asked about here.")
+    } else if settings.acceptsLocalNetwork {
+        print("Every pairing request with a valid code is allowed without asking, from anywhere on the network.")
+    } else {
+        print("Every pairing request with a valid code is allowed without asking.")
+    }
     try publish(try await receiver.openPairingWindow())
     print("Type 'help' for commands.")
 
@@ -507,14 +534,32 @@ private func chooseDevice(_ receiver: MockReceiver, _ words: [String]) async -> 
     return list[number - 1].fingerprint
 }
 
-/// Standard input for the mock's commands, shared with the `--ask` prompt.
-private actor Console {
-    static let shared = Console()
+/// Standard input for the mock's commands, shared with the pairing question.
+actor Console {
+    static let shared = Console { readLine() }
+    private static let nobodyCanAnswer = "[mock] nothing more can be typed here, so the request was denied."
+
+    private let readNextLine: @Sendable () -> String?
     private var pendingDecisions: [(id: UUID, continuation: CheckedContinuation<Bool, Never>)] = []
+    private var inputEnded = false
+
+    /// `readNextLine` blocks until a line is typed, and returns nil once nothing more can be.
+    init(readNextLine: @escaping @Sendable () -> String?) {
+        self.readNextLine = readNextLine
+    }
+
+    /// How many questions are waiting for an answer.
+    var waitingQuestions: Int { pendingDecisions.count }
 
     /// Waits for 'y' or 'n'. If the request expires first, the answer is no, and the next
     /// line typed is an ordinary command rather than an answer to a prompt that has gone.
+    /// Once nothing more can be typed, as when the mock was started from a script, every
+    /// answer is no at once.
     func nextDecision() async -> Bool {
+        if inputEnded {
+            print(Self.nobodyCanAnswer)
+            return false
+        }
         let id = UUID()
         return await withTaskCancellationHandler {
             await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
@@ -538,10 +583,21 @@ private actor Console {
         return true
     }
 
+    private func endInput() {
+        inputEnded = true
+        let waiting = pendingDecisions
+        pendingDecisions.removeAll()
+        for decision in waiting {
+            decision.continuation.resume(returning: false)
+            print(Self.nobodyCanAnswer)
+        }
+    }
+
+    /// Starts reading. Lines that answer a question are not commands, so they are not in the stream.
     nonisolated func lines() -> AsyncStream<String> {
         AsyncStream { continuation in
             let thread = Thread {
-                while let line = readLine() {
+                while let line = self.readNextLine() {
                     let finished = DispatchSemaphore(value: 0)
                     Task {
                         let wasAnswer = await self.answerPending(line)
@@ -550,6 +606,12 @@ private actor Console {
                     }
                     finished.wait()
                 }
+                let ended = DispatchSemaphore(value: 0)
+                Task {
+                    await self.endInput()
+                    ended.signal()
+                }
+                ended.wait()
                 continuation.finish()
             }
             thread.start()

@@ -24,7 +24,7 @@ let package = Package(
         .executableTarget(name: "erdigo-example-quickstart", dependencies: ["ErdigoSDK"], path: "macos/Examples/quickstart"),
         .testTarget(
             name: "ErdigoTests",
-            dependencies: ["ErdigoCore", "ErdigoSDK", "ErdigoMockReceiver"],
+            dependencies: ["ErdigoCore", "ErdigoSDK", "ErdigoMockReceiver", "erdigo-send"],
             path: "macos/Tests/ErdigoTests"
         ),
     ]
