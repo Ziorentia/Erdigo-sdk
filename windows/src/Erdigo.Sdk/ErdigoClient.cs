@@ -435,18 +435,30 @@ public sealed class ErdigoClient : IDisposable
                     }
                     current.LastSeq = seq;
                     return;
-                case ReceiverMessage.Error { Value: var error } when error.Code == ErrorCode.RateLimited.ToWire():
-                    rateLimitedAnswers += 1;
-                    if (rateLimitedAnswers > MaxRateLimitedAnswers)
+                case ReceiverMessage.Error { Value: var error }:
+                    var endsConnection = EndsConnection(error);
+                    // An answer about one request must be about this one. An answer that ends the connection is about
+                    // the connection, so it ends it whatever number it carries.
+                    var answersThisRequest = error.Seq is not { } answered || answered == seq;
+                    if (!endsConnection && !answersThisRequest)
                     {
                         DropSession();
-                        throw new ErdigoException(ErdigoErrorKind.Rejected, receiverError: error);
+                        throw new ErdigoException(ErdigoErrorKind.ProtocolViolation, "the error answers a different sequence number");
                     }
-                    var wait = (error.RetryAfterMs ?? 1000) / 1000.0;
-                    await SleepAsync(Math.Max(wait, MinimumRateLimitWait), cancellationToken).ConfigureAwait(false);
-                    break;
-                case ReceiverMessage.Error { Value: var error }:
-                    Handle(error, seq, current);
+                    // Only an answer the receiver will keep the connection open after is worth waiting for.
+                    if (!endsConnection && error.Code == ErrorCode.RateLimited.ToWire())
+                    {
+                        rateLimitedAnswers += 1;
+                        if (rateLimitedAnswers > MaxRateLimitedAnswers)
+                        {
+                            DropSession();
+                            throw new ErdigoException(ErdigoErrorKind.Rejected, receiverError: error);
+                        }
+                        var wait = (error.RetryAfterMs ?? 1000) / 1000.0;
+                        await SleepAsync(Math.Max(wait, MinimumRateLimitWait), cancellationToken).ConfigureAwait(false);
+                        break;
+                    }
+                    Handle(error, seq, answersThisRequest, endsConnection, current);
                     return;
                 default:
                     DropSession();
@@ -455,36 +467,39 @@ public sealed class ErdigoClient : IDisposable
         }
     }
 
-    private void Handle(ReceiverError error, ulong seq, Session current)
+    /// <summary>
+    /// Whether the receiver closes the connection after this answer. <c>paused</c> and <c>replaced</c> always do, even
+    /// if a receiver leaves out the flag.
+    /// </summary>
+    private static bool EndsConnection(ReceiverError error) =>
+        error.Fatal || error.Code == ErrorCode.Paused.ToWire() || error.Code == ErrorCode.Replaced.ToWire();
+
+    /// <summary>Turns an error answer into the error the caller sees. It always throws.</summary>
+    private void Handle(ReceiverError error, ulong seq, bool answersThisRequest, bool endsConnection, Session current)
     {
-        if (error.LastSeq is { } last)
+        // A number from an answer to some other request says nothing about where this connection stands.
+        if (answersThisRequest && error.LastSeq is { } last)
         {
             current.LastSeq = Math.Max(current.LastSeq, last);
+        }
+        if (endsConnection)
+        {
+            DropSession();
         }
 
         if (error.Code == ErrorCode.Paused.ToWire())
         {
-            DropSession();
             throw new ConnectionLostException();
         }
         if (error.Code == ErrorCode.Replaced.ToWire())
         {
-            DropSession();
             throw new ErdigoException(ErdigoErrorKind.Replaced, receiverError: error);
         }
         if (error.Code == ErrorCode.StaleSeq.ToWire() || error.Code == ErrorCode.SeqConflict.ToWire())
         {
-            if (error.Fatal)
-            {
-                DropSession();
-            }
             throw new ErdigoException(ErdigoErrorKind.SequenceConflict, receiverError: error, lastSeq: current.LastSeq);
         }
-        if (error.Fatal)
-        {
-            DropSession();
-        }
-        else if (error.Seq == seq && ErrorCodes.FromWire(error.Code) is { } code && !code.IsRetryable())
+        if (!endsConnection && error.Seq == seq && ErrorCodes.FromWire(error.Code) is { } code && !code.IsRetryable())
         {
             // The receiver used up this number on the failed request.
             current.LastSeq = seq;
