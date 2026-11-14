@@ -392,8 +392,9 @@ What they cover:
   before anything is sent, and a code file others can read is refused.
 - **With the other editions:** `tests/cli-smoke.sh` pairs with the .NET mock receiver using the QR text and a typed
   code (answered in a pseudo terminal, including a `yes` typed before the key appeared, which must not count), and
-  writes every kind of item, including a photo of several chunks. CI runs it on Linux with PHP 8.1 to 8.5. It was also
-  run on macOS against the Swift mock receiver.
+  writes every kind of item, including a photo of several chunks. CI runs it on Linux with PHP 8.1 to 8.5, where it also
+  finds the mock on the network with multicast DNS (`ERDIGO_MULTICAST_CHECKS=1`), pairs with it and writes to it. It was
+  also run on macOS against the Swift mock receiver, without the multicast check.
 
 CI runs the PHPUnit tests on Linux with PHP 8.1, 8.2, 8.3, 8.4 and 8.5, and on Windows with PHP 8.1 and 8.5, where the
 access-list checks run too.
@@ -405,5 +406,6 @@ What has **not** been tested:
   silicon) and on GitHub's Linux (x64) and Windows runners.
 - PHP under a web server (PHP-FPM or Apache's module). The tests run PHP from the command line; the web-request
   behaviour, including the lock between processes, was checked with several command-line processes at once.
-- Discovery against a real Erdigo app. The DNS messages are checked in unit tests.
+- Discovery against a real Erdigo app, or on a network other than a CI runner's. It was checked against the .NET mock's
+  multicast DNS responder, and the DNS reader in unit tests.
 - No independent security audit has been done.

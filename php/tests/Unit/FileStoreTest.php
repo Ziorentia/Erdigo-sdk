@@ -186,6 +186,15 @@ final class FileStoreTest extends TestCase
         if (!PrivateFile::isWindows()) {
             $this->markTestSkipped('only on Windows');
         }
+        // What the tools report, so that a failure shows why.
+        $probe = Temporary::directory() . '\\probe';
+        mkdir($probe);
+        \Erdigo\WindowsAcl::makePrivate($probe);
+        $read = new \ReflectionMethod(\Erdigo\WindowsAcl::class, 'sddl');
+        $sddl = (string) $read->invoke(null, $probe);
+        $sid = \Erdigo\WindowsAcl::currentUserSid();
+        $this->assertTrue(\Erdigo\WindowsAcl::grantsOnly($sddl, $sid), "access list '{$sddl}' for user '{$sid}'");
+
         $directory = Temporary::directory() . '\\state';
         $store = new FileDeviceStore($directory);
         $store->loadOrCreateIdentity();
