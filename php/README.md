@@ -335,6 +335,11 @@ pairing is saved. With the QR text or `--fingerprint` it compares the key itself
 answer, so `pair` refuses a bare code when standard input or output is not a terminal, as in a pipe, a cron job or a
 web server, and stops before it contacts the receiver.
 
+`note --text-file` reads the note from a UTF-8 file. It takes out what editors such as Notepad add: a byte order
+mark at the start, and the carriage return of each Windows line ending (CR LF becomes LF). Nothing else is changed.
+A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
+sent.
+
 ## Differences from the other SDKs
 
 - **No mock receiver.** `serve --mock` points to the .NET and Swift editions' mocks, which this edition is tested

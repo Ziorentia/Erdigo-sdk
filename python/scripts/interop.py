@@ -278,13 +278,19 @@ def main() -> int:
             send(*step, *address)
         mock.drain()
 
-        print("A note file with Windows line endings is refused before anything is sent, as by the .NET and Swift tools")
+        print("A note file saved by Notepad is sent without its byte order mark and carriage returns")
         # The protocol allows line feeds and tabs in a note, but no carriage return (spec section 6.3).
-        crlf_file = work / "note-crlf.txt"
-        crlf_file.write_bytes(b"First line\r\nSecond line\r\n")
-        refused = send("note", "--id", "crlf", "--lat", "37.572", "--lon", "126.982", "--text-file", str(crlf_file), *address, expect_ok=False)
+        notepad_file = work / "note-notepad.txt"
+        notepad_file.write_bytes(b"\xef\xbb\xbfFirst line\r\nSecond line\r\n")
+        send("note", "--id", "notepad", "--lat", "37.572", "--lon", "126.982", "--text-file", str(notepad_file), *address)
+        mock.drain()
+
+        print("A carriage return on its own is still refused before anything is sent")
+        lone_cr_file = work / "note-lone-cr.txt"
+        lone_cr_file.write_bytes(b"First line\rSecond line")
+        refused = send("note", "--id", "lone-cr", "--lat", "37.573", "--lon", "126.983", "--text-file", str(lone_cr_file), *address, expect_ok=False)
         if refused.returncode != 1 or "a note cannot contain control or text-direction characters" not in refused.stderr:
-            raise AssertionError("a note file with carriage returns was not refused as the other tools refuse it")
+            raise AssertionError("a note file with a carriage return on its own was not refused")
         if any(re.match(r"\[mock\] (connected|#\d+ )", line) for line in mock.drain(1.0)):
             raise AssertionError("the mock was contacted for a note that should have been refused first")
 
@@ -299,6 +305,7 @@ def main() -> int:
             "pin city-hall at 37.5664,126.978 title=Seoul City Hall points=0",
             "note inline at 37.57,126.98 title=- points=0",
             "note from-file at 37.571,126.981 title=- points=0",
+            "note notepad at 37.572,126.982 title=- points=0",
             "photo view at 37.5665,126.978 title=View points=0",
             "photo small at 37.5666,126.9781 title=- points=0",
             "track walk at -,- title=Morning walk points=2",

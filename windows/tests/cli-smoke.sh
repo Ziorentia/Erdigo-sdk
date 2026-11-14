@@ -186,11 +186,17 @@ connections() {
 perl -e 'print "a" x 4096' >"$WORK/note-at-limit.txt"
 perl -e 'print "a" x 4097' >"$WORK/note-over-limit.txt"
 printf 'caf\xe9' >"$WORK/note-latin1.txt"
+printf '\xef\xbb\xbfFirst line\r\nSecond line\r\n' >"$WORK/note-notepad.txt"
+printf 'First line\rSecond line' >"$WORK/note-lone-cr.txt"
 perl -e 'open(my $f, ">", $ARGV[0]) or die; truncate($f, 256 * 1024 * 1024) or die' "$WORK/huge.jpg"
 expect_ok "a note file at the limit" "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/note-at-limit.txt"
+expect_ok "a note file saved by Notepad, with a byte order mark and CR LF" \
+    "$BIN" note "${STATE[@]}" --id notepad --lat 1 --lon 1 --text-file "$WORK/note-notepad.txt"
 BEFORE_CONNECTIONS="$(connections)"
 expect_refused "a note file one byte over the limit" "at most 4096 bytes" \
     "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/note-over-limit.txt"
+expect_refused "a note file with a carriage return on its own" "control or text-direction" \
+    "$BIN" note "${STATE[@]}" --id lone-cr --lat 1 --lon 1 --text-file "$WORK/note-lone-cr.txt"
 expect_refused "a note file that is not UTF-8" "not UTF-8 text" \
     "$BIN" note "${STATE[@]}" --id long --lat 1 --lon 1 --text-file "$WORK/note-latin1.txt"
 expect_refused "a missing note file" "the note file does not exist" \

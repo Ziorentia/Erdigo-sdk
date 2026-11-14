@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Erdigo\Tests\Unit;
 
+use Erdigo\Cli\CommandFiles;
+use Erdigo\Cli\UsageException;
 use Erdigo\Core\PairingTicket;
 use Erdigo\PrivateFile;
 use Erdigo\Tests\Support\ScriptedReceiver;
@@ -21,6 +23,29 @@ final class CliTest extends TestCase
     protected function setUp(): void
     {
         $this->work = Temporary::directory();
+    }
+
+    public function testOnlyOneByteOrderMarkAndOnlyCrLfPairsAreTakenOutOfANoteFile(): void
+    {
+        $this->assertSame("\xEF\xBB\xBFa", CommandFiles::noteFromFile("\xEF\xBB\xBF\xEF\xBB\xBFa"));
+        $this->assertSame("a\rb", CommandFiles::noteFromFile("a\rb"));
+        $this->assertSame("a\r\nb", CommandFiles::noteFromFile("a\r\r\nb"));
+        $this->assertSame("a\n\rb", CommandFiles::noteFromFile("a\n\rb"));
+        $this->assertSame("a\r", CommandFiles::noteFromFile("a\r"));
+    }
+
+    public function testTheNoteLimitCountsTheNoteThatIsSentNotTheFile(): void
+    {
+        $lines = intdiv(4096, 2);
+        file_put_contents($this->work . '/at-limit.txt', "\xEF\xBB\xBF" . str_repeat("a\r\n", $lines));
+        $this->assertSame(str_repeat("a\n", $lines), CommandFiles::readNote($this->work . '/at-limit.txt'));
+        file_put_contents($this->work . '/over.txt', str_repeat("a\r\n", $lines) . 'a');
+        try {
+            CommandFiles::readNote($this->work . '/over.txt');
+            $this->fail('a note over the limit was read');
+        } catch (UsageException $error) {
+            $this->assertSame(CommandFiles::noteTooLarge(), $error->getMessage());
+        }
     }
 
     /**
@@ -149,12 +174,17 @@ final class CliTest extends TestCase
         $this->assertSame(['ping', 'put', 'put', 'put', 'put', 'track_append', 'track_finish', 'move', 'photo_begin', 'photo_chunk',
             'photo_end', 'delete', 'delete_all'], $types);
         $this->assertSame("From a file\n", $receiver->requests()[4]['text']);
+        file_put_contents($this->work . '/notepad.txt', "\xEF\xBB\xBFFirst line\r\nSecond \u{e9}\r\n\r\nend\r\n");
+        $this->toolSucceeds(['note', ...$this->stateFolder(), '--id', 'notepad', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/notepad.txt']);
+        $this->assertSame("First line\nSecond \u{e9}\n\nend\n", $receiver->requests()[count($receiver->requests()) - 1]['text']);
         $this->assertCount(1, $receiver->events('photo_stored'));
 
         // Files that are refused never reach the receiver.
         $before = $receiver->connections();
         file_put_contents($this->work . '/long.txt', str_repeat('a', 4097));
         $this->toolRefuses(['note', ...$this->stateFolder(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/long.txt'], 'at most 4096 bytes');
+        file_put_contents($this->work . '/lone-cr.txt', "First line\rSecond line");
+        $this->toolRefuses(['note', ...$this->stateFolder(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/lone-cr.txt'], 'control or text-direction');
         file_put_contents($this->work . '/latin1.txt', "caf\xE9");
         $this->toolRefuses(['note', ...$this->stateFolder(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/latin1.txt'], 'not UTF-8 text');
         $this->toolRefuses(['note', ...$this->stateFolder(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/none.txt'], 'the note file does not exist');

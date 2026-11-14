@@ -65,6 +65,55 @@ public sealed class CommandFileTests : IDisposable
         Refused(CommandFiles.NoteTooLarge, () => CommandFiles.ReadNote(path));
     }
 
+    [Fact]
+    public void NoteSavedByNotepadIsReadWithoutItsByteOrderMarkOrCarriageReturns()
+    {
+        var path = File("note.txt", [0xEF, 0xBB, 0xBF, .. "First line\r\nSecond é\r\n\r\nend"u8]);
+        Assert.Equal("First line\nSecond é\n\nend", CommandFiles.ReadNote(path));
+    }
+
+    [Fact]
+    public void OnlyTheFirstByteOrderMarkIsTakenOut()
+    {
+        var path = File("note.txt", [0xEF, 0xBB, 0xBF, 0xEF, 0xBB, 0xBF, (byte)'a']);
+        Assert.Equal("﻿a", CommandFiles.ReadNote(path));
+    }
+
+    [Theory]
+    [InlineData("a\rb", "a\rb")]
+    [InlineData("a\r\r\nb", "a\r\nb")]
+    [InlineData("a\n\rb", "a\n\rb")]
+    [InlineData("a\r", "a\r")]
+    public void ACarriageReturnOnItsOwnIsLeftForTheNoteRules(string text, string expected)
+    {
+        Assert.Equal(expected, CommandFiles.NoteFromFile(text));
+    }
+
+    [Fact]
+    public void NoteAtTheLimitWithWindowsLineEndingsIsRead()
+    {
+        var lines = Limits.V1.NoteBytes / 2;
+        var text = string.Concat(Enumerable.Repeat("a\r\n", lines));
+        var note = CommandFiles.ReadNote(File("note.txt", [0xEF, 0xBB, 0xBF, .. System.Text.Encoding.UTF8.GetBytes(text)]));
+        Assert.Equal(Limits.V1.NoteBytes, System.Text.Encoding.UTF8.GetByteCount(note));
+        Assert.DoesNotContain('\r', note);
+    }
+
+    [Fact]
+    public void NoteOverTheLimitOnceItsCarriageReturnsAreOutIsRefused()
+    {
+        var text = string.Concat(Enumerable.Repeat("a\r\n", Limits.V1.NoteBytes / 2)) + "a";
+        var path = File("note.txt", System.Text.Encoding.UTF8.GetBytes(text));
+        Refused(CommandFiles.NoteTooLarge, () => CommandFiles.ReadNote(path));
+    }
+
+    [Fact]
+    public void NoteFileFarOverTheLimitIsRefusedWithoutReadingAllOfIt()
+    {
+        var path = LongFile("note.txt", (Limits.V1.NoteBytes * 2) + 4);
+        Refused(CommandFiles.NoteTooLarge, () => CommandFiles.ReadNote(path));
+    }
+
     [Theory]
     [InlineData(new byte[] { 0xFF })]
     [InlineData(new byte[] { 0x61, 0xC3 })]

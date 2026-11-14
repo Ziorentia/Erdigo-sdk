@@ -150,6 +150,8 @@ png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, heigh
 open(sys.argv[1], "wb").write(png)
 PYTHON
 printf 'From a file\nwith two lines' >"$WORK/note.txt"
+printf '\xef\xbb\xbfFirst line\r\nSecond line\r\n' >"$WORK/note-notepad.txt"
+printf 'First line\rSecond line' >"$WORK/note-lone-cr.txt"
 
 expect_ok "ping" ping "${STATE[@]}"
 expect_ok "pin" pin "${STATE[@]}" --id gate --lat 37.5796 --lon 126.977 --title "Palace gate"
@@ -157,6 +159,10 @@ expect_ok "negative coordinates" pin "${STATE[@]}" --id opera --lat -33.8568 --l
 expect_ok "marker" marker "${STATE[@]}" --id tower --lat 48.8584 --lon 2.2945 --color blue --title Tower
 expect_ok "note" note "${STATE[@]}" --id meet --lat 37.5663 --lon 126.9779 --text "Meet at the gate"
 expect_ok "note from a file" note "${STATE[@]}" --id filed --lat 37.5663 --lon 126.9779 --text-file "$WORK/note.txt"
+expect_ok "a note file saved by Notepad, with a byte order mark and CR LF" \
+    note "${STATE[@]}" --id notepad --lat 37.5664 --lon 126.978 --text-file "$WORK/note-notepad.txt"
+expect_refused "a note file with a carriage return on its own" "control or text-direction" \
+    note "${STATE[@]}" --id lone-cr --lat 1 --lon 1 --text-file "$WORK/note-lone-cr.txt"
 expect_ok "track point" track-add "${STATE[@]}" --id walk --lat 37.5663 --lon 126.9779 --ts 1700000000000 --alt 38.5 --title Walk
 expect_ok "another track point" track-add "${STATE[@]}" --id walk --lat 37.5665 --lon 126.978
 expect_ok "track finish" track-finish "${STATE[@]}" --id walk
@@ -176,6 +182,7 @@ check "the mock holds the moved pin" grep -q '^pin gate at 37.58,126.98 title=Pa
 check "the mock holds the pin with negative coordinates" grep -q '^pin opera at -33.8568,151.2153' "$WORK/mock.log"
 check "the mock holds the marker" grep -q '^marker tower at 48.8584,2.2945 title=Tower' "$WORK/mock.log"
 check "the mock holds the note from a file" grep -q '^note filed ' "$WORK/mock.log"
+check "the mock holds the note saved by Notepad" grep -q '^note notepad ' "$WORK/mock.log"
 check "the mock holds the track with two points" grep -q '^track walk .*title=Walk points=2' "$WORK/mock.log"
 check "the mock holds both photos" bash -c 'grep -q "^photo view " "$0" && grep -q "^photo big " "$0"' "$WORK/mock.log"
 check "the deleted note is gone" bash -c '! grep -q "^note meet " "$0"' "$WORK/mock.log"

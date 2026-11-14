@@ -298,6 +298,11 @@ full 64-digit key, which is part of the QR text.
 A code file must be readable by you alone. On macOS and Linux give it mode 0600. On Windows keep it in your own
 profile folder.
 
+`note --text-file` reads the note from a UTF-8 file. It takes out what editors such as Notepad add: a byte order
+mark at the start, and the carriage return of each Windows line ending (CR LF becomes LF). Nothing else is changed.
+A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
+sent.
+
 ## Layout
 
 | Path | Contents |
