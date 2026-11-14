@@ -208,8 +208,9 @@ The folder's name is this edition's own, so it never shares a device key with th
 is a link, belongs to someone else, or that others could read or replace, the way ssh treats its keys.
 
 **On Windows** Node.js cannot read or change an access list without a native module, and this SDK has none. When the
-store creates its folder, it gives it an access list that grants the current user alone, with nothing inherited, using
-the `icacls` tool that comes with Windows. It does not check the access list of a folder that already exists, or of
+store creates its folder, it removes everything the folder inherits and grants the current user full control, using
+the `icacls` tool that comes with Windows. SYSTEM and the Administrators group, who control the computer anyway, can
+keep access, as the .NET SDK allows; on the CI runners they do. It does not check the access list of a folder that already exists, or of
 the files in it. The key is not encrypted: unlike the .NET SDK, which uses DPAPI, this edition keeps it in a file that
 the folder's access list protects. A code file given to `erdigo-send pair --code-file` must be inside your own
 profile folder (`%USERPROFILE%`), which by default only you, SYSTEM and administrators can read, because the tool

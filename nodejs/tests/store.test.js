@@ -191,11 +191,18 @@ test('a lock left by a process that has gone is taken over', () => {
   assert.equal(store.nextConnectCounter('receiver', 1), 1);
 });
 
+// As the .NET SDK accepts: the current user, SYSTEM and the Administrators group, who control the computer anyway,
+// and nothing inherited from above. Names are as an English Windows prints them, as on the CI runners.
 test('on Windows the state folder is restricted to the current user', { skip: unix }, () => {
   const directory = join(folder, 'state');
   new FileDeviceStore(directory);
   const listing = execFileSync('icacls', [directory], { encoding: 'utf8' });
-  const entries = listing.split(/\r?\n/).map((line) => line.replace(directory, '').trim()).filter((line) => line.includes(':('));
-  assert.equal(entries.length, 1, listing);
-  assert.ok(!/Everyone|Users|Authenticated/i.test(listing), listing);
+  const entries = listing.replace(directory, '').split(/\r?\n/).map((line) => line.trim()).filter((line) => line.includes(':('));
+  const user = execFileSync('whoami', { encoding: 'utf8' }).trim().toLowerCase();
+  assert.ok(entries.some((entry) => entry.toLowerCase().startsWith(`${user}:`) && entry.includes('(F)')), listing);
+  for (const entry of entries) {
+    assert.ok(!entry.includes('(I)'), `inherited: ${listing}`);
+    const who = entry.slice(0, entry.indexOf(':(')).toLowerCase();
+    assert.ok([user, 'nt authority\\system', 'builtin\\administrators'].includes(who), `granted to ${who}: ${listing}`);
+  }
 });
