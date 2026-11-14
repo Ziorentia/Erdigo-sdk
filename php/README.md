@@ -35,12 +35,13 @@ app's minimum and recommended systems are listed in
 32-bit PHP is refused, because the protocol's counters do not fit in its integers. Some older NAS models with 32-bit ARM
 processors run 32-bit PHP; check with `php -r 'echo PHP_INT_SIZE;'`, which must print `8`.
 
-This SDK is not on Packagist. To use it with Composer, point Composer at this repository:
+This SDK is not on Packagist. To use it with Composer, clone this repository and point Composer at its `php` folder,
+since the package is not at the top of the repository:
 
 ```json
 {
-    "repositories": [{ "type": "vcs", "url": "https://github.com/Ziorentia/Erdigo-sdk" }],
-    "require": { "ziorentia/erdigo-sdk": "dev-main" }
+    "repositories": [{ "type": "path", "url": "/path/to/Erdigo-sdk/php" }],
+    "require": { "ziorentia/erdigo-sdk": "*@dev" }
 }
 ```
 
@@ -221,7 +222,7 @@ PHP usually runs one short process per web request, so each request opens its ow
 client is closed or the request ends. Each connection costs:
 
 - a TCP connection and three round trips: the handshake, `hello` and `welcome`, and the request and its answer;
-- four X25519 operations, which take well under a millisecond with libsodium;
+- six X25519 operations for the handshake, which take well under a millisecond in all with libsodium;
 - one write of the connection counter to `pairings.json`, flushed to disk with `fsync` before anything is sent, because
   the receiver refuses a counter it has seen. On a NAS with spinning disks this write is the slowest part, typically
   some milliseconds.

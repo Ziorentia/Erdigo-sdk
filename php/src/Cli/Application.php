@@ -99,6 +99,10 @@ TEXT;
         } catch (UsageException | ErdigoException | WireException $error) {
             fwrite($application->err, 'erdigo-send: ' . $error->getMessage() . "\n");
             return 1;
+        } catch (\Throwable $error) {
+            // Something this tool did not expect. Its message, without the trace, which shows paths and arguments.
+            fwrite($application->err, 'erdigo-send: unexpected error: ' . $error->getMessage() . "\n");
+            return 1;
         }
     }
 
