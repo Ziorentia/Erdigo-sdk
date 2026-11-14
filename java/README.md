@@ -11,9 +11,9 @@ its own: develop against the .NET or Swift one, as described below.
 **Android has not been tested.** The library uses only the JDK, but it has not been built or run on Android, and its
 key storage and terminal handling assume a desktop or server system.
 
-> **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
-> review on the Mac App Store and the Microsoft Store. Until it is released, develop against a mock receiver. This
-> notice will be removed once the review is complete.
+> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
+> Microsoft Store and still waiting for review on the Mac App Store. Until it is released there, write to Erdigo on a
+> Windows PC or develop against a mock receiver. This notice will be removed once the Mac review is complete.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later on a Mac or a Windows PC on the same local network: see
 [Get the Erdigo app](../README.md#get-the-erdigo-app).

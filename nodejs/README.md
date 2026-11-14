@@ -9,9 +9,9 @@ It speaks the same [protocol](../spec/integration-v1.md) as the [Swift SDK](../s
 [.NET SDK](../dotnet/README.md), and works with their mock receivers. It has no runtime dependencies: the
 cryptography comes from `node:crypto`, the connection from `node:net`, and discovery from `node:dgram`.
 
-> **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
-> review on the Mac App Store and the Microsoft Store. Until it is released, develop against a mock receiver as
-> described below. This notice will be removed once the review is complete.
+> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
+> Microsoft Store and still waiting for review on the Mac App Store. Until it is released there, write to Erdigo on a
+> Windows PC or develop against a mock receiver as described below. This notice will be removed once the Mac review is complete.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later on a Mac or a PC on the same local network, from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) or the
