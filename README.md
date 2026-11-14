@@ -2,8 +2,13 @@
 
 Official Erdigo SDK by Ziorentia LLC.
 
-Put pins, markers, notes, photos and tracks on an Erdigo map from your own devices and programs: a sensor, a drone, a
-Raspberry Pi, a script. They talk to the Erdigo app on the same local network.
+Put pins, markers, notes, photos and tracks on an Erdigo map from your own programs, such as a script on a PC, a
+gateway that reads your sensors, or a ground station that relays where a drone is. They talk to the Erdigo app on the
+same local network.
+
+The SDKs carry what your program sends; they do not read sensors or drones themselves. Your program gets the readings
+or positions from the device in its own way and sends them through the SDK. There is no ready-made integration for any
+particular drone or board.
 
 > **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
 > review on the Mac App Store and the Microsoft Store. Until it is released, develop and test against the mock
@@ -67,6 +72,11 @@ streams use the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and
 |---|---|---|
 | macOS 12 or later (Swift) | [`macos/`](macos/README.md) | Preview |
 | Windows 10 or later (.NET 8) | [`windows/`](windows/README.md) | Preview |
+
+**Linux, including a Raspberry Pi.** The .NET SDK also builds and runs on Linux, and its tests run on Linux (x64) in
+CI. It is supported there for development and testing only, it has not been tried on a Raspberry Pi or another ARM
+board, and the device key is kept in a file only you can read (mode 0600) rather than encrypted. For another language,
+implement the [protocol specification](spec/integration-v1.md).
 
 ## Try it in two minutes
 
