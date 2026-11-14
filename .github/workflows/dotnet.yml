@@ -10,8 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  windows-sdk:
-    name: Windows SDK (${{ matrix.os }})
+  dotnet-sdk:
+    name: .NET SDK (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
