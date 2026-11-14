@@ -1,4 +1,4 @@
-name: CI
+name: Swift
 
 on:
   push:
@@ -10,7 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  macos:
+  swift-sdk:
+    name: Swift SDK (macos-15)
     runs-on: macos-15
     timeout-minutes: 20
     steps:
