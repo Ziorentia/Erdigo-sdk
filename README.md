@@ -21,6 +21,36 @@ from the store for that computer:
 
 Either SDK works with either app: a program using the Windows SDK can write to a Mac, and the other way round.
 
+### System requirements for the app
+
+These are for the Erdigo app that receives. The SDKs have their own, listed under [Platforms](#platforms).
+
+**Erdigo for Mac**
+
+| | Minimum | Recommended |
+|---|---|---|
+| macOS | macOS 12 Monterey | macOS 13 Ventura or later |
+| Mac | Intel or Apple silicon | Apple silicon |
+| Memory | 4 GB | 8 GB or more |
+| Network | Wi-Fi or Ethernet, on the same local network as your devices | The same, with an internet connection for maps and map layers |
+
+On macOS 12, camera and stream video plays only if it is H.264. H.265 (HEVC) video and using an iPhone as a camera
+need macOS 13 or later.
+
+**Erdigo for Windows**
+
+| | Minimum | Recommended |
+|---|---|---|
+| Windows | Windows 10 version 1809 (build 17763) | Windows 11 |
+| Processor | 1 GHz or faster: x64, x86 or ARM64 | 2 GHz dual-core or faster |
+| Memory | 4 GB | 8 GB |
+| Graphics | DirectX 9 | DirectX 11 |
+| Network | Wi-Fi or Ethernet, on the same local network as your devices | The same, with an internet connection for maps and map layers |
+
+H.265 (HEVC) camera video needs the HEVC Video Extensions from the Microsoft Store; the app offers to install them.
+Without them it shows the camera's H.264 stream if the camera has one, and still records the original. WebRTC
+streams use the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and is on most Windows 10 PCs.
+
 ## How it works
 
 - **Write only.** A device can add, move and delete its own items. It cannot read the map, anyone's location or
