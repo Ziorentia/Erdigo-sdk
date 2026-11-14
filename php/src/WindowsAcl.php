@@ -72,7 +72,7 @@ final class WindowsAcl
     public static function makePrivate(string $directory): void
     {
         $sid = self::currentUserSid();
-        self::run(['icacls', $directory, '/inheritance:r', '/grant:r', "*{$sid}:(OI)(CI)F", '/q']);
+        self::run(['icacls', self::native($directory), '/inheritance:r', '/grant:r', "*{$sid}:(OI)(CI)F", '/q']);
     }
 
     private static function sddl(string $path): string
@@ -82,7 +82,7 @@ final class WindowsAcl
             throw new PrivateFileException(PrivateFileException::UNREADABLE, 'the permissions could not be checked');
         }
         try {
-            self::run(['icacls', $path, '/save', $saved, '/q']);
+            self::run(['icacls', self::native($path), '/save', $saved, '/q']);
             $raw = (string) file_get_contents($saved);
         } finally {
             @unlink($saved);
@@ -94,6 +94,12 @@ final class WindowsAcl
         $lines = preg_split('/\r?\n/', str_replace("\0", '', $raw)) ?: [];
         $lines = array_values(array_filter($lines, static fn (string $line): bool => trim($line) !== ''));
         return $lines === [] ? '' : trim($lines[count($lines) - 1]);
+    }
+
+    /** A path as Windows' own tools write it, with backslashes. */
+    private static function native(string $path): string
+    {
+        return str_replace('/', '\\', $path);
     }
 
     /** @param list<string> $command */

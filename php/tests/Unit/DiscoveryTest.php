@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
 
 final class DiscoveryTest extends TestCase
 {
-    private static function name(string $name): string
+    private static function dnsName(string $name): string
     {
         $output = '';
         foreach (explode('.', $name) as $label) {
@@ -20,13 +20,13 @@ final class DiscoveryTest extends TestCase
         return $output . "\0";
     }
 
-    private static function record(string $name, int $type, string $data, int $ttl = 120): string
+    private static function dnsRecord(string $name, int $type, string $data, int $ttl = 120): string
     {
-        return self::name($name) . pack('nnNn', $type, 0x8001, $ttl, strlen($data)) . $data;
+        return self::dnsName($name) . pack('nnNn', $type, 0x8001, $ttl, strlen($data)) . $data;
     }
 
     /** @param list<string> $records */
-    private static function response(int $id, array $records): string
+    private static function dnsResponse(int $id, array $records): string
     {
         return pack('nnnnnn', $id, 0x8400, 0, count($records), 0, 0) . implode('', $records);
     }
@@ -34,17 +34,17 @@ final class DiscoveryTest extends TestCase
     public function testTheQueryAsksForTheService(): void
     {
         $query = MdnsWire::encodeQuery(0x1234, [[MdnsWire::serviceName(), MdnsWire::TYPE_PTR]]);
-        $this->assertSame(pack('nnnnnn', 0x1234, 0, 1, 0, 0, 0) . self::name('_erdigo-int._tcp.local') . pack('nn', 12, 1), $query);
+        $this->assertSame(pack('nnnnnn', 0x1234, 0, 1, 0, 0, 0) . self::dnsName('_erdigo-int._tcp.local') . pack('nn', 12, 1), $query);
     }
 
     public function testAnAnswerLeadsToAnEndpoint(): void
     {
         $instance = 'a1b2c3._erdigo-int._tcp.local';
-        $message = MdnsWire::decode(self::response(7, [
-            self::record('_erdigo-int._tcp.local', MdnsWire::TYPE_PTR, self::name($instance)),
-            self::record($instance, MdnsWire::TYPE_SRV, pack('nnn', 0, 0, 52345) . self::name('host-x.local')),
-            self::record('host-x.local', MdnsWire::TYPE_A, (string) inet_pton('192.168.1.20')),
-            self::record('other.local', MdnsWire::TYPE_A, (string) inet_pton('192.168.1.99')),
+        $message = MdnsWire::decode(self::dnsResponse(7, [
+            self::dnsRecord('_erdigo-int._tcp.local', MdnsWire::TYPE_PTR, self::dnsName($instance)),
+            self::dnsRecord($instance, MdnsWire::TYPE_SRV, pack('nnn', 0, 0, 52345) . self::dnsName('host-x.local')),
+            self::dnsRecord('host-x.local', MdnsWire::TYPE_A, (string) inet_pton('192.168.1.20')),
+            self::dnsRecord('other.local', MdnsWire::TYPE_A, (string) inet_pton('192.168.1.99')),
         ]));
         $this->assertNotNull($message);
         $this->assertSame(7, $message['id']);
@@ -60,9 +60,9 @@ final class DiscoveryTest extends TestCase
     {
         $header = pack('nnnnnn', 1, 0x8400, 0, 1, 0, 0);
         // A PTR record whose target points back at its own name.
-        $good = $header . self::name('_erdigo-int._tcp.local') . pack('nnNn', 12, 1, 120, 9) . "\x01a" . "\x01b\xC0\x0C" . "\0";
+        $good = $header . self::dnsName('_erdigo-int._tcp.local') . pack('nnNn', 12, 1, 120, 9) . "\x01a" . "\x01b\xC0\x0C" . "\0";
         $this->assertNull(MdnsWire::decode($good), 'a target that runs past its record');
-        $pointer = $header . self::name('_erdigo-int._tcp.local') . pack('nnNn', 12, 1, 120, 4) . "\x01a\xC0\x0C";
+        $pointer = $header . self::dnsName('_erdigo-int._tcp.local') . pack('nnNn', 12, 1, 120, 4) . "\x01a\xC0\x0C";
         $decoded = MdnsWire::decode($pointer);
         $this->assertNotNull($decoded);
         $this->assertSame('a._erdigo-int._tcp.local', $decoded['records'][0]['target']);

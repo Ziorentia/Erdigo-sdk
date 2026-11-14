@@ -33,7 +33,7 @@ final class FileStoreTest extends TestCase
         }
     }
 
-    private static function mode(string $path): int
+    private static function modeOf(string $path): int
     {
         clearstatcache(true, $path);
         return fileperms($path) & 0777;
@@ -51,7 +51,7 @@ final class FileStoreTest extends TestCase
         $this->fail('expected a storage error');
     }
 
-    private static function pairing(int $counterFloor = 0): ReceiverPairing
+    private static function samplePairing(int $counterFloor = 0): ReceiverPairing
     {
         return new ReceiverPairing('home', Noise::publicKey(Noise::newPrivateKey()), [ItemKind::Pin, ItemKind::Track], counterFloor: $counterFloor);
     }
@@ -64,11 +64,11 @@ final class FileStoreTest extends TestCase
         $again = (new FileDeviceStore($directory))->loadOrCreateIdentity();
         $this->assertSame($identity->fingerprint, $again->fingerprint);
         $this->assertSame(36, filesize($directory . '/identity.key'));
-        $store->save(self::pairing());
+        $store->save(self::samplePairing());
         if (!PrivateFile::isWindows()) {
-            $this->assertSame(0700, self::mode($directory));
-            $this->assertSame(0600, self::mode($directory . '/identity.key'));
-            $this->assertSame(0600, self::mode($directory . '/pairings.json'));
+            $this->assertSame(0700, self::modeOf($directory));
+            $this->assertSame(0600, self::modeOf($directory . '/identity.key'));
+            $this->assertSame(0600, self::modeOf($directory . '/pairings.json'));
         }
     }
 
@@ -76,7 +76,7 @@ final class FileStoreTest extends TestCase
     {
         $directory = Temporary::directory() . '/state';
         $store = new FileDeviceStore($directory);
-        $pairing = self::pairing(5000);
+        $pairing = self::samplePairing(5000);
         $store->save($pairing);
         $fingerprint = $pairing->fingerprint();
         // The receiver's floor comes first, then the clock, then one more than the last value.
@@ -169,7 +169,7 @@ final class FileStoreTest extends TestCase
     public function testConnectionLocksExcludeEachOther(): void
     {
         $store = new FileDeviceStore(Temporary::directory() . '/state');
-        $fingerprint = self::pairing()->fingerprint();
+        $fingerprint = self::samplePairing()->fingerprint();
         $first = $store->acquireConnectionLock($fingerprint, 1.0);
         $this->assertNotNull($first);
         $started = microtime(true);
