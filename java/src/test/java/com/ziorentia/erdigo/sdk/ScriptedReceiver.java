@@ -266,9 +266,10 @@ final class ScriptedReceiver implements AutoCloseable {
             Wire.decodeHello(owned.open(connection.readFrame()));
             ReceiverMessage instead = helloAnswer;
             if (instead != null) {
+                // Noted before the answer goes out, because the client may look as soon as it has the answer.
+                event("hello answered");
                 send(connection, owned, instead);
                 connection.finishSending();
-                event("hello answered");
                 return;
             }
             long lastSeq;
