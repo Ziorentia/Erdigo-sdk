@@ -1,0 +1,42 @@
+{
+  "name": "erdigo-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Write pins, markers, notes, photos and tracks to an Erdigo receiver on the local network (integration-v1).",
+  "license": "MIT",
+  "author": "Ziorentia LLC",
+  "homepage": "https://github.com/Ziorentia/Erdigo-sdk/tree/main/nodejs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ziorentia/Erdigo-sdk.git",
+    "directory": "nodejs"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./terminal": {
+      "types": "./terminal.d.ts",
+      "default": "./src/cli/terminal.js"
+    }
+  },
+  "types": "./index.d.ts",
+  "bin": {
+    "erdigo-send": "bin/erdigo-send.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "index.d.ts",
+    "terminal.d.ts",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test"
+  }
+}

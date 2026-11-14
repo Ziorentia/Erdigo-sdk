@@ -1,0 +1,59 @@
+name: Node.js
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The job only reads the code. A private repository needs this much to check it out.
+permissions:
+  contents: read
+
+jobs:
+  nodejs-sdk:
+    name: Node.js SDK (${{ matrix.os }}, Node ${{ matrix.node }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [20, 22]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      # actions/setup-node v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: ${{ matrix.node }}
+      # The .NET SDK's mock receiver, which the Node.js SDK is checked against. This edition has none of its own.
+      # actions/setup-dotnet v4.3.1
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 8.0.x
+      # The same checks as the .NET workflow: exactly what the lock files say, checked for known vulnerabilities.
+      - name: Build the .NET mock receiver
+        working-directory: windows
+        run: |
+          dotnet restore Erdigo.sln --locked-mode -p:NuGetAuditMode=all
+          dotnet build src/erdigo-send --no-restore --configuration Release
+      # The Node.js SDK has no dependencies, so there is nothing to install.
+      - name: Test
+        working-directory: nodejs
+        env:
+          ERDIGO_MOCK: '["dotnet", "../windows/src/erdigo-send/bin/Release/net8.0/erdigo-send.dll"]'
+        run: |
+          node --version
+          node --test
+      # The checks drive the tools through pseudo terminals, which Windows does not have.
+      - name: Command-line checks
+        if: runner.os == 'Linux'
+        run: nodejs/tests/cli-smoke.sh
