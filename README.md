@@ -5,8 +5,21 @@ Official Erdigo SDK by Ziorentia LLC.
 Put pins, markers, notes, photos and tracks on an Erdigo map from your own devices and programs: a sensor, a drone, a
 Raspberry Pi, a script. They talk to the Erdigo app on the same local network.
 
-> **Preview.** The released Erdigo app does not yet accept these connections. Until it does, develop and test
-> against the mock receiver included with each SDK. The wire format may still change.
+> **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
+> review on the Mac App Store and the Microsoft Store. Until it is released, develop and test against the mock
+> receiver included with each SDK. This notice will be removed once the review is complete.
+
+## Get the Erdigo app
+
+The SDKs send to the Erdigo app, which must be running on a Mac or a Windows PC on the same local network. Install it
+from the store for that computer:
+
+| App | Store | Version |
+|---|---|---|
+| Erdigo for Mac | [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) | 2.17.23 or later |
+| Erdigo for Windows | [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) | 2.17.23 or later |
+
+Either SDK works with either app: a program using the Windows SDK can write to a Mac, and the other way round.
 
 ## How it works
 
@@ -66,8 +79,15 @@ the [Windows SDK guide](windows/README.md).
 ## Status of the security work
 
 The cryptography follows the standard [Noise Protocol Framework](https://noiseprotocol.org/) and passes the official
-test vectors. **It has not had an independent security audit**, and the released Erdigo app does not yet include a
-receiver.
+test vectors. **It has not had an independent security audit.** The receiver is part of the Erdigo app from version
+2.17.23.
+
+## How this SDK was made
+
+Both SDKs were written and verified with AI coding agents, Anthropic's [Claude Code](https://claude.com/claude-code) and
+OpenAI's [Codex](https://openai.com/codex/), working for Ziorentia LLC. Besides the automated tests and the official
+Noise test vectors, the agents checked each SDK against the real Erdigo app on its platform: pairing, sending items
+and reconnecting.
 
 ## License
 
