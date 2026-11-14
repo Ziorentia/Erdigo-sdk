@@ -3,9 +3,10 @@
 A Swift package for writing pins, markers, notes, photos and tracks to an Erdigo receiver on the local network. It
 needs macOS 12 or later and has no dependencies beyond the system.
 
-> **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
-> review on the Mac App Store and the Microsoft Store. Until it is released, develop against the mock receiver
-> described below. This notice will be removed once the review is complete.
+> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
+> Microsoft Store and still waiting for review on the Mac App Store. Until it is released there, this SDK can write to
+> Erdigo on a Windows PC on the same network, or you can develop against the mock receiver described below. This
+> notice will be removed once the Mac review is complete.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) on a Mac on the same local network. It can
