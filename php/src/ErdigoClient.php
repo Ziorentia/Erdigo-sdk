@@ -491,12 +491,18 @@ final class ErdigoClient
                 throw new ConnectionLostException();
             }
         }
-        // The remembered address comes first, because looking around the network takes a moment.
-        if ($this->firstAnswer($this->target->knownEndpoints($this->pairing))) {
-            return;
-        }
-        if ($this->target->isDiscover() && $this->firstAnswer(Discovery::browse())) {
-            return;
+        try {
+            // The remembered address comes first, because looking around the network takes a moment.
+            if ($this->firstAnswer($this->target->knownEndpoints($this->pairing))) {
+                return;
+            }
+            if ($this->target->isDiscover() && $this->firstAnswer(Discovery::browse())) {
+                return;
+            }
+        } catch (ErdigoException $error) {
+            // No connection came of it, so other processes need not wait.
+            $this->close();
+            throw $error;
         }
         $this->close();
         $this->checkDeadline();

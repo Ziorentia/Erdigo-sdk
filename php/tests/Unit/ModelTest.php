@@ -49,7 +49,7 @@ final class ModelTest extends TestCase
 {
     private const CODE = 'TEST0-0NLYC-0DE00-00000';
 
-    private static function fingerprint(string $pair = 'ab'): string
+    private static function sampleFingerprint(string $pair = 'ab'): string
     {
         return str_repeat($pair, 32);
     }
@@ -100,14 +100,14 @@ final class ModelTest extends TestCase
     public function testValidQrTextWorksAndRoundTrips(): void
     {
         $code = new PairingCode(self::CODE);
-        $ticket = PairingTicket::parse('erdigo-pair:1?code=' . self::CODE . '&fp=' . self::fingerprint());
-        $this->assertSame(self::fingerprint(), $ticket->fingerprint);
+        $ticket = PairingTicket::parse('erdigo-pair:1?code=' . self::CODE . '&fp=' . self::sampleFingerprint());
+        $this->assertSame(self::sampleFingerprint(), $ticket->fingerprint);
         $this->assertTrue($ticket->code->equals($code));
-        $this->assertSame('erdigo-pair:1?code=' . $code->display() . '&fp=' . self::fingerprint(), $ticket->uri());
+        $this->assertSame('erdigo-pair:1?code=' . $code->display() . '&fp=' . self::sampleFingerprint(), $ticket->uri());
         $this->assertSame($ticket->uri(), PairingTicket::parse((string) $ticket->uri())->uri());
         // In either order, with white space around it, and with the fingerprint in capitals.
-        $this->assertSame($ticket->uri(), PairingTicket::parse(" \n erdigo-pair:1?fp=" . self::fingerprint() . '&code=' . self::CODE . "\r\n")->uri());
-        $this->assertSame($ticket->uri(), PairingTicket::parse('erdigo-pair:1?code=' . self::CODE . '&fp=' . strtoupper(self::fingerprint()))->uri());
+        $this->assertSame($ticket->uri(), PairingTicket::parse(" \n erdigo-pair:1?fp=" . self::sampleFingerprint() . '&code=' . self::CODE . "\r\n")->uri());
+        $this->assertSame($ticket->uri(), PairingTicket::parse('erdigo-pair:1?code=' . self::CODE . '&fp=' . strtoupper(self::sampleFingerprint()))->uri());
     }
 
     public function testABareCodeStaysTheTypedPath(): void
@@ -125,8 +125,8 @@ final class ModelTest extends TestCase
     public static function malformedQrText(): array
     {
         $code = self::CODE;
-        $fingerprint = self::fingerprint();
-        $other = self::fingerprint('cd');
+        $fingerprint = self::sampleFingerprint();
+        $other = self::sampleFingerprint('cd');
         return [
             'nothing after the prefix' => ['erdigo-pair:1?'],
             'no fingerprint' => ["erdigo-pair:1?code={$code}"],
@@ -173,7 +173,7 @@ final class ModelTest extends TestCase
 
     public function testPairingTextOverTheLimitIsRefused(): void
     {
-        $qr = 'erdigo-pair:1?code=' . self::CODE . '&fp=' . self::fingerprint();
+        $qr = 'erdigo-pair:1?code=' . self::CODE . '&fp=' . self::sampleFingerprint();
         $this->assertSame(110, strlen($qr));
         foreach ([$qr, self::CODE] as $text) {
             $atTheLimit = $text . str_repeat(' ', 1024 - strlen($text));
@@ -191,7 +191,7 @@ final class ModelTest extends TestCase
         foreach (['', 'AB' . str_repeat('ab', 31), str_repeat('ab', 31), str_repeat('zz', 32)] as $text) {
             $this->assertNull((new PairingTicket($code, $text))->uri());
         }
-        $this->assertNotNull((new PairingTicket($code, self::fingerprint()))->uri());
+        $this->assertNotNull((new PairingTicket($code, self::sampleFingerprint()))->uri());
     }
 
     public function testCoordinatesAreValidated(): void

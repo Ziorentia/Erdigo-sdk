@@ -19,23 +19,23 @@ use PHPUnit\Framework\TestCase;
 final class PairingTest extends TestCase
 {
     /** @param array<string, mixed> $pairing */
-    private static function receiver(array $pairing = []): ScriptedReceiver
+    private static function pairingReceiver(array $pairing = []): ScriptedReceiver
     {
         return new ScriptedReceiver(['pairing' => $pairing + ['decision' => 'approve']]);
     }
 
-    private static function target(ScriptedReceiver $receiver): ReceiverTarget
+    private static function addressOf(ScriptedReceiver $receiver): ReceiverTarget
     {
         return ReceiverTarget::address('127.0.0.1', $receiver->port);
     }
 
     public function testTheQrTextPairsWithoutAskingAnyone(): void
     {
-        $receiver = self::receiver(['kinds' => ['pin'], 'counter' => 1234]);
+        $receiver = self::pairingReceiver(['kinds' => ['pin'], 'counter' => 1234]);
         $identity = (new InMemoryDeviceStore())->loadOrCreateIdentity();
         $asked = false;
         $pairing = Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             PairingTicket::parse($receiver->qrText()),
             $identity,
             "  Greenhouse\u{202E} sensor  ",
@@ -63,17 +63,17 @@ final class PairingTest extends TestCase
 
     public function testADefaultLabelComesFromTheFingerprint(): void
     {
-        $receiver = self::receiver();
-        $pairing = Pairing::pair(self::target($receiver), PairingTicket::parse($receiver->qrText()), (new InMemoryDeviceStore())->loadOrCreateIdentity(), 'Sensor', [ItemKind::Pin]);
+        $receiver = self::pairingReceiver();
+        $pairing = Pairing::pair(self::addressOf($receiver), PairingTicket::parse($receiver->qrText()), (new InMemoryDeviceStore())->loadOrCreateIdentity(), 'Sensor', [ItemKind::Pin]);
         $this->assertSame('receiver-' . substr($receiver->fingerprint, 0, 8), $pairing->label);
     }
 
     public function testAWrongFingerprintStopsBeforeTheReceiverHearsAboutTheDevice(): void
     {
-        $receiver = self::receiver();
+        $receiver = self::pairingReceiver();
         $ticket = new PairingTicket(PairingTicket::parse($receiver->qrText())->code, str_repeat('0', 64));
         EndToEnd::expect($this, ErrorKind::FingerprintMismatch, static fn () => Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             $ticket,
             (new InMemoryDeviceStore())->loadOrCreateIdentity(),
             'Sensor',
@@ -85,10 +85,10 @@ final class PairingTest extends TestCase
 
     public function testATypedCodeNeedsSomeoneToCompareTheKey(): void
     {
-        $receiver = self::receiver();
+        $receiver = self::pairingReceiver();
         $ticket = new PairingTicket(PairingTicket::parse($receiver->qrText())->code);
         EndToEnd::expect($this, ErrorKind::InvalidArgument, static fn () => Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             $ticket,
             (new InMemoryDeviceStore())->loadOrCreateIdentity(),
             'Sensor',
@@ -100,7 +100,7 @@ final class PairingTest extends TestCase
 
     public function testATypedCodeThatIsNotConfirmedTellsTheReceiverNothing(): void
     {
-        $receiver = self::receiver();
+        $receiver = self::pairingReceiver();
         $ticket = new PairingTicket(PairingTicket::parse($receiver->qrText())->code);
         $shown = null;
         $confirm = static function (string $key) use (&$shown): bool {
@@ -108,7 +108,7 @@ final class PairingTest extends TestCase
             return false;
         };
         EndToEnd::expect($this, ErrorKind::KeyNotConfirmed, static fn () => Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             $ticket,
             (new InMemoryDeviceStore())->loadOrCreateIdentity(),
             'Sensor',
@@ -122,10 +122,10 @@ final class PairingTest extends TestCase
 
     public function testATypedCodeThatIsConfirmedPairs(): void
     {
-        $receiver = self::receiver();
+        $receiver = self::pairingReceiver();
         $ticket = new PairingTicket(PairingTicket::parse($receiver->qrText())->code);
         $pairing = Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             $ticket,
             (new InMemoryDeviceStore())->loadOrCreateIdentity(),
             'Sensor',
@@ -141,9 +141,9 @@ final class PairingTest extends TestCase
     public function testAnswersOtherThanApproval(): void
     {
         foreach (['deny' => ErrorKind::PairingDenied, 'code_reused' => ErrorKind::CodeReused] as $decision => $kind) {
-            $receiver = self::receiver(['decision' => $decision]);
+            $receiver = self::pairingReceiver(['decision' => $decision]);
             EndToEnd::expect($this, $kind, static fn () => Pairing::pair(
-                self::target($receiver),
+                self::addressOf($receiver),
                 PairingTicket::parse($receiver->qrText()),
                 (new InMemoryDeviceStore())->loadOrCreateIdentity(),
                 'Sensor',
@@ -154,9 +154,9 @@ final class PairingTest extends TestCase
 
     public function testNobodyAnsweringIsATimeout(): void
     {
-        $receiver = self::receiver(['decision' => 'silent']);
+        $receiver = self::pairingReceiver(['decision' => 'silent']);
         EndToEnd::expect($this, ErrorKind::PairingTimedOut, static fn () => Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             PairingTicket::parse($receiver->qrText()),
             (new InMemoryDeviceStore())->loadOrCreateIdentity(),
             'Sensor',
@@ -167,10 +167,10 @@ final class PairingTest extends TestCase
 
     public function testAWrongCodeGetsNoAnswer(): void
     {
-        $receiver = self::receiver();
+        $receiver = self::pairingReceiver();
         $ticket = new PairingTicket(PairingCode::generate(), $receiver->fingerprint);
         EndToEnd::expect($this, ErrorKind::NoAnswer, static fn () => Pairing::pair(
-            self::target($receiver),
+            self::addressOf($receiver),
             $ticket,
             (new InMemoryDeviceStore())->loadOrCreateIdentity(),
             'Sensor',

@@ -25,7 +25,7 @@ final class NoiseVectorTest extends TestCase
         return $cases;
     }
 
-    private static function pattern(string $protocolName): Pattern
+    private static function patternFor(string $protocolName): Pattern
     {
         return match ($protocolName) {
             'Noise_IK_25519_ChaChaPoly_SHA256' => Pattern::ik(),
@@ -36,7 +36,7 @@ final class NoiseVectorTest extends TestCase
         };
     }
 
-    private static function bytes(?string $hex): ?string
+    private static function hexBytes(?string $hex): ?string
     {
         return $hex === null ? null : (string) hex2bin($hex);
     }
@@ -45,29 +45,29 @@ final class NoiseVectorTest extends TestCase
     #[DataProvider('vectors')]
     public function testVectorIsReproducedByteForByte(array $vector): void
     {
-        $pattern = self::pattern($vector['protocol_name']);
+        $pattern = self::patternFor($vector['protocol_name']);
         $this->assertSame($vector['protocol_name'], $pattern->protocolName());
         $initiator = new HandshakeState(
             $pattern,
             true,
-            self::bytes($vector['init_prologue']),
-            self::bytes($vector['init_static'] ?? null),
-            self::bytes($vector['init_remote_static'] ?? null),
-            array_map([self::class, 'bytes'], $vector['init_psks'] ?? []),
-            self::bytes($vector['init_ephemeral']),
+            self::hexBytes($vector['init_prologue']),
+            self::hexBytes($vector['init_static'] ?? null),
+            self::hexBytes($vector['init_remote_static'] ?? null),
+            array_map([self::class, 'hexBytes'], $vector['init_psks'] ?? []),
+            self::hexBytes($vector['init_ephemeral']),
         );
         $responder = new HandshakeState(
             $pattern,
             false,
-            self::bytes($vector['resp_prologue']),
-            self::bytes($vector['resp_static'] ?? null),
+            self::hexBytes($vector['resp_prologue']),
+            self::hexBytes($vector['resp_static'] ?? null),
             null,
-            array_map([self::class, 'bytes'], $vector['resp_psks'] ?? []),
-            self::bytes($vector['resp_ephemeral']),
+            array_map([self::class, 'hexBytes'], $vector['resp_psks'] ?? []),
+            self::hexBytes($vector['resp_ephemeral']),
         );
         $transports = null;
         foreach ($vector['messages'] as $index => $message) {
-            $payload = self::bytes($message['payload']);
+            $payload = self::hexBytes($message['payload']);
             $fromInitiator = $index % 2 === 0;
             if ($transports === null) {
                 [$sender, $reader] = $fromInitiator ? [$initiator, $responder] : [$responder, $initiator];

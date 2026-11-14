@@ -30,7 +30,7 @@ final class IntegrationVectorTest extends TestCase
     private const DIRECTORY = __DIR__ . '/../../../spec/vectors/integration-v1/';
 
     /** @return array<string, mixed> */
-    private static function load(string $name): array
+    private static function loadVector(string $name): array
     {
         return json_decode((string) file_get_contents(self::DIRECTORY . $name), true, 64, JSON_THROW_ON_ERROR);
     }
@@ -44,7 +44,7 @@ final class IntegrationVectorTest extends TestCase
     #[DataProvider('handshakes')]
     public function testHandshakeIsReproducedFromBothSides(string $name): void
     {
-        $vector = self::load($name);
+        $vector = self::loadVector($name);
         $prologue = (string) hex2bin($vector['preamble_and_prologue']);
         $isPairing = $vector['protocol_name'] === 'Noise_XXpsk0_25519_ChaChaPoly_SHA256';
         $pattern = $isPairing ? Pattern::xxPsk0() : Pattern::ik();
@@ -107,7 +107,7 @@ final class IntegrationVectorTest extends TestCase
 
     public function testPairingCodeKeyAndQrText(): void
     {
-        $vector = self::load('handshake-pair.json');
+        $vector = self::loadVector('handshake-pair.json');
         $code = new PairingCode($vector['pairing_code_as_typed']);
         $this->assertSame($vector['pairing_code_canonical'], $code->canonical);
         $this->assertSame($vector['psk'], bin2hex($code->presharedKey()));
@@ -120,14 +120,14 @@ final class IntegrationVectorTest extends TestCase
 
     public function testDeviceMessagesAreWrittenExactlyAsPublished(): void
     {
-        $pair = self::load('handshake-pair.json');
+        $pair = self::loadVector('handshake-pair.json');
         $request = new PairRequest([1], 'erdigo-test/1.0', 'Test device', [ItemKind::Pin, ItemKind::Track]);
-        $this->assertSame(self::text($pair, 'handshake_3'), Wire::encodePairRequest($request));
+        $this->assertSame(self::payloadText($pair, 'handshake_3'), Wire::encodePairRequest($request));
 
-        $connect = self::load('handshake-connect.json');
-        $this->assertSame(self::text($connect, 'hello'), Wire::encodeHello(new Hello([1], 'erdigo-test/1.0')));
+        $connect = self::loadVector('handshake-connect.json');
+        $this->assertSame(self::payloadText($connect, 'hello'), Wire::encodeHello(new Hello([1], 'erdigo-test/1.0')));
         $pin = new RequestEnvelope(42, new PutPin('gate', new Coordinate(37.5796, 126.977), 'Palace gate'));
-        $this->assertSame(self::text($connect, 'request'), Wire::encodeRequest($pin));
+        $this->assertSame(self::payloadText($connect, 'request'), Wire::encodeRequest($pin));
         $this->assertSame($connect['frames'][1]['payload'], bin2hex(pack('J', $connect['connect_counter'])));
         $this->assertSame(IntegrationV1::CONNECT_FIRST_MESSAGE_LENGTH, strlen((string) hex2bin($connect['frames'][1]['noise_message'])));
         $this->assertSame($connect['device_fingerprint'], IntegrationV1::fingerprint((string) hex2bin($connect['device_static_public'])));
@@ -137,7 +137,7 @@ final class IntegrationVectorTest extends TestCase
     public function testReceiverMessagesDecodeAndEncodeBackToTheSameBytes(): void
     {
         foreach (['handshake-pair.json', 'handshake-connect.json'] as $name) {
-            foreach (self::load($name)['frames'] as $frame) {
+            foreach (self::loadVector($name)['frames'] as $frame) {
                 if ($frame['direction'] === 'receiver_to_device' && ($frame['payload_text'] ?? '') !== '') {
                     $message = Wire::decodeReceiverMessage($frame['payload_text']);
                     $this->assertSame($frame['payload_text'], Wire::encodeReceiverMessage($message), $frame['stage']);
@@ -147,7 +147,7 @@ final class IntegrationVectorTest extends TestCase
     }
 
     /** @param array<string, mixed> $vector */
-    private static function text(array $vector, string $stage): string
+    private static function payloadText(array $vector, string $stage): string
     {
         foreach ($vector['frames'] as $frame) {
             if ($frame['stage'] === $stage) {
@@ -161,7 +161,7 @@ final class IntegrationVectorTest extends TestCase
     public static function validMessages(): array
     {
         $cases = [];
-        foreach (self::load('messages.json')['valid'] as $entry) {
+        foreach (self::loadVector('messages.json')['valid'] as $entry) {
             $cases[$entry['name']] = [$entry['json']];
         }
         return $cases;
@@ -184,7 +184,7 @@ final class IntegrationVectorTest extends TestCase
     /** @return array<string, array{0: string, 1: string}> */
     public static function invalidMessages(): array
     {
-        $file = self::load('messages.json');
+        $file = self::loadVector('messages.json');
         $cases = [];
         foreach ($file['invalid'] as $entry) {
             $cases[$entry['name']] = [$entry['json'], $entry['code']];
