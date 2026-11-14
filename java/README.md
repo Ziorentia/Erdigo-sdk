@@ -275,7 +275,7 @@ directly, so it needs neither port 5353 nor a Bonjour service. It is used only w
 - **The terminal.** Java has no API for the terminal's settings, so on macOS and Linux the tool reads the code from the
   terminal itself (`/dev/tty`) with echo turned off by `stty`, and before asking about the key it switches line mode
   off for a moment, again with `stty`, to discard anything typed early, a half-typed line included. On Windows it reads
-  the code with `Console.readPassword`, so standard input must be the console, and it discards keys typed early by
+  the code with `Console.readPassword`, so standard input and output must be the console, and it discards keys typed early by
   asking PowerShell to empty the console's input buffer. **The Windows side of this has not been tried with a person at
   a Windows console**; CI runs the library's tests on Windows, but not the tool in a console.
 
