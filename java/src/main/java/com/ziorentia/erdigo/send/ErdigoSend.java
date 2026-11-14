@@ -214,7 +214,7 @@ public final class ErdigoSend {
             directory = FileDeviceStore.defaultDirectory(profile);
         }
         if (options.flag("keychain")) {
-            throw new UsageException("--keychain belongs to the macOS SDK. This edition keeps the device key in a file only you can read: mode 0600 on macOS and Linux, and an access list for you alone on Windows.");
+            throw new UsageException("--keychain belongs to the Swift SDK. This edition keeps the device key in a file only you can read: mode 0600 on macOS and Linux, and an access list for you alone on Windows.");
         }
         return new Context(new FileDeviceStore(directory), options.flag("redact"));
     }
@@ -478,7 +478,7 @@ public final class ErdigoSend {
                 identity(arguments);
                 return;
             case "serve":
-                throw new UsageException("this edition has no mock receiver. Run the one from the .NET SDK (dotnet run --project windows/src/erdigo-send -- serve --mock) or the Swift SDK (swift run erdigo-send serve --mock); this tool works with both.");
+                throw new UsageException("this edition has no mock receiver. Run the one from the .NET SDK (dotnet run --project dotnet/src/erdigo-send -- serve --mock) or the Swift SDK (swift run erdigo-send serve --mock); this tool works with both.");
             case "ping":
                 write(arguments, options -> ErdigoClient::ping);
                 return;

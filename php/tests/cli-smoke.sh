@@ -2,10 +2,10 @@
 # Runs the PHP erdigo-send against the mock receiver of another edition, over real TCP, and checks what comes out.
 # This is the proof that the PHP edition works with the others.
 #
-#     MOCK=windows/src/erdigo-send/bin/Release/net8.0/erdigo-send php/tests/cli-smoke.sh
+#     MOCK=dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send php/tests/cli-smoke.sh
 #     MOCK=.build/debug/erdigo-send php/tests/cli-smoke.sh
 #
-# MOCK is a built erdigo-send of the .NET edition (dotnet build windows/src/erdigo-send) or of the Swift edition
+# MOCK is a built erdigo-send of the .NET edition (dotnet build dotnet/src/erdigo-send) or of the Swift edition
 # (swift build). It needs no terminal of its own, and makes pseudo terminals for whatever has to run in one, with the
 # helper the Swift SDK's checks use, so it runs on macOS and Linux.
 #
@@ -14,7 +14,7 @@ set -u
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 PHP_DIR="$(cd "$TESTS_DIR/.." && pwd)"
 REPO_DIR="$(cd "$PHP_DIR/.." && pwd)"
-HELPER="$REPO_DIR/macos/Tests/typed-ahead-check.py"
+HELPER="$REPO_DIR/swift/Tests/typed-ahead-check.py"
 PHP_BIN="$(command -v "${PHP:-php}")"
 SEND="$PHP_DIR/bin/erdigo-send"
 

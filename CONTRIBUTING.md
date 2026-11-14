@@ -13,7 +13,7 @@ Thank you for helping. A few rules keep this repository safe to use.
 ```bash
 swift build
 swift test
-macos/Tests/cli-smoke.sh
+swift/Tests/cli-smoke.sh
 ```
 
 If you touch the wire format, also generate the vectors again and run the independent check. See
@@ -22,7 +22,7 @@ If you touch the wire format, also generate the vectors again and run the indepe
 ## Rules for the code
 
 - **Do not write new cryptography.** Use the Noise patterns in the specification.
-- **Do not add dependencies** without a strong reason. The macOS SDK has none today, and that is on purpose.
+- **Do not add dependencies** without a strong reason. The Swift SDK has none today, and that is on purpose.
 - **Test with made-up data.** Use keys from `spec/vectors` or generated in the test, addresses from
   `192.0.2.0/24`, and the coordinates of public places. Never commit real keys, fingerprints, pairing codes,
   coordinates, device names or addresses.

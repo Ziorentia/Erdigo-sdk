@@ -40,7 +40,7 @@ A receiver advertises the Bonjour service `_erdigo-int._tcp` with the TXT record
 - A receiver MUST refuse connections from outside the local network.
 
 A device SHOULD try its last known address first. Otherwise it tries the advertised receivers in turn, and MAY
-stop after a limit (the macOS SDK tries eight), so a crowded network can hide a receiver. A receiver it is not
+stop after a limit (the Swift SDK tries eight), so a crowded network can hide a receiver. A receiver it is not
 paired with stays silent. An advertisement is not authenticated and proves nothing about who is behind it. Only the
 handshake does.
 

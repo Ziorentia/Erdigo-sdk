@@ -29,6 +29,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: SDK commit and macOS version
+      label: SDK, commit and system
+      description: Which folder (swift, dotnet, python, nodejs, java or php), the commit, and the system with its runtime version, for example "python, 1a2b3c4, Windows 11, Python 3.12".
     validations:
       required: true

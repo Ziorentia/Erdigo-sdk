@@ -1,4 +1,4 @@
-# Erdigo SDK for macOS
+# Erdigo SDK for Swift (macOS)
 
 A Swift package for writing pins, markers, notes, photos and tracks to an Erdigo receiver on the local network. It
 needs macOS 12 or later and has no dependencies beyond the system.
@@ -190,11 +190,11 @@ swift test
 ```
 
 ```bash
-macos/Tests/cli-smoke.sh
+swift/Tests/cli-smoke.sh
 ```
 
 The tests use the official Noise vectors and run the SDK against the mock receiver over real TCP, including the cases
 that must fail: strangers, replays, reused codes, removed devices, limits and disguised images.
 
 The command-line checks skip the mocks that listen on the local network, because the macOS firewall may ask about
-them. Run them with `ERDIGO_LAN_CHECKS=1 macos/Tests/cli-smoke.sh`; CI always does.
+them. Run them with `ERDIGO_LAN_CHECKS=1 swift/Tests/cli-smoke.sh`; CI always does.

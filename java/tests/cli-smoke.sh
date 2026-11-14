@@ -1,22 +1,22 @@
 #!/bin/bash
 # Runs the Java erdigo-send against the .NET SDK's mock receiver and checks what comes out, on macOS or Linux.
 #
-#     (cd java && ./mvnw -B package) && dotnet build windows/src/erdigo-send -c Release && java/tests/cli-smoke.sh
+#     (cd java && ./mvnw -B package) && dotnet build dotnet/src/erdigo-send -c Release && java/tests/cli-smoke.sh
 #
 # MOCK names the mock's erdigo-send executable (by default the .NET Release build). It needs no terminal of its own,
 # and it makes its own pseudo terminals for whatever has to run in one, with the helper the Swift and .NET SDKs'
-# checks use. It is a port of the device side of windows/tests/cli-smoke.sh: this edition has no mock of its own.
+# checks use. It is a port of the device side of dotnet/tests/cli-smoke.sh: this edition has no mock of its own.
 #
 set -u
 
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 JAVA_DIR="$(cd "$TESTS_DIR/.." && pwd)"
 ROOT="$(cd "$JAVA_DIR/.." && pwd)"
-HELPER="$ROOT/macos/Tests/typed-ahead-check.py"
+HELPER="$ROOT/swift/Tests/typed-ahead-check.py"
 JAR="${JAR:-$JAVA_DIR/target/erdigo-send.jar}"
-MOCK="${MOCK:-$ROOT/windows/src/erdigo-send/bin/Release/net8.0/erdigo-send}"
+MOCK="${MOCK:-$ROOT/dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send}"
 [ -f "$JAR" ] || { echo "Build first: (cd java && ./mvnw -B package)"; exit 1; }
-[ -x "$MOCK" ] || { echo "Build the .NET mock first: dotnet build windows/src/erdigo-send -c Release, or set MOCK"; exit 1; }
+[ -x "$MOCK" ] || { echo "Build the .NET mock first: dotnet build dotnet/src/erdigo-send -c Release, or set MOCK"; exit 1; }
 
 # Runs a command that is stopped if it takes too long, so that it cannot hang this script. An alarm
 # survives exec. Only the mocks, which this script stops itself, run without this.
@@ -136,7 +136,7 @@ OUTPUT="$(limited "$BIN" SECRET-CODE 2>&1)"
 check "a code as a command is not repeated" bash -c '[[ "$0" != *SECRET-CODE* ]]' "$OUTPUT"
 expect_refused "--state-dir and --profile together are refused" "cannot be used together" \
     "$BIN" identity "${STATE[@]}" --profile other
-expect_refused "--keychain is refused" "belongs to the macOS SDK" "$BIN" identity "${STATE[@]}" --keychain
+expect_refused "--keychain is refused" "belongs to the Swift SDK" "$BIN" identity "${STATE[@]}" --keychain
 expect_refused "this edition has no mock" "no mock receiver" "$BIN" serve --mock
 chmod 644 "$WORK/code"
 expect_refused "a readable code file is refused" "mode 0600" \

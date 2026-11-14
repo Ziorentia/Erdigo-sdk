@@ -24,7 +24,7 @@ from the store for that computer:
 | Erdigo for Mac | [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) | 2.17.23 or later |
 | Erdigo for Windows | [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) | 2.17.23 or later |
 
-Either SDK works with either app: a program using the Windows SDK can write to a Mac, and the other way round.
+Every SDK works with either app: a program using the .NET SDK can write to a Mac, and one using the Swift SDK to a Windows PC.
 
 ### System requirements for the app
 
@@ -70,8 +70,8 @@ streams use the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and
 
 | Platform | Where | Status |
 |---|---|---|
-| macOS 12 or later (Swift) | [`macos/`](macos/README.md) | Preview |
-| Windows 10 or later (.NET 8) | [`windows/`](windows/README.md) | Preview |
+| Swift, on macOS 12 or later | [`swift/`](swift/README.md) | Preview |
+| C# (.NET 8), on Windows 10 or later | [`dotnet/`](dotnet/README.md) | Preview |
 | Linux, macOS or Windows (Python 3.10 or later), for scripts and boards such as a Raspberry Pi | [`python/`](python/README.md) | Preview |
 | Node.js 20 or later on macOS, Windows or Linux | [`nodejs/`](nodejs/README.md) | Preview |
 | Java 17 or later (Windows, macOS, Linux) | [`java/`](java/README.md) | Preview |
@@ -106,14 +106,31 @@ swift run erdigo-send pin --host 127.0.0.1 --port PORT --id city-hall --lat 37.5
 The mock prints each request it accepts.
 
 On Windows, install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) and do the same from the
-`windows` folder with `dotnet run --project src/erdigo-send --` in place of `swift run erdigo-send`, for example
+`dotnet` folder with `dotnet run --project src/erdigo-send --` in place of `swift run erdigo-send`, for example
 `dotnet run --project src/erdigo-send -- serve --mock`. The two SDKs and their mock receivers work with each other. See
-the [Windows SDK guide](windows/README.md).
+the [.NET SDK guide](dotnet/README.md).
+
+## Things to know
+
+- **Line endings in notes.** A note may hold line feeds and tabs, but no carriage return (CR, spec section 6.3).
+  Windows editors such as Notepad save each line ending as CR LF, and some put a byte order mark (BOM) at the start.
+  - `erdigo-send note --text-file` takes both out for you in every SDK, so a note saved in Notepad can be sent as it
+    is. A CR on its own is still refused.
+  - **In your own code, the SDK does not change the text.** A note with a CR or a BOM is refused before anything is
+    sent. Turn `\r\n` into `\n` and drop a leading BOM before you send text that came from a Windows file or
+    program.
+- **Local network only.** The device and the Erdigo app must be on the same local network. A server on the internet,
+  such as a web shop, cannot reach the app.
+- **The mock receiver is for testing.** It stores nothing and draws no map. Use the real app to see items on a map.
 
 ## Documentation
 
-- [macOS SDK guide](macos/README.md)
-- [Windows SDK guide](windows/README.md)
+- [Swift SDK guide](swift/README.md)
+- [.NET SDK guide](dotnet/README.md)
+- [Python SDK guide](python/README.md)
+- [Node.js SDK guide](nodejs/README.md)
+- [Java SDK guide](java/README.md)
+- [PHP SDK guide](php/README.md)
 - [Protocol specification](spec/integration-v1.md), for building an SDK in another language or a receiver
 - [Threat model](spec/threat-model.md): what this protects against, and what it does not
 - [Test vectors](spec/vectors/README.md)
@@ -128,10 +145,11 @@ test vectors. **It has not had an independent security audit.** The receiver is 
 
 ## How this SDK was made
 
-Both SDKs were written and verified with AI coding agents, Anthropic's [Claude Code](https://claude.com/claude-code) and
-OpenAI's [Codex](https://openai.com/codex/), working for Ziorentia LLC. Besides the automated tests and the official
-Noise test vectors, the agents checked each SDK against the real Erdigo app on its platform: pairing, sending items
-and reconnecting.
+The SDKs were written and verified with AI coding agents, Anthropic's [Claude Code](https://claude.com/claude-code)
+and OpenAI's [Codex](https://openai.com/codex/), working for Ziorentia LLC. Every SDK passes its automated tests and the
+official Noise test vectors, and is checked against the Swift and .NET mock receivers. The Swift and .NET SDKs were
+also checked against the real Erdigo app on their platforms: pairing, sending items and reconnecting. The Python,
+Node.js, Java and PHP SDKs have so far been checked against the mock receivers only.
 
 ## License
 

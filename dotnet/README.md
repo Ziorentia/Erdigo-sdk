@@ -1,10 +1,10 @@
-# Erdigo SDK for Windows (.NET)
+# Erdigo SDK for .NET (C#)
 
 A .NET 8 library for writing pins, markers, notes, photos and tracks to an Erdigo receiver on the local network. It is
 for Windows 10 or later. It also builds and runs on macOS and Linux, which this repository uses for development and
 CI, but the device key is protected only on Windows (see [Where things are kept](#where-things-are-kept)).
 
-It is a port of the [macOS SDK](../macos/README.md) and speaks the same [protocol](../spec/integration-v1.md). The two
+It is a port of the [Swift SDK](../swift/README.md) and speaks the same [protocol](../spec/integration-v1.md). The two
 SDKs and their mock receivers work with each other.
 
 > **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
@@ -19,7 +19,7 @@ also write to [Erdigo for Mac](https://apps.apple.com/us/app/erdigo/id6446225102
 ## Try it in two minutes
 
 You need the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or a later one; the libraries target
-.NET 8 either way. Run the tests from a full clone, since they read the shared vectors in `spec/`. In the `windows`
+.NET 8 either way. Run the tests from a full clone, since they read the shared vectors in `spec/`. In the `dotnet`
 folder, start a mock receiver in one terminal:
 
 ```powershell
@@ -59,7 +59,7 @@ standard output does not hold it.
 No package is published yet. Reference the project from yours:
 
 ```xml
-<ProjectReference Include="path\to\Erdigo-sdk\windows\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
+<ProjectReference Include="path\to\Erdigo-sdk\dotnet\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
 ```
 
 Pair once:
@@ -264,7 +264,7 @@ answers with a small, bounds-checked DNS reader in this repository. Receivers an
 neither port 5353, which Windows itself uses, nor Bonjour for Windows, and it works the same on every system. It is
 used only when no address is given.
 
-## Differences from the macOS SDK
+## Differences from the Swift SDK
 
 - The device key is protected with DPAPI on Windows. There is no keychain option, so `erdigo-send --keychain` is
   refused. On other systems the key is in a 0600 file.

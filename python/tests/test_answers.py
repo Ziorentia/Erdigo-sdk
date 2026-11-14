@@ -1,6 +1,6 @@
 """How the client takes error answers, including ones a real receiver would not give by itself.
 
-The same cases as windows/tests/Erdigo.Tests/AnswerHandlingTests.cs. Above all: an answer that ends the connection is
+The same cases as dotnet/tests/Erdigo.Tests/AnswerHandlingTests.cs. Above all: an answer that ends the connection is
 decided on before any rate-limit retry, so a fatal ``rate_limited`` is never resent.
 """
 

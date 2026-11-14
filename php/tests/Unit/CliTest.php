@@ -126,7 +126,7 @@ final class CliTest extends TestCase
         $this->toolRefuses(['ping', ...$this->stateFolder(), '--host', 'x'], '--host and --port go together');
         $this->toolRefuses(['ping', ...$this->stateFolder(), '--port', '70000', '--host', 'x'], '--port must be');
         $this->toolRefuses(['ping', ...$this->stateFolder(), '--retry-for', 'soon'], '--retry-for must be');
-        $this->toolRefuses(['ping', ...$this->stateFolder(), '--keychain'], '--keychain belongs to the macOS SDK');
+        $this->toolRefuses(['ping', ...$this->stateFolder(), '--keychain'], '--keychain belongs to the Swift SDK');
         $this->toolRefuses(['ping', ...$this->stateFolder()], 'no receiver is paired');
         $this->toolRefuses(['delete-all', ...$this->stateFolder()], '--yes');
         $this->toolRefuses(['pin', ...$this->stateFolder(), '--id', 'a', '--lat', 'nan', '--lon', '1'], 'must be a number');

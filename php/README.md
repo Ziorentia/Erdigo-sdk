@@ -5,7 +5,7 @@ local network. It is for PHP that runs on the same local network as the Erdigo a
 with Web Station, an in-house camera or device server, a web server in the office, or a script run by hand or by cron.
 It needs PHP 8.1 or later, 64-bit, and nothing beyond what PHP itself bundles.
 
-It is a port of the [Windows SDK](../windows/README.md) and speaks the same [protocol](../spec/integration-v1.md). It
+It is a port of the [.NET SDK](../dotnet/README.md) and speaks the same [protocol](../spec/integration-v1.md). It
 works with the other SDKs' mock receivers and with the Erdigo app on a Mac or a Windows PC.
 
 > **Local network only.** The device running PHP and the computer running the Erdigo app must be on the same local
@@ -352,7 +352,7 @@ sent.
   keychain. `--keychain` is refused.
 - **On Windows**, PHP can neither hide what is typed nor discard what was typed ahead, so `pair` reads a code only from
   `--code-file`, and a bare code is refused: use the QR text or `--fingerprint`. For a Windows PC, the
-  [.NET SDK](../windows/README.md) is the better choice.
+  [.NET SDK](../dotnet/README.md) is the better choice.
 - **Discovery** uses IPv4 only, and needs the `sockets` extension.
 
 ## Layout
@@ -376,11 +376,11 @@ phpunit
 ```
 
 ```bash
-MOCK=../windows/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh
+MOCK=../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh
 ```
 
 Run them in the `php` folder of a full clone, since they read the shared vectors in `spec/`. The second needs a built
-mock receiver of another edition (`dotnet build windows/src/erdigo-send --configuration Release`, or `swift build` for
+mock receiver of another edition (`dotnet build dotnet/src/erdigo-send --configuration Release`, or `swift build` for
 `.build/debug/erdigo-send`) and Python 3, for the pseudo terminals.
 
 What they cover:

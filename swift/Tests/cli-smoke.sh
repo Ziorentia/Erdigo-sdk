@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs erdigo-send against its own mock receiver and checks what comes out.
 #
-#     swift build && macos/Tests/cli-smoke.sh
+#     swift build && swift/Tests/cli-smoke.sh
 #
 # It needs no terminal of its own, and it makes its own pseudo terminals for whatever has to run in one.
 #

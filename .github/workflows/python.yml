@@ -52,16 +52,16 @@ jobs:
         run: python -m pytest
       # The .NET mock receiver, restored from its lock file as the .NET workflow does.
       - name: Build the .NET mock receiver
-        working-directory: windows
+        working-directory: dotnet
         run: |
           dotnet restore src/erdigo-send --locked-mode -p:NuGetAuditMode=all
           dotnet build src/erdigo-send --no-restore --configuration Release
       # Pairs with the .NET mock and writes every item kind to it. On Linux it also pairs with a typed code through a
       # pseudo terminal, which Windows does not have.
       - name: Interop with the .NET mock receiver
-        run: python scripts/interop.py --cwd ../windows -- dotnet run --no-build --configuration Release --project src/erdigo-send --
+        run: python scripts/interop.py --cwd ../dotnet -- dotnet run --no-build --configuration Release --project src/erdigo-send --
       # Finds the .NET mock through its multicast DNS advertisement, without an address. The mock then listens on the
       # runner's network, which nobody else shares.
       - name: Discovery of the .NET mock receiver
         if: runner.os == 'Linux'
-        run: python scripts/interop.py --discovery --cwd ../windows -- dotnet run --no-build --configuration Release --project src/erdigo-send --
+        run: python scripts/interop.py --discovery --cwd ../dotnet -- dotnet run --no-build --configuration Release --project src/erdigo-send --

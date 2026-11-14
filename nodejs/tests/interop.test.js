@@ -1,7 +1,7 @@
 // Pairs with, and writes every item kind to, the mock receiver of another edition, over real TCP. The mock is chosen
 // with ERDIGO_MOCK, a JSON array holding the command that runs that edition's erdigo-send, such as
 //
-//     ERDIGO_MOCK='["../windows/src/erdigo-send/bin/Release/net8.0/erdigo-send"]' node --test tests/interop.test.js
+//     ERDIGO_MOCK='["../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send"]' node --test tests/interop.test.js
 //     ERDIGO_MOCK='["../.build/debug/erdigo-send"]' node --test tests/interop.test.js
 //
 // Without it these tests are skipped.

@@ -5,8 +5,8 @@ local network. It runs on macOS, Windows and Linux, in Node.js and in server run
 web browser, because a browser cannot open a TCP connection to the local network, and this protocol has no internet
 path.
 
-It speaks the same [protocol](../spec/integration-v1.md) as the [macOS SDK](../macos/README.md) and the
-[.NET SDK](../windows/README.md), and works with their mock receivers. It has no runtime dependencies: the
+It speaks the same [protocol](../spec/integration-v1.md) as the [Swift SDK](../swift/README.md) and the
+[.NET SDK](../dotnet/README.md), and works with their mock receivers. It has no runtime dependencies: the
 cryptography comes from `node:crypto`, the connection from `node:net`, and discovery from `node:dgram`.
 
 > **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
@@ -25,7 +25,7 @@ from the .NET SDK (it needs the [.NET 8 SDK](https://dotnet.microsoft.com/downlo
 Swift one. In the repository's root folder, in one terminal:
 
 ```bash
-dotnet run --project windows/src/erdigo-send -- serve --mock
+dotnet run --project dotnet/src/erdigo-send -- serve --mock
 ```
 
 or
@@ -265,7 +265,7 @@ from an ordinary port and reads the answers with a small, bounds-checked DNS rea
 answer such a query directly, so it needs neither port 5353 nor Bonjour, and it works the same on every system. It is
 used only when no address is given.
 
-## Differences from the macOS and .NET SDKs
+## Differences from the Swift and .NET SDKs
 
 - There is no mock receiver. `erdigo-send serve` says so and names the .NET and Swift mocks.
 - The device key is kept in a file on every system, as described above. There is no keychain or DPAPI option, so
@@ -324,7 +324,7 @@ cd nodejs && node --test
 ```
 
 ```bash
-dotnet build windows/Erdigo.sln && nodejs/tests/cli-smoke.sh
+dotnet build dotnet/Erdigo.sln && nodejs/tests/cli-smoke.sh
 ```
 
 `node --test` runs the official Noise vectors and every integration-v1 vector, byte for byte, and runs the SDK over
@@ -336,7 +336,7 @@ Where this edition adds a defence, its test was run without the defence and seen
 `ERDIGO_MOCK` names that edition's `erdigo-send`:
 
 ```bash
-ERDIGO_MOCK='["../windows/src/erdigo-send/bin/Debug/net8.0/erdigo-send"]' node --test tests/interop.test.js
+ERDIGO_MOCK='["../dotnet/src/erdigo-send/bin/Debug/net8.0/erdigo-send"]' node --test tests/interop.test.js
 ERDIGO_MOCK='["../.build/debug/erdigo-send"]' node --test tests/interop.test.js
 ```
 

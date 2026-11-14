@@ -39,8 +39,8 @@ Writing
       Options: --to LABEL (needed with several receivers), --host HOST --port PORT, --retry-for SECONDS
 
 Testing without the Erdigo app
-  This edition has no mock receiver. Run the one in the .NET SDK (windows/) or the Swift SDK (macos/):
-      dotnet run --project windows/src/erdigo-send -- serve --mock
+  This edition has no mock receiver. Run the one in the .NET SDK (dotnet/) or the Swift SDK (swift/):
+      dotnet run --project dotnet/src/erdigo-send -- serve --mock
       swift run erdigo-send serve --mock
 
 For pairing and writing commands
@@ -191,7 +191,7 @@ function makeContext(options) {
     directory = FileDeviceStore.defaultDirectory(profile);
   }
   if (options.flag('keychain')) {
-    throw new UsageError('--keychain belongs to the macOS SDK. This edition keeps the device key in a file only you can read.');
+    throw new UsageError('--keychain belongs to the Swift SDK. This edition keeps the device key in a file only you can read.');
   }
   const redact = options.flag('redact');
   return { store: new FileDeviceStore(directory), redact, shown: (text) => (redact ? '<redacted>' : text) };
@@ -448,7 +448,7 @@ async function runCommand(command, args) {
     case 'identity':
       return runIdentity(args);
     case 'serve':
-      throw new UsageError('this edition has no mock receiver. Run the one in the .NET SDK (windows/) or the Swift SDK (macos/), as \'erdigo-send help\' shows.');
+      throw new UsageError('this edition has no mock receiver. Run the one in the .NET SDK (dotnet/) or the Swift SDK (swift/), as \'erdigo-send help\' shows.');
     case 'ping':
       return runWrite(args, () => (client) => client.ping());
     case 'pin':

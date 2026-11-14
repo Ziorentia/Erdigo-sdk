@@ -2,7 +2,7 @@
 
 Usage, from the python folder, with the mock's command after ``--``:
 
-    python scripts/interop.py --cwd ../windows -- dotnet run --no-build -c Release --project src/erdigo-send --
+    python scripts/interop.py --cwd ../dotnet -- dotnet run --no-build -c Release --project src/erdigo-send --
     python scripts/interop.py --cwd .. -- swift run erdigo-send
 
 The mock is started with ``serve --mock --code-file FILE``. The script pairs with the QR text from that file, then sends
@@ -32,7 +32,7 @@ import zlib
 from pathlib import Path
 from typing import List, Optional
 
-# A 32x32 JPEG made with Pillow from a solid colour, as in windows/tests/Erdigo.Tests/TestImages.cs.
+# A 32x32 JPEG made with Pillow from a solid colour, as in dotnet/tests/Erdigo.Tests/TestImages.cs.
 JPEG = base64.b64decode(
     "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0d"
     "Hx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4e"
