@@ -1,0 +1,207 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Erdigo\Tests\Unit;
+
+use Erdigo\Core\PairingTicket;
+use Erdigo\PrivateFile;
+use Erdigo\Tests\Support\ScriptedReceiver;
+use Erdigo\Tests\Support\Temporary;
+use PHPUnit\Framework\TestCase;
+
+/**
+ * Runs bin/erdigo-send as a program, with no terminal: standard input is empty and output goes to pipes. The checks
+ * that need a terminal are in tests/cli-smoke.sh.
+ */
+final class CliTest extends TestCase
+{
+    private string $work;
+
+    protected function setUp(): void
+    {
+        $this->work = Temporary::directory();
+    }
+
+    /**
+     * @param list<string> $arguments
+     * @return array{0: int, 1: string} The exit status and everything printed.
+     */
+    private function run(array $arguments): array
+    {
+        $process = proc_open(
+            array_merge([PHP_BINARY, __DIR__ . '/../../bin/erdigo-send'], $arguments),
+            [0 => ['file', PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+        );
+        $this->assertTrue(is_resource($process));
+        $output = (string) stream_get_contents($pipes[1]) . (string) stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        return [proc_close($process), $output];
+    }
+
+    /** @param list<string> $arguments */
+    private function refused(array $arguments, string $wanted): string
+    {
+        [$status, $output] = $this->run($arguments);
+        $this->assertNotSame(0, $status, $output);
+        $this->assertStringContainsString($wanted, $output);
+        return $output;
+    }
+
+    /** @param list<string> $arguments */
+    private function ok(array $arguments): string
+    {
+        [$status, $output] = $this->run($arguments);
+        $this->assertSame(0, $status, $output);
+        return $output;
+    }
+
+    /** @return list<string> */
+    private function state(): array
+    {
+        return ['--state-dir', $this->work . '/state'];
+    }
+
+    private function codeFile(string $text): string
+    {
+        $path = $this->work . '/code-' . bin2hex(random_bytes(4));
+        file_put_contents($path, $text);
+        if (!PrivateFile::isWindows()) {
+            chmod($path, 0600);
+        }
+        return $path;
+    }
+
+    public function testACodeIsNeverTakenAsAnArgumentNorRepeated(): void
+    {
+        $this->refused(['pair', ...$this->state(), '--name', 'x', '--kinds', 'pin', '--code', 'ABCDE'], 'not accepted as an argument');
+        $output = $this->refused(['pair', ...$this->state(), '--code=SECRET-CODE'], 'not accepted as an argument');
+        $this->assertStringNotContainsString('SECRET-CODE', $output);
+        foreach ([
+            ['pair', ...$this->state(), 'SECRET-CODE'],
+            ['pair', ...$this->state(), '--SECRET-CODE'],
+            ['pair', ...$this->state(), '--SECRET-CODE=1'],
+            ['pair', ...$this->state(), '--name', 'x', '--kinds', 'SECRET-CODE'],
+            ['SECRET-CODE'],
+        ] as $arguments) {
+            [$status, $output] = $this->run($arguments);
+            $this->assertNotSame(0, $status);
+            $this->assertStringNotContainsString('SECRET-CODE', $output);
+        }
+    }
+
+    public function testOptionsAreChecked(): void
+    {
+        $this->refused(['identity', ...$this->state(), '--profile', 'other'], 'cannot be used together');
+        $this->refused(['identity', '--profile', 'a/b'], '--profile may contain only');
+        $this->refused(['ping', ...$this->state(), '--bogus', '1'], 'unknown option');
+        $this->refused(['ping', ...$this->state(), '--title', 'x'], 'does not apply');
+        $this->refused(['ping', ...$this->state(), '--host', 'x'], '--host and --port go together');
+        $this->refused(['ping', ...$this->state(), '--port', '70000', '--host', 'x'], '--port must be');
+        $this->refused(['ping', ...$this->state(), '--retry-for', 'soon'], '--retry-for must be');
+        $this->refused(['ping', ...$this->state(), '--keychain'], '--keychain belongs to the macOS SDK');
+        $this->refused(['ping', ...$this->state()], 'no receiver is paired');
+        $this->refused(['delete-all', ...$this->state()], '--yes');
+        $this->refused(['pin', ...$this->state(), '--id', 'a', '--lat', 'nan', '--lon', '1'], 'must be a number');
+        $this->refused(['pin', ...$this->state(), '--id', 'a', '--lat', '91', '--lon', '1'], 'latitude');
+        $this->refused(['marker', ...$this->state(), '--id', 'a', '--lat', '1', '--lon', '1', '--color', 'pink'], '--color must be one of');
+        $this->refused(['note', ...$this->state(), '--id', 'a', '--lat', '1', '--lon', '1'], 'either --text or --text-file');
+        $this->refused(['track-add', ...$this->state(), '--id', 'a', '--lat', '1', '--lon', '1', '--ts', '1.5'], '--ts must be whole milliseconds');
+        $this->refused(['serve', '--mock'], 'no mock receiver of its own');
+        $this->refused(['pair', ...$this->state(), '--name', 'x', '--kinds', 'pin,bogus'], '--kinds takes');
+        $this->assertStringContainsString('erdigo-send: write pins', $this->ok(['help']));
+    }
+
+    public function testPairingAndWriting(): void
+    {
+        $receiver = new ScriptedReceiver(['pairing' => ['decision' => 'approve']]);
+        $address = ['--host', '127.0.0.1', '--port', (string) $receiver->port];
+        $code = $this->codeFile($receiver->qrText() . "\n");
+
+        $this->refused(['pair', ...$this->state(), ...$address, '--name', 'CLI', '--kinds', 'pin', '--code-file', $code,
+            '--fingerprint', str_repeat('0', 64)], 'does not match');
+        $this->refused(['pair', ...$this->state(), ...$address, '--name', 'CLI', '--kinds', 'pin', '--code-file', $code,
+            '--fingerprint', 'abc'], '--fingerprint must be 64 hexadecimal digits');
+        $this->assertSame([], $receiver->events('pair_connection'));
+
+        $output = $this->ok(['pair', ...$this->state(), ...$address, '--name', 'CLI test', '--kinds', 'pin,marker,note,photo,track',
+            '--label', 'home', '--code-file', $code]);
+        $this->assertStringContainsString("Paired as 'home'. Allowed: pin, marker, note, photo, track.", $output);
+        $this->assertStringContainsString('Receiver key: ' . \Erdigo\Core\IntegrationV1::shortFingerprint($receiver->fingerprint), $output);
+        $this->refused(['pair', ...$this->state(), ...$address, '--name', 'CLI', '--kinds', 'pin', '--label', 'home', '--code-file', $code],
+            'already paired under that label');
+
+        $this->ok(['ping', ...$this->state()]);
+        $this->ok(['pin', ...$this->state(), '--id', 'gate', '--lat', '37.5796', '--lon', '126.977', '--title', 'Palace gate']);
+        $this->ok(['marker', ...$this->state(), '--id', 'tower', '--lat', '48.8584', '--lon', '2.2945', '--color', 'blue']);
+        $this->ok(['note', ...$this->state(), '--id', 'meet', '--lat', '37.5663', '--lon', '126.9779', '--text', 'Meet']);
+        file_put_contents($this->work . '/note.txt', "From a file\n");
+        $this->ok(['note', ...$this->state(), '--id', 'filed', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/note.txt']);
+        $this->ok(['track-add', ...$this->state(), '--id', 'walk', '--lat', '-33.8568', '--lon', '151.2153', '--ts', '1700000000000', '--alt', '38.5', '--title', 'Walk']);
+        $this->ok(['track-finish', ...$this->state(), '--id', 'walk', '--to', 'home']);
+        $this->ok(['move', ...$this->state(), '--id', 'gate', '--lat', '37.58', '--lon', '126.98']);
+        $this->ok(['photo', ...$this->state(), '--id', 'view', '--lat', '1', '--lon', '1', '--file', __DIR__ . '/../fixtures/photo.jpg', '--title', 'View']);
+        $this->ok(['delete', ...$this->state(), '--id', 'meet']);
+        $this->ok(['delete-all', ...$this->state(), '--yes']);
+        $types = array_map(static fn (array $request): string => $request['t'], $receiver->requests());
+        $this->assertSame(['ping', 'put', 'put', 'put', 'put', 'track_append', 'track_finish', 'move', 'photo_begin', 'photo_chunk',
+            'photo_end', 'delete', 'delete_all'], $types);
+        $this->assertSame("From a file\n", $receiver->requests()[4]['text']);
+        $this->assertCount(1, $receiver->events('photo_stored'));
+
+        // Files that are refused never reach the receiver.
+        $before = $receiver->connections();
+        file_put_contents($this->work . '/long.txt', str_repeat('a', 4097));
+        $this->refused(['note', ...$this->state(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/long.txt'], 'at most 4096 bytes');
+        file_put_contents($this->work . '/latin1.txt', "caf\xE9");
+        $this->refused(['note', ...$this->state(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/latin1.txt'], 'not UTF-8 text');
+        $this->refused(['note', ...$this->state(), '--id', 'a', '--lat', '1', '--lon', '1', '--text-file', $this->work . '/none.txt'], 'the note file does not exist');
+        file_put_contents($this->work . '/fake.jpg', 'not an image');
+        $this->refused(['photo', ...$this->state(), '--id', 'p', '--lat', '1', '--lon', '1', '--file', $this->work . '/fake.jpg'], 'JPEG or PNG');
+        $huge = fopen($this->work . '/huge.jpg', 'w');
+        ftruncate($huge, 256 * 1024 * 1024);
+        fclose($huge);
+        $this->refused(['photo', ...$this->state(), '--id', 'p', '--lat', '1', '--lon', '1', '--file', $this->work . '/huge.jpg'], 'at most 1048576 bytes');
+        $this->refused(['pin', ...$this->state(), '--id', 'bad id', '--lat', '1', '--lon', '1'], 'item id');
+        $this->assertSame($before, $receiver->connections());
+
+        $list = $this->ok(['list', ...$this->state(), '--redact']);
+        $this->assertStringContainsString('<redacted>', $list);
+        $this->assertStringNotContainsString('home', $list);
+        $this->assertStringContainsString('home', $this->ok(['list', ...$this->state()]));
+        $this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', trim($this->ok(['identity', ...$this->state()])));
+        $this->refused(['ping', ...$this->state(), '--to', 'elsewhere'], 'no receiver is paired under that label');
+        $this->ok(['forget', ...$this->state(), '--to', 'home']);
+        $this->assertStringContainsString('No receivers are paired.', $this->ok(['list', ...$this->state()]));
+    }
+
+    public function testABareCodeWithoutATerminalIsRefusedBeforeTheReceiverIsContacted(): void
+    {
+        $receiver = new ScriptedReceiver(['pairing' => ['decision' => 'approve']]);
+        $address = ['--host', '127.0.0.1', '--port', (string) $receiver->port];
+        $bare = $this->codeFile(PairingTicket::parse($receiver->qrText())->code->display());
+        $this->refused(['pair', ...$this->state(), ...$address, '--name', 'CLI', '--kinds', 'pin', '--code-file', $bare],
+            "a bare code needs a person to compare the receiver's key");
+        $this->refused(['pair', ...$this->state(), ...$address, '--name', 'CLI', '--kinds', 'pin', '--code-file', $bare, '--redact'],
+            '--redact hides the receiver');
+        $this->assertSame([], $receiver->events());
+        // With the key given in full, it pairs without asking.
+        $this->ok(['pair', ...$this->state(), ...$address, '--name', 'CLI', '--kinds', 'pin', '--code-file', $bare, '--fingerprint', strtoupper($receiver->fingerprint)]);
+    }
+
+    public function testACodeFileOthersCanReadIsRefused(): void
+    {
+        if (PrivateFile::isWindows()) {
+            $this->markTestSkipped('file modes are not used on Windows');
+        }
+        $receiver = new ScriptedReceiver(['pairing' => ['decision' => 'approve']]);
+        $code = $this->codeFile($receiver->qrText());
+        chmod($code, 0644);
+        $output = $this->refused(['pair', ...$this->state(), '--host', '127.0.0.1', '--port', (string) $receiver->port, '--name', 'CLI',
+            '--kinds', 'pin', '--code-file', $code], 'mode 0600');
+        $this->assertStringNotContainsString(PairingTicket::parse($receiver->qrText())->code->display(), $output);
+        $this->assertSame([], $receiver->events());
+    }
+}
