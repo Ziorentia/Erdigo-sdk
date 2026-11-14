@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "erdigo-sdk"
+version = "0.1.0"
+description = "Write pins, markers, notes, photos and tracks to an Erdigo receiver on the local network."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Ziorentia LLC" }]
+requires-python = ">=3.10"
+# Pinned: every user gets the cryptography that was tested. Update it here, in requirements/, and test again.
+dependencies = ["cryptography==50.0.2"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Private :: Do Not Upload",
+]
+
+[project.optional-dependencies]
+# Finds receivers on the local network. Without it, give --host and --port, or ReceiverTarget.address(...).
+discovery = [
+    "zeroconf==0.154.0; python_version >= '3.11'",
+    "zeroconf==0.152.0; python_version < '3.11'",
+]
+
+[project.scripts]
+erdigo-send = "erdigo_sdk.cli:main"
+
+[project.urls]
+Source = "https://github.com/Ziorentia/Erdigo-sdk"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

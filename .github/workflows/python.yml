@@ -1,0 +1,67 @@
+name: Python
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The job only reads the code. A private repository needs this much to check it out.
+permissions:
+  contents: read
+
+jobs:
+  python-sdk:
+    name: Python SDK (${{ matrix.os }}, ${{ matrix.python }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        # The oldest version the SDK supports, and the newest.
+        python: ["3.10", "3.14"]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: python
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+      PIP_DISABLE_PIP_VERSION_CHECK: 1
+      PYTHONUTF8: 1
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      # actions/setup-python v5.6.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python }}
+      # actions/setup-dotnet v4.3.1, for the .NET mock receiver the interop check talks to.
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 8.0.x
+      # Exactly the versions and hashes in requirements/test.txt, then this package with nothing more.
+      - name: Install
+        run: |
+          python -m pip install --require-hashes -r requirements/test.txt
+          python -m pip install --no-deps --no-build-isolation .
+          erdigo-send help > /dev/null
+      - name: Test
+        run: python -m pytest
+      # The .NET mock receiver, restored from its lock file as the .NET workflow does.
+      - name: Build the .NET mock receiver
+        working-directory: windows
+        run: |
+          dotnet restore src/erdigo-send --locked-mode -p:NuGetAuditMode=all
+          dotnet build src/erdigo-send --no-restore --configuration Release
+      # Pairs with the .NET mock and writes every item kind to it. On Linux it also pairs with a typed code through a
+      # pseudo terminal, which Windows does not have.
+      - name: Interop with the .NET mock receiver
+        run: python scripts/interop.py --cwd ../windows -- dotnet run --no-build --configuration Release --project src/erdigo-send --
+      # Finds the .NET mock through its multicast DNS advertisement, without an address. The mock then listens on the
+      # runner's network, which nobody else shares.
+      - name: Discovery of the .NET mock receiver
+        if: runner.os == 'Linux'
+        run: python scripts/interop.py --discovery --cwd ../windows -- dotnet run --no-build --configuration Release --project src/erdigo-send --
