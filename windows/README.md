@@ -7,8 +7,13 @@ CI, but the device key is protected only on Windows (see [Where things are kept]
 It is a port of the [macOS SDK](../macos/README.md) and speaks the same [protocol](../spec/integration-v1.md). The two
 SDKs and their mock receivers work with each other.
 
-> **Preview.** The released Erdigo app does not yet accept these connections. Until it does, develop against the mock
-> receiver described below.
+> **In store review.** Erdigo 2.17.23, the first version of the app that accepts these connections, is waiting for
+> review on the Microsoft Store and the Mac App Store. Until it is released, develop against the mock receiver
+> described below. This notice will be removed once the review is complete.
+
+To use the SDK with a real map, install Erdigo 2.17.23 or later from the
+[Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) on a PC on the same local network. It can
+also write to [Erdigo for Mac](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12).
 
 ## Try it in two minutes
 
