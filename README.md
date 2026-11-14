@@ -74,6 +74,7 @@ streams use the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and
 | Windows 10 or later (.NET 8) | [`windows/`](windows/README.md) | Preview |
 | Linux, macOS or Windows (Python 3.10 or later), for scripts and boards such as a Raspberry Pi | [`python/`](python/README.md) | Preview |
 | Node.js 20 or later on macOS, Windows or Linux | [`nodejs/`](nodejs/README.md) | Preview |
+| Java 17 or later (Windows, macOS, Linux) | [`java/`](java/README.md) | Preview |
 
 **Linux, including a Raspberry Pi.** The .NET SDK also builds and runs on Linux, and its tests run on Linux (x64) in
 CI. It is supported there for development and testing only, it has not been tried on a Raspberry Pi or another ARM
