@@ -111,15 +111,16 @@ final class WindowsAcl
                 'proc_open is disabled, so the permissions of the state folder cannot be checked on Windows',
             );
         }
-        $process = PrivateFile::quietly(static fn () => proc_open(
+        $pipes = [];
+        $process = @proc_open(
             $command,
             [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
             $pipes,
             null,
             null,
             ['bypass_shell' => true],
-        ));
-        if (!is_resource($process)) {
+        );
+        if (!is_resource($process) || !isset($pipes[0], $pipes[1], $pipes[2])) {
             throw new PrivateFileException(PrivateFileException::UNREADABLE, "{$command[0]} could not be started");
         }
         fclose($pipes[0]);
