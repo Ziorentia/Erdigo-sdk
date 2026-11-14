@@ -1,0 +1,85 @@
+name: Java
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The job only reads the code. A private repository needs this much to check it out.
+permissions:
+  contents: read
+
+jobs:
+  java-sdk:
+    name: Java SDK (${{ matrix.os }}, Java ${{ matrix.java }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        java: ['17', '21']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      # actions/setup-java v4.9.1
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      # actions/setup-dotnet v4.3.1, for the .NET SDK's mock receiver, which the Java SDK is tested against.
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        with:
+          dotnet-version: 8.0.x
+      # Exactly what the lock files say, checked against nuget.org's list of known vulnerabilities, as the .NET
+      # workflow does.
+      - name: Build the .NET mock receiver
+        working-directory: windows
+        run: |
+          dotnet restore src/erdigo-send --locked-mode -p:NuGetAuditMode=all
+          dotnet build src/erdigo-send --no-restore --configuration Release
+      - name: Locate the mock receiver
+        run: |
+          MOCK="$GITHUB_WORKSPACE/windows/src/erdigo-send/bin/Release/net8.0/erdigo-send"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            MOCK="$(cygpath -w "$MOCK.exe")"
+          fi
+          echo "ERDIGO_MOCK=$MOCK" >>"$GITHUB_ENV"
+      # The Maven wrapper downloads Maven itself and refuses it unless its SHA-256 matches the one pinned in
+      # .mvn/wrapper/maven-wrapper.properties. -C makes a dependency whose checksum does not match an error.
+      # ERDIGO_REQUIRE_MOCK makes the tests against the mock fail rather than be skipped if it cannot be found.
+      # On Linux the mock also advertises itself, and the SDK finds it over real multicast DNS.
+      - name: Build and test
+        if: runner.os != 'Windows'
+        working-directory: java
+        env:
+          ERDIGO_REQUIRE_MOCK: '1'
+          ERDIGO_MULTICAST_TESTS: '1'
+        run: ./mvnw -B -C verify
+      - name: Build and test (mvnw.cmd)
+        if: runner.os == 'Windows'
+        working-directory: java
+        shell: cmd
+        env:
+          ERDIGO_REQUIRE_MOCK: '1'
+        run: mvnw.cmd -B -C verify
+      - name: The tests against the mock ran
+        run: |
+          REPORT=java/target/surefire-reports/TEST-com.ziorentia.erdigo.sdk.MockInteropTest.xml
+          grep -q 'tests="4"' "$REPORT"
+          # Only the multicast test may be skipped, and only where it is not asked for.
+          if [ "$RUNNER_OS" = "Linux" ]; then grep -q 'skipped="0"' "$REPORT"; else grep -q 'skipped="1"' "$REPORT"; fi
+      - name: The tool runs from its jar
+        run: java -jar java/target/erdigo-send.jar help
+      # The checks drive the tool through pseudo terminals, which Windows does not have.
+      - name: Command-line checks
+        if: runner.os == 'Linux'
+        run: java/tests/cli-smoke.sh
