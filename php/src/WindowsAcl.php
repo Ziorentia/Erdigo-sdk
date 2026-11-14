@@ -61,11 +61,23 @@ final class WindowsAcl
                 continue;
             }
             $sid = $fields[5];
-            if ($sid !== $userSid && !in_array($sid, self::TRUSTED, true)) {
+            if (!self::isUser($sid, $userSid) && !in_array($sid, self::TRUSTED, true)) {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Whether an entry's account is the current user. Windows writes this computer's built-in Administrator and Guest
+     * accounts, whose identifiers end in -500 and -501, with the aliases LA and LG.
+     */
+    private static function isUser(string $sid, string $userSid): bool
+    {
+        if ($sid === $userSid) {
+            return true;
+        }
+        return ($sid === 'LA' && str_ends_with($userSid, '-500')) || ($sid === 'LG' && str_ends_with($userSid, '-501'));
     }
 
     /** Gives a folder a protected access list that grants the current user alone, passed on to everything inside. */

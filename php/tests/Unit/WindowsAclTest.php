@@ -27,6 +27,11 @@ final class WindowsAclTest extends TestCase
         $this->assertFalse(WindowsAcl::grantsOnly('D:P(A;;FA;;;S-1-5-21-1111111111-2222222222-3333333333-1002)', self::USER), 'another user');
         $this->assertFalse(WindowsAcl::grantsOnly('D:P(OA;;CR;guid;;WD)', self::USER), 'an object entry for everyone');
         $this->assertFalse(WindowsAcl::grantsOnly('', self::USER), 'nothing could be read');
+        // The built-in Administrator account is written with an alias, as on GitHub's Windows runners.
+        $administrator = 'S-1-5-21-3289802278-1561746829-1498425070-500';
+        $this->assertTrue(WindowsAcl::grantsOnly('D:PAI(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;LA)', $administrator));
+        $this->assertFalse(WindowsAcl::grantsOnly('D:PAI(A;OICI;FA;;;LA)', self::USER), 'the Administrator is not this user');
+        $this->assertFalse(WindowsAcl::grantsOnly('D:PAI(A;OICI;FA;;;LG)', $administrator), 'nor is the Guest');
         $this->assertFalse(WindowsAcl::grantsOnly('D:P(A;;FA)', self::USER), 'a malformed entry');
     }
 }
