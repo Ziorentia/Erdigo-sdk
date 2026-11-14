@@ -196,13 +196,17 @@ test('a lock left by a process that has gone is taken over', () => {
 test('on Windows the state folder is restricted to the current user', { skip: unix }, () => {
   const directory = join(folder, 'state');
   new FileDeviceStore(directory);
-  const listing = execFileSync('icacls', [directory], { encoding: 'utf8' });
-  const entries = listing.replace(directory, '').split(/\r?\n/).map((line) => line.trim()).filter((line) => line.includes(':('));
-  const user = execFileSync('whoami', { encoding: 'utf8' }).trim().toLowerCase();
-  assert.ok(entries.some((entry) => entry.toLowerCase().startsWith(`${user}:`) && entry.includes('(F)')), listing);
+  const system32 = join(process.env.SystemRoot ?? 'C:\\Windows', 'System32');
+  const listing = execFileSync(join(system32, 'icacls.exe'), [directory], { encoding: 'utf8' });
+  // The Windows whoami, not one that a shell such as Git Bash may put first on the path.
+  const user = execFileSync(join(system32, 'whoami.exe'), { encoding: 'utf8' }).trim().toLowerCase();
+  const allowed = [user, 'nt authority\\system', 'builtin\\administrators'];
+  // icacls may print the folder's path in its short form, so each entry is recognised by the name before ':('.
+  const entries = listing.split(/\r?\n/).filter((line) => line.includes(':(')).map((line) => line.toLowerCase());
+  assert.ok(entries.length > 0, listing);
+  assert.ok(entries.some((entry) => entry.includes(`${user}:(`) && entry.includes('(f)')), listing);
   for (const entry of entries) {
-    assert.ok(!entry.includes('(I)'), `inherited: ${listing}`);
-    const who = entry.slice(0, entry.indexOf(':(')).toLowerCase();
-    assert.ok([user, 'nt authority\\system', 'builtin\\administrators'].includes(who), `granted to ${who}: ${listing}`);
+    assert.ok(!entry.includes('(i)'), `inherited: ${listing}`);
+    assert.ok(allowed.some((name) => entry.includes(`${name}:(`)), `granted to someone else: ${listing}`);
   }
 });
