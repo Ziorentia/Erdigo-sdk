@@ -5,7 +5,8 @@ declare(strict_types=1);
 /*
  * A receiver for the tests, run in a process of its own. It follows the protocol well enough to pair and to take
  * requests, and lets a test replace its answers, so that the client's handling of every answer can be checked over
- * real TCP. It handles one connection at a time and writes what happened to a log, one JSON object per line.
+ * real TCP. It handles one connection at a time and writes what happened to a log, one JSON object per line. The file
+ * named by `silence` holds how many of the next connections to close unanswered; a test may change it at any time.
  *
  *     php scripted-receiver.php CONFIG_FILE
  *
@@ -77,6 +78,17 @@ $scripted = static function () use (&$script, &$requestCount): ?array {
     return null;
 };
 
+/** Whether to close this connection unanswered, because the test asked for that. */
+$silenced = static function () use ($config): bool {
+    $left = (int) @file_get_contents($config['silence']);
+    if ($left <= 0) {
+        return false;
+    }
+    file_put_contents($config['silence'] . '.left', (string) ($left - 1));
+    rename($config['silence'] . '.left', $config['silence']);
+    return true;
+};
+
 $limits = Limits::v1();
 if (isset($config['limits'])) {
     $values = array_merge(get_object_vars($limits), $config['limits']);
@@ -86,6 +98,11 @@ if (isset($config['limits'])) {
 while (true) {
     $socket = @stream_socket_accept($server, 3600);
     if ($socket === false) {
+        continue;
+    }
+    if ($silenced()) {
+        $note(['event' => 'silent', 'why' => 'told to']);
+        fclose($socket);
         continue;
     }
     $stream = FrameStream::fromAccepted($socket);

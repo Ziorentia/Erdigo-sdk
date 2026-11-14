@@ -95,12 +95,14 @@ store.save(pairing);
 
 `confirmKey` runs before the receiver hears about this device, so the receiver still shows its key. Unless it returns
 `true`, `pair` rejects with an `ErdigoError` whose `kind` is `keyNotConfirmed`, which a real program should catch. The
-receiver has heard nothing about this device, and the code stays valid. A typed code cannot pair without
-`confirmKey`. Text from the QR code carries the receiver's key, and `pair` compares it and stops on a mismatch, so it
-asks the person nothing. `PairingTicket.parse` refuses QR text without a valid fingerprint. The terminal check makes a
-pipe or a file count as a no, because nobody is there to see the key and answer, so a program with no terminal should
-use the QR text. The [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this
-matters.
+receiver has heard nothing about this device, and the code stays valid. A typed code cannot pair without `confirmKey`.
+Once the person has confirmed the key, a pairing connection that meets silence is tried up to three times, half a second
+and then a second apart, since the receiver may still be closing the connection that showed the key: nothing about this
+device is sent until the receiver has proven the code and its key matches the one confirmed, so trying again is safe.
+Text from the QR code carries the receiver's key, and `pair` compares it and stops on a mismatch, so it asks the person
+nothing. `PairingTicket.parse` refuses QR text without a valid fingerprint. The terminal check makes a pipe or a file
+count as a no, because nobody is there to see the key and answer, so a program with no terminal should use the QR text.
+The [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this matters.
 
 After that, write:
 

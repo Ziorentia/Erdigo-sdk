@@ -40,6 +40,8 @@ export class TestReceiver {
     /** Ends the connection after applying a request, before answering it, when this returns true. */
     /** @type {((envelope: { seq: number, request: any }) => boolean) | null} */
     this.dropBeforeAnswer = null;
+    /** How many of the next connections are closed at once, without a word, before any is answered. */
+    this.silentConnections = 0;
     /** Every request read, in order. */
     this.requests = [];
     this.code = PairingCode.generate();
@@ -47,6 +49,13 @@ export class TestReceiver {
     this.server = createServer((socket) => {
       this.connections.add(socket);
       socket.on('close', () => this.connections.delete(socket));
+      this.events.push({ type: 'connection' });
+      if (this.silentConnections > 0) {
+        this.silentConnections -= 1;
+        this.events.push({ type: 'silent', reason: 'dropped' });
+        socket.destroy();
+        return;
+      }
       this.serve(new ByteStream({ socket })).catch(() => {}).finally(() => socket.destroy());
     });
   }

@@ -70,6 +70,36 @@ def test_typed_code_that_is_confirmed_pairs_with_the_key_that_was_shown(receiver
     assert receiver.record.pair_first_messages == 2
 
 
+def test_after_a_confirmed_key_a_silent_connection_is_tried_again(receiver: TestReceiver) -> None:
+    """The receiver may still be closing the connection that showed the key, and so drop the next one unanswered."""
+
+    def confirm(key: str) -> bool:
+        receiver.silent_connections = 2
+        return True
+
+    identity = DeviceIdentity.generate()
+    pairing = pair(_target(receiver), PairingTicket(receiver.code), identity, "Device", [ItemKind.PIN], confirm_key=confirm)
+    assert pairing.receiver_key == receiver.public_key
+    assert identity.public_key in receiver.devices
+    # Once to find the key, twice met with silence, once to pair.
+    assert receiver.record.connections == 4
+    assert receiver.record.silenced == 2
+    assert len(receiver.record.pair_requests) == 1
+
+
+@pytest.mark.parametrize("from_qr_text", [True, False])
+def test_qr_text_meeting_silence_is_not_tried_again(receiver: TestReceiver, from_qr_text: bool) -> None:
+    """Without a key a person confirmed a moment ago, silence is reported at once, as by the other SDKs. The same goes
+    for a fingerprint given with a typed code."""
+    receiver.silent_connections = 1
+    ticket = PairingTicket.parse(receiver.ticket.uri) if from_qr_text else PairingTicket(receiver.code, receiver.fingerprint)
+    with pytest.raises(ErdigoError) as raised:
+        pair(_target(receiver), ticket, DeviceIdentity.generate(), "Device", [ItemKind.PIN], confirm_key=lambda key: True)
+    assert raised.value.kind is ErrorKind.NO_ANSWER
+    assert receiver.record.connections == 1
+    assert receiver.record.silenced == 1
+
+
 def test_wrong_code_gets_no_answer(receiver: TestReceiver) -> None:
     other = PairingTicket(PairingCode.generate(), receiver.fingerprint)
     with pytest.raises(ErdigoError) as raised:

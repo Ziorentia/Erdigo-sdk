@@ -276,6 +276,137 @@ public abstract class EndToEndBase : IDisposable
         }
     }
 
+    /// <summary>
+    /// Stands in front of a receiver and passes every connection on unchanged, except those it is told to close at once
+    /// without a word, as a receiver does with a connection beyond what it allows one address before it proves itself.
+    /// </summary>
+    internal sealed class SilencingRelay : IDisposable
+    {
+        private readonly object sync = new();
+        private readonly TcpListener listener = new(IPAddress.Loopback, 0);
+        private readonly ushort receiverPort;
+        private readonly CancellationTokenSource stopping = new();
+        private int toSilence;
+        private int connections;
+        private int silenced;
+
+        public SilencingRelay(ushort receiverPort)
+        {
+            this.receiverPort = receiverPort;
+            listener.Start();
+            Port = (ushort)((IPEndPoint)listener.LocalEndpoint).Port;
+            _ = AcceptAsync();
+        }
+
+        public ushort Port { get; }
+
+        /// <summary>Every connection made to the relay so far.</summary>
+        public int Connections
+        {
+            get
+            {
+                lock (sync)
+                {
+                    return connections;
+                }
+            }
+        }
+
+        /// <summary>The connections closed without a word.</summary>
+        public int Silenced
+        {
+            get
+            {
+                lock (sync)
+                {
+                    return silenced;
+                }
+            }
+        }
+
+        /// <summary>Closes the next <paramref name="count"/> connections at once, without a word.</summary>
+        public void SilenceNext(int count)
+        {
+            lock (sync)
+            {
+                toSilence = count;
+            }
+        }
+
+        public void Dispose()
+        {
+            // The source is left for the relayed connections still winding down, which hold its token.
+            stopping.Cancel();
+            listener.Stop();
+        }
+
+        private async Task AcceptAsync()
+        {
+            while (true)
+            {
+                TcpClient inbound;
+                try
+                {
+                    inbound = await listener.AcceptTcpClientAsync(stopping.Token);
+                }
+                catch (Exception error) when (error is SocketException or ObjectDisposedException or OperationCanceledException)
+                {
+                    return;
+                }
+                bool silence;
+                lock (sync)
+                {
+                    connections += 1;
+                    silence = toSilence > 0;
+                    if (silence)
+                    {
+                        toSilence -= 1;
+                        silenced += 1;
+                    }
+                }
+                if (silence)
+                {
+                    inbound.Dispose();
+                }
+                else
+                {
+                    _ = RelayAsync(inbound);
+                }
+            }
+        }
+
+        private async Task RelayAsync(TcpClient inbound)
+        {
+            using (inbound)
+            using (var outbound = new TcpClient())
+            {
+                try
+                {
+                    await outbound.ConnectAsync(IPAddress.Loopback, receiverPort, stopping.Token);
+                }
+                catch (Exception error) when (error is SocketException or ObjectDisposedException or OperationCanceledException)
+                {
+                    return;
+                }
+                var device = inbound.GetStream();
+                var receiver = outbound.GetStream();
+                // Either side hanging up ends the connection for both.
+                await Task.WhenAny(PumpAsync(device, receiver), PumpAsync(receiver, device));
+            }
+        }
+
+        private async Task PumpAsync(Stream from, Stream to)
+        {
+            try
+            {
+                await from.CopyToAsync(to, stopping.Token);
+            }
+            catch (Exception error) when (error is IOException or SocketException or ObjectDisposedException or OperationCanceledException)
+            {
+            }
+        }
+    }
+
     /// <summary>A PNG of one shade, made here so that any size can be tested.</summary>
     internal static byte[] Png(int width, int height, int colourType = 2, bool interlaced = false)
     {

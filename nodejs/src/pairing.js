@@ -1,5 +1,6 @@
 // Pairs this device with a receiver, using the one-time code a person reads from the receiver's screen.
 
+import { setTimeout as delay } from 'node:timers/promises';
 import { candidates } from './discovery.js';
 import { DeviceIdentity, ErdigoError, ErdigoErrorKind, receiverPairing } from './identity.js';
 import { decodeReceiverMessage, encodePairRequest } from './messages.js';
@@ -41,7 +42,7 @@ export const SDK_NAME = 'erdigo-nodejs/0.1.0';
  * runs before the receiver hears anything about this device, so the receiver still shows its key. If it returns
  * false, this rejects with {@link ErdigoErrorKind.keyNotConfirmed}, the code stays valid, and the receiver has seen
  * neither this device's key nor its name. If it returns true, the key the person confirmed is compared as if it came
- * from a QR code.
+ * from a QR code, and the pairing connection is tried up to three times if it meets silence.
  * @param {PairOptions} options
  * @returns {Promise<import('./identity.js').ReceiverPairing>}
  */
@@ -82,6 +83,7 @@ export async function pair({
   }
   signal?.throwIfAborted();
   let current = ticket;
+  let confirmedByAPerson = false;
   if (current.fingerprint === null) {
     if (typeof confirmKey !== 'function') {
       throw new ErdigoError(ErdigoErrorKind.invalidArgument, {
@@ -95,25 +97,58 @@ export async function pair({
     }
     signal?.throwIfAborted();
     current = new PairingTicket(current.code, found);
+    confirmedByAPerson = true;
   }
   const request = encodePairRequest({ versions: [VERSION], sdk: SDK_NAME, name, kinds: canonicalKinds(wanted) });
+  // After a person has confirmed the key, the receiver has just answered with this code, so silence now is most likely
+  // the receiver still closing the connection that showed the key: a receiver limits how many unproven connections one
+  // address may have at once. Trying again is safe, because nothing about this device is sent until the receiver has
+  // proven the code and its key matches the one confirmed.
+  const tries = confirmedByAPerson ? CONFIRMED_ATTEMPTS : 1;
   let lastError = new ErdigoError(ErdigoErrorKind.noAnswer);
-  for (const endpoint of await candidates(target, signal)) {
-    try {
-      return await attempt(endpoint, current, identity, request, label ?? null, handshakeTimeoutMs, approvalTimeoutMs, signal);
-    } catch (error) {
-      // A stopped pairing lands here too, because its connection was closed.
-      signal?.throwIfAborted();
-      if (error instanceof ErdigoError && error.kind === ErdigoErrorKind.noAnswer) {
-        continue;
+  search: for (const endpoint of await candidates(target, signal)) {
+    for (let round = 0; round < tries; round += 1) {
+      if (round > 0) {
+        await sleep(CONFIRMED_RETRY_WAIT_MS * round, signal);
       }
-      // A definite answer from a receiver holding this code ends the search.
-      lastError = /** @type {ErdigoError} */ (error);
-      break;
+      try {
+        return await attempt(endpoint, current, identity, request, label ?? null, handshakeTimeoutMs, approvalTimeoutMs, signal);
+      } catch (error) {
+        // A stopped pairing lands here too, because its connection was closed.
+        signal?.throwIfAborted();
+        if (error instanceof ErdigoError && error.kind === ErdigoErrorKind.noAnswer) {
+          continue;
+        }
+        // A definite answer from a receiver holding this code ends the search.
+        lastError = /** @type {ErdigoError} */ (error);
+        break search;
+      }
     }
   }
   signal?.throwIfAborted();
   throw lastError;
+}
+
+/** How many times the pairing connection is tried after a person confirmed the key. */
+const CONFIRMED_ATTEMPTS = 3;
+
+/** The wait before the second try. The third waits twice as long. */
+const CONFIRMED_RETRY_WAIT_MS = 500;
+
+/**
+ * Waits, and rejects with the signal's own reason if it is stopped.
+ * @param {number} ms
+ * @param {AbortSignal} [signal]
+ */
+async function sleep(ms, signal) {
+  try {
+    await delay(ms, undefined, { signal });
+  } catch (error) {
+    if (signal?.aborted) {
+      throw signal.reason;
+    }
+    throw error;
+  }
 }
 
 /** @param {string} label */

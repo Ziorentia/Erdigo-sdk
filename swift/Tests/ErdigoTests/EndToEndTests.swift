@@ -818,6 +818,164 @@ final class EndToEndTests: XCTestCase {
         XCTAssertEqual(pairing.fingerprint, ticket.fingerprint)
     }
 
+    /// Stands in front of a receiver and passes connections through to it, except that it closes the next ones it is
+    /// told to without a word. A receiver does that while it is still closing an earlier connection from the same
+    /// address, and when exactly depends on timing, which a test cannot rely on.
+    private final class SilentGate: @unchecked Sendable {
+        private let lock = NSLock()
+        private let receiverPort: UInt16
+        private let listener: NWListener
+        private var toDrop = 0
+        private var accepted = 0
+        private var silent = 0
+
+        private init(receiverPort: UInt16) throws {
+            self.receiverPort = receiverPort
+            let parameters = NWParameters.tcp
+            parameters.requiredInterfaceType = .loopback
+            listener = try NWListener(using: parameters)
+        }
+
+        /// Starts a gate in front of the receiver at `receiverPort`, and returns it with the port to use instead.
+        static func start(receiverPort: UInt16) async throws -> (SilentGate, UInt16) {
+            let gate = try SilentGate(receiverPort: receiverPort)
+            let listener = gate.listener
+            listener.newConnectionHandler = { [weak gate] connection in
+                guard let gate else { return connection.cancel() }
+                let stream = ByteStream(connection: connection)
+                Task { await gate.serve(stream) }
+            }
+            let port: UInt16 = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<UInt16, Error>) in
+                let once = OnceContinuation(continuation)
+                listener.stateUpdateHandler = { state in
+                    switch state {
+                    case .ready:
+                        once.finish(.success(listener.port?.rawValue ?? 0))
+                    case .failed(let error):
+                        once.finish(.failure(error))
+                    case .cancelled:
+                        once.finish(.failure(ByteStream.Failure.closed))
+                    default:
+                        break
+                    }
+                }
+                listener.start(queue: DispatchQueue(label: "erdigo.test.gate"))
+            }
+            return (gate, port)
+        }
+
+        func stop() {
+            listener.cancel()
+        }
+
+        func dropNext(_ count: Int) {
+            lock.lock()
+            toDrop = count
+            lock.unlock()
+        }
+
+        /// Every connection that reached the gate, passed through or not.
+        var connections: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return accepted
+        }
+
+        var dropped: Int {
+            lock.lock()
+            defer { lock.unlock() }
+            return silent
+        }
+
+        private func passes() -> Bool {
+            lock.lock()
+            defer { lock.unlock() }
+            accepted += 1
+            guard toDrop > 0 else { return true }
+            toDrop -= 1
+            silent += 1
+            return false
+        }
+
+        private func serve(_ device: ByteStream) async {
+            defer { device.cancel() }
+            guard (try? await device.start(timeout: 2)) != nil, passes(),
+                  let receiver = try? ByteStream(host: "127.0.0.1", port: receiverPort)
+            else { return }
+            defer { receiver.cancel() }
+            guard (try? await receiver.start(timeout: 2)) != nil else { return }
+            // Whichever side stops first ends both.
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    guard let preamble = try? await device.read(exactly: 5), (try? await receiver.send(preamble)) != nil else { return }
+                    while let frame = try? await device.readFrame(), (try? await receiver.sendFrame(frame)) != nil {}
+                }
+                group.addTask {
+                    while let frame = try? await receiver.readFrame(), (try? await device.sendFrame(frame)) != nil {}
+                }
+                await group.next()
+                group.cancelAll()
+            }
+        }
+    }
+
+    private func pairingRequests(_ receiver: MockReceiver) async -> Int {
+        await receiver.events.filter { if case .pairingRequested = $0 { return true } else { return false } }.count
+    }
+
+    /// The receiver may still be closing the connection that showed the key, and so drop the next one unanswered.
+    func testAfterAConfirmedKeyASilentConnectionIsTriedAgain() async throws {
+        let (receiver, receiverPort) = try await startReceiver()
+        let (gate, port) = try await SilentGate.start(receiverPort: receiverPort)
+        defer { gate.stop() }
+        let code = try await receiver.openPairingWindow().code
+
+        let yes = KeyQuestion(answer: true) { gate.dropNext(2) }
+        let identity = DeviceIdentity.generate()
+        let pairing = try await Pairing.pair(
+            target: .address(host: "127.0.0.1", port: port), ticket: PairingTicket(code: code), identity: identity,
+            deviceName: "Careful", kinds: [.pin], handshakeTimeout: 1, confirmKey: yes.callAsFunction
+        )
+
+        let receiverFingerprint = await receiver.fingerprint
+        XCTAssertEqual(pairing.fingerprint, receiverFingerprint)
+        XCTAssertEqual(yes.shown.count, 1)
+        // One connection to read the key, two met silence, and one paired.
+        XCTAssertEqual(gate.dropped, 2)
+        XCTAssertEqual(gate.connections, 4)
+        let requests = await pairingRequests(receiver)
+        XCTAssertEqual(requests, 1)
+        let devices = await receiver.pairedDevices()
+        XCTAssertEqual(devices.map(\.fingerprint), [identity.fingerprint])
+    }
+
+    /// Without a key a person confirmed a moment ago, silence is reported at once.
+    func testQRTextMeetingSilenceIsNotTriedAgain() async throws {
+        let (receiver, receiverPort) = try await startReceiver()
+        let (gate, port) = try await SilentGate.start(receiverPort: receiverPort)
+        defer { gate.stop() }
+        let ticket = try await receiver.openPairingWindow()
+
+        gate.dropNext(1)
+        do {
+            _ = try await Pairing.pair(
+                target: .address(host: "127.0.0.1", port: port), ticket: ticket, identity: .generate(),
+                deviceName: "Scanner", kinds: [.pin], handshakeTimeout: 1
+            )
+            XCTFail("expected no answer")
+        } catch {
+            XCTAssertEqual(error as? ErdigoError, .noAnswer)
+        }
+        XCTAssertEqual(gate.connections, 1)
+        try await assertHeardNoRequest(receiver)
+        // The pairing window is still open, and the same text pairs once the receiver answers.
+        let pairing = try await Pairing.pair(
+            target: .address(host: "127.0.0.1", port: port), ticket: ticket, identity: .generate(),
+            deviceName: "Scanner", kinds: [.pin], handshakeTimeout: 1
+        )
+        XCTAssertEqual(pairing.fingerprint, ticket.fingerprint)
+    }
+
     /// Someone else who knows the code takes the receiver's place between the question and the pairing.
     func testAKeyOtherThanTheOneConfirmedDoesNotPair() async throws {
         let code = try PairingCode(parsing: "TEST0-0NLYC-0DE00-00000")

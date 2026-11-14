@@ -138,6 +138,46 @@ final class PairingTest extends TestCase
         $this->assertCount(1, $receiver->events('pair_request'));
     }
 
+    /** The receiver may still be closing the connection that showed the key, and so drop the next one unanswered. */
+    public function testAfterAConfirmedKeyASilentConnectionIsTriedAgain(): void
+    {
+        $receiver = self::pairingReceiver();
+        $ticket = new PairingTicket(PairingTicket::parse($receiver->qrText())->code);
+        $pairing = Pairing::pair(
+            self::addressOf($receiver),
+            $ticket,
+            (new InMemoryDeviceStore())->loadOrCreateIdentity(),
+            'Sensor',
+            [ItemKind::Pin],
+            confirmKey: static function (string $key) use ($receiver): bool {
+                $receiver->silenceNextConnections(2);
+                return true;
+            },
+        );
+        $this->assertSame($receiver->publicKey, $pairing->receiverKey);
+        $this->assertCount(2, $receiver->events('silent'));
+        // Once to find the key, and once to pair, on the third try.
+        $this->assertCount(2, $receiver->events('message2_sent'));
+        $this->assertCount(1, $receiver->events('pair_request'));
+    }
+
+    /** Without a key a person confirmed a moment ago, silence is reported at once, as by the other SDKs. */
+    public function testTheQrTextMeetingSilenceIsNotTriedAgain(): void
+    {
+        $receiver = self::pairingReceiver();
+        $receiver->silenceNextConnections(1);
+        EndToEnd::expect($this, ErrorKind::NoAnswer, static fn () => Pairing::pair(
+            self::addressOf($receiver),
+            PairingTicket::parse($receiver->qrText()),
+            (new InMemoryDeviceStore())->loadOrCreateIdentity(),
+            'Sensor',
+            [ItemKind::Pin],
+        ));
+        // One connection, closed unanswered. A second would have reached the pairing.
+        $this->assertCount(1, $receiver->events('silent'));
+        $this->assertSame([], $receiver->events('pair_connection'));
+    }
+
     public function testAnswersOtherThanApproval(): void
     {
         foreach (['deny' => ErrorKind::PairingDenied, 'code_reused' => ErrorKind::CodeReused] as $decision => $kind) {

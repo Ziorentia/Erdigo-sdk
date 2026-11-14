@@ -238,6 +238,9 @@ if command -v python3 >/dev/null 2>&1; then
     requests() {
         grep -c '^\[mock\] pairing request' "$WORK/mock.log"
     }
+    drops() {
+        grep -c '^\[mock\] dropped a connection without answering' "$WORK/mock.log"
+    }
     typed_file() {
         printf '%s\n' "$TYPED" >"$WORK/typed-code"
         chmod 600 "$WORK/typed-code"
@@ -271,10 +274,13 @@ if command -v python3 >/dev/null 2>&1; then
         failed "half a yes typed early: $RUN_OUTPUT"
     fi
 
+    DROPS_BEFORE="$(drops)"
     if run_checked --early "no"$'\n' --answer "yes"$'\n' -- "${PAIR_TYPED[@]}" --state-dir "$WORK/state-yes" --code-file "$WORK/typed-code"; then
         check "a yes after the key pairs" test "$RUN_STATUS" = "0"
         check "a confirmed typed code is saved" test -e "$WORK/state-yes/pairings.json"
-        check "a confirmed typed code connects twice" test "$RUN_CONNECTIONS" = "2"
+        # Once to find the key and once to pair, and once more for each connection the receiver dropped unanswered
+        # because it was still closing the first, which the SDK then tries again.
+        check "a confirmed typed code connects twice, and again after a drop" test "$RUN_CONNECTIONS" = "$((2 + $(drops) - DROPS_BEFORE))"
         check "the receiver heard one request" test "$(requests)" = "$((BEFORE + 1))"
     else
         failed "a typed code answered yes: $RUN_OUTPUT"

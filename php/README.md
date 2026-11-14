@@ -108,7 +108,10 @@ key in it: `Pairing::pair` then needs a `confirmKey` callback that shows a perso
 it matches the one on the receiver's screen, because a code proves only that the other side knows it. The program that
 supplies that callback is responsible for a person answering it. The
 [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this matters. On a server, use
-the QR text.
+the QR text. Once a person has confirmed the key, a pairing connection that meets silence is tried up to three times,
+half a second and then a second apart, because the receiver may still be closing the connection that showed the key;
+this is safe, since nothing about this device is sent until the receiver has proven the code and its key matches the
+one confirmed.
 
 After that, write:
 
@@ -391,7 +394,8 @@ What they cover:
 - The client against a scripted receiver over real TCP: every kind of item, photos in chunks, tracks in batches,
   reconnection with the same sequence number, every kind of error answer (including those that end the connection
   before any rate-limit retry), pacing, timeouts, and processes sharing a key.
-- Pairing with the QR text, a wrong key, a typed code confirmed or not, a denied request and a reused code.
+- Pairing with the QR text, a wrong key, a typed code confirmed or not, silence after a confirmed key (tried again) and
+  with the QR text (not), a denied request and a reused code.
 - The store's permissions, a damaged key, links, counters and the document root.
 - The tool, run as a program: a code is never an argument nor repeated, a bare code without a terminal is refused
   before anything is sent, and a code file others can read is refused.

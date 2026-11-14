@@ -40,6 +40,7 @@ public enum Pairing {
         if let label { try validateLabel(label) }
 
         var ticket = ticket
+        var confirmedByAPerson = false
         if ticket.fingerprint == nil {
             guard let confirmKey else {
                 throw ErdigoError.invalidArgument("a typed code needs confirmKey, because a person has to compare the receiver's key")
@@ -47,6 +48,7 @@ public enum Pairing {
             let found = try await receiverFingerprint(target: target, code: ticket.code, handshakeTimeout: handshakeTimeout)
             guard await confirmKey(IntegrationV1.shortFingerprint(found)) else { throw ErdigoError.keyNotConfirmed }
             ticket = PairingTicket(code: ticket.code, fingerprint: found)
+            confirmedByAPerson = true
         }
 
         let request = PairRequest(
@@ -57,29 +59,45 @@ public enum Pairing {
         )
 
         var lastError: ErdigoError = .noAnswer
-        for endpoint in try await Discovery.candidates(target: target) {
-            do {
-                return try await attempt(
-                    endpoint: endpoint,
-                    ticket: ticket,
-                    identity: identity,
-                    request: request,
-                    label: label,
-                    handshakeTimeout: handshakeTimeout,
-                    approvalTimeout: approvalTimeout
-                )
-            } catch ErdigoError.noAnswer {
-                // A cancelled task lands here too, because its connection was closed.
-                try Task.checkCancellation()
-                continue
-            } catch let error as ErdigoError {
-                // A definite answer from a receiver holding this code ends the search.
-                lastError = error
-                break
+        search: for endpoint in try await Discovery.candidates(target: target) {
+            // After a person has confirmed the key, the receiver has just answered with this code, so silence now is
+            // most likely the receiver still closing the connection that showed the key: a receiver limits how many
+            // unproven connections one address may have at once. Trying again is safe, because nothing about this
+            // device is sent until the receiver has proven the code and its key matches the one confirmed.
+            let tries = confirmedByAPerson ? confirmedAttempts : 1
+            for round in 0..<tries {
+                if round > 0 {
+                    // Throws if the task is cancelled while it waits.
+                    try await Task.sleep(nanoseconds: confirmedRetryWait * UInt64(round))
+                }
+                do {
+                    return try await attempt(
+                        endpoint: endpoint,
+                        ticket: ticket,
+                        identity: identity,
+                        request: request,
+                        label: label,
+                        handshakeTimeout: handshakeTimeout,
+                        approvalTimeout: approvalTimeout
+                    )
+                } catch ErdigoError.noAnswer {
+                    // A cancelled task lands here too, because its connection was closed.
+                    try Task.checkCancellation()
+                } catch let error as ErdigoError {
+                    // A definite answer from a receiver holding this code ends the search.
+                    lastError = error
+                    break search
+                }
             }
         }
         throw lastError
     }
+
+    /// How many times the pairing connection is tried after a person confirmed the key.
+    private static let confirmedAttempts = 3
+
+    /// Half a second before the second try, and a second before the third.
+    private static let confirmedRetryWait: UInt64 = 500_000_000
 
     /// Finds the key of the receiver that holds this code, and stops there, so that a person can
     /// compare it. This runs the exchange up to message 2, as spec 4.1 describes.

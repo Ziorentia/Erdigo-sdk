@@ -71,6 +71,7 @@ public static class Pairing
             ValidateLabel(label);
         }
 
+        var confirmedByAPerson = false;
         if (ticket.Fingerprint is null)
         {
             if (confirmKey is null)
@@ -83,32 +84,50 @@ public static class Pairing
                 throw new ErdigoException(ErdigoErrorKind.KeyNotConfirmed);
             }
             ticket = new PairingTicket(ticket.Code, found);
+            confirmedByAPerson = true;
         }
 
         var request = new PairRequest(new[] { IntegrationV1.Version }, SdkName, name, ItemKinds.CanonicalList(kinds));
 
-        var lastError = new ErdigoException(ErdigoErrorKind.NoAnswer);
+        // After a person has confirmed the key, the receiver has just answered with this code, so silence now is most
+        // likely the receiver still closing the connection that showed the key: a receiver limits how many unproven
+        // connections one address may have at once. Trying again is safe, because nothing about this device is sent
+        // until the receiver has proven the code and its key matches the one confirmed.
+        var tries = confirmedByAPerson ? ConfirmedAttempts : 1;
         foreach (var endpoint in await Discovery.CandidatesAsync(target, cancellationToken).ConfigureAwait(false))
         {
-            try
+            for (var round = 0; round < tries; round++)
             {
-                return await AttemptAsync(endpoint, ticket, identity, request, label, handshakeTime, approvalTime, cancellationToken).ConfigureAwait(false);
-            }
-            catch (ErdigoException error) when (error.Kind == ErdigoErrorKind.NoAnswer)
-            {
-                // A cancelled pairing lands here too, because its connection was closed.
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-            catch (ErdigoException error)
-            {
-                // A definite answer from a receiver holding this code ends the search.
-                lastError = error;
-                break;
+                if (round > 0)
+                {
+                    await Task.Delay(ConfirmedRetryWait * round, cancellationToken).ConfigureAwait(false);
+                }
+                try
+                {
+                    return await AttemptAsync(endpoint, ticket, identity, request, label, handshakeTime, approvalTime, cancellationToken).ConfigureAwait(false);
+                }
+                catch (ErdigoException error) when (error.Kind == ErdigoErrorKind.NoAnswer)
+                {
+                    // A cancelled pairing lands here too, because its connection was closed.
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+                catch (ErdigoException)
+                {
+                    // A definite answer from a receiver holding this code ends the search.
+                    cancellationToken.ThrowIfCancellationRequested();
+                    throw;
+                }
             }
         }
         cancellationToken.ThrowIfCancellationRequested();
-        throw lastError;
+        throw new ErdigoException(ErdigoErrorKind.NoAnswer);
     }
+
+    /// <summary>How many times the pairing connection is tried after a person confirmed the key.</summary>
+    internal const int ConfirmedAttempts = 3;
+
+    /// <summary>The wait before the second try. Each later try waits this much longer than the one before.</summary>
+    private static readonly TimeSpan ConfirmedRetryWait = TimeSpan.FromMilliseconds(500);
 
     /// <summary>
     /// Finds the key of the receiver that holds this code, and stops there, so that a person can compare it. This

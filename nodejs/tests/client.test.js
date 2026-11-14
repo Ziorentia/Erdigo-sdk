@@ -111,6 +111,64 @@ test('only a yes pairs with a typed code', async () => {
   }
 });
 
+// The receiver may still be closing the connection that showed the key, and so drop the next one unanswered.
+test('after a confirmed key, a silent connection is tried again', async () => {
+  const { receiver: mock, target } = await receiver();
+  try {
+    const pairing = await pair({
+      target, ticket: new PairingTicket(mock.code), identity: DeviceIdentity.generate(), deviceName: 'Sensor', kinds: ['pin'],
+      confirmKey: () => {
+        mock.silentConnections = 2;
+        return true;
+      },
+    });
+    assert.equal(pairingFingerprint(pairing), mock.fingerprint);
+    assert.equal(mock.count('silent'), 2);
+    assert.equal(mock.count('pairing requested'), 1);
+  } finally {
+    await mock.stop();
+  }
+});
+
+// Without a key a person confirmed a moment ago, silence is reported at once, as by the other SDKs.
+test('QR text meeting silence is not tried again', async () => {
+  const { receiver: mock, target } = await receiver();
+  try {
+    mock.silentConnections = 1;
+    await expectKind(ErdigoErrorKind.noAnswer, () => pair({
+      target, ticket: PairingTicket.parse(mock.qrText), identity: DeviceIdentity.generate(), deviceName: 'Sensor', kinds: ['pin'],
+    }));
+    assert.equal(mock.count('connection'), 1);
+  } finally {
+    await mock.stop();
+  }
+});
+
+test('pairing can be stopped while it waits to try again', async () => {
+  const { receiver: mock, target } = await receiver();
+  try {
+    const controller = new AbortController();
+    const reason = new Error('stopped by the test');
+    await assert.rejects(
+      pair({
+        target, ticket: new PairingTicket(mock.code), identity: DeviceIdentity.generate(), deviceName: 'Sensor', kinds: ['pin'],
+        signal: controller.signal,
+        confirmKey: () => {
+          mock.silentConnections = 3;
+          // Half a second passes before the second try.
+          setTimeout(() => controller.abort(reason), 250);
+          return true;
+        },
+      }),
+      (error) => error === reason,
+    );
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    assert.equal(mock.count('connection'), 2, 'the key was read once and pairing tried once');
+  } finally {
+    await mock.stop();
+  }
+});
+
 test('a wrong fingerprint stops before message 3', async () => {
   const { receiver: mock, target } = await receiver();
   try {

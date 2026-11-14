@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Callable, Iterable, Optional, Tuple
 
 from . import discovery, messages, noise, protocol
@@ -14,6 +15,12 @@ from .protocol import ErrorCode, WireError
 from .stream import FramedStream, StreamError, StreamFailure
 
 SDK_NAME = "erdigo-python/0.1.0"
+
+#: How many times the pairing connection is tried after a person confirmed the key.
+CONFIRMED_ATTEMPTS = 3
+
+# Seconds before the second try; the third waits twice as long.
+_CONFIRMED_RETRY_WAIT = 0.5
 
 #: Shows a person the receiver's key, in the form the receiver shows it (the first 16 digits of its fingerprint), and
 #: returns whether it matches the key on the receiver's screen.
@@ -59,6 +66,7 @@ def pair(
     if label is not None:
         validate_label(label)
 
+    confirmed_by_a_person = False
     if ticket.fingerprint is None:
         if confirm_key is None:
             raise ErdigoError(
@@ -68,19 +76,25 @@ def pair(
         if not confirm_key(protocol.short_fingerprint(found)):
             raise ErdigoError(ErrorKind.KEY_NOT_CONFIRMED)
         ticket = PairingTicket(ticket.code, found)
+        confirmed_by_a_person = True
 
     request = PairRequest((protocol.VERSION,), SDK_NAME, name, tuple(wanted))
-    last_error = ErdigoError(ErrorKind.NO_ANSWER)
+    # After a person has confirmed the key, the receiver has just answered with this code, so silence now is most
+    # likely the receiver still closing the connection that showed the key: a receiver limits how many unproven
+    # connections one address may have at once. Trying again is safe, because nothing about this device is sent until
+    # the receiver has proven the code and its key matches the one confirmed.
+    tries = CONFIRMED_ATTEMPTS if confirmed_by_a_person else 1
     for endpoint in discovery.candidates(target):
-        try:
-            return _attempt(endpoint, ticket, identity, request, label, handshake_timeout, approval_timeout)
-        except ErdigoError as error:
-            if error.kind is ErrorKind.NO_ANSWER:
-                continue
-            # A definite answer from a receiver holding this code ends the search.
-            last_error = error
-            break
-    raise last_error
+        for tried in range(tries):
+            if tried:
+                time.sleep(_CONFIRMED_RETRY_WAIT * tried)
+            try:
+                return _attempt(endpoint, ticket, identity, request, label, handshake_timeout, approval_timeout)
+            except ErdigoError as error:
+                if error.kind is not ErrorKind.NO_ANSWER:
+                    # A definite answer from a receiver holding this code ends the search.
+                    raise
+    raise ErdigoError(ErrorKind.NO_ANSWER)
 
 
 def _receiver_fingerprint(target: ReceiverTarget, code: PairingCode, handshake_timeout: float) -> str:

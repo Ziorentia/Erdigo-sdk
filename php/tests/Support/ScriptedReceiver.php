@@ -25,6 +25,7 @@ final class ScriptedReceiver
     private array $pipes;
     private readonly string $logPath;
     private readonly string $configPath;
+    private readonly string $silencePath;
 
     /**
      * @param array<string, mixed> $settings `pairing` (decision, kinds, counter), `devices`, `script`, `missing`, `limits`.
@@ -37,6 +38,7 @@ final class ScriptedReceiver
         $directory = Temporary::directory();
         $this->logPath = $directory . '/receiver.log';
         $this->configPath = $directory . '/receiver.json';
+        $this->silencePath = $directory . '/silence';
         $this->code = isset($settings['pairing']) ? PairingCode::generate() : null;
         if ($this->code !== null) {
             $settings['pairing']['code'] = $this->code->canonical;
@@ -51,7 +53,9 @@ final class ScriptedReceiver
         }
         $settings['receiver_private'] = bin2hex($private);
         $settings['log'] = $this->logPath;
+        $settings['silence'] = $this->silencePath;
         file_put_contents($this->logPath, '');
+        $this->silenceNextConnections(0);
         file_put_contents($this->configPath, json_encode($settings, JSON_THROW_ON_ERROR));
         $process = proc_open(
             [PHP_BINARY, __DIR__ . '/scripted-receiver.php', $this->configPath],
@@ -75,6 +79,18 @@ final class ScriptedReceiver
     public function qrText(): string
     {
         return (string) (new PairingTicket($this->code ?? throw new \LogicException('no pairing code'), $this->fingerprint))->uri();
+    }
+
+    /**
+     * Makes the receiver close the next `$count` connections as soon as it accepts them, without reading or answering
+     * anything, as a receiver does with a connection from an address that has too many unproven ones. Each is logged as
+     * a `silent` event, `why` being `told to`.
+     */
+    public function silenceNextConnections(int $count): void
+    {
+        // Replaced in one step, so that the receiver never reads a half-written number.
+        file_put_contents($this->silencePath . '.new', (string) $count);
+        rename($this->silencePath . '.new', $this->silencePath);
     }
 
     /** @return list<array<string, mixed>> */
