@@ -171,6 +171,20 @@ def test_mistakes_are_explained(capsys, tmp_path, arguments, message) -> None:
     assert message in err
 
 
+def test_a_note_file_with_windows_line_endings_is_refused_as_the_other_tools_refuse_it(capsys, receiver: TestReceiver, tmp_path) -> None:
+    """The protocol allows line feeds and tabs in a note, but no carriage return. The .NET and Swift tools send the
+    file as it is and refuse it with this message, so this one does too, rather than changing the note."""
+    state = tmp_path / "state"
+    code_file = _private_file(tmp_path / "code.txt", receiver.ticket.uri)
+    assert run(capsys, "pair", "--name", "x", "--kinds", "note", "--code-file", code_file, *_address(receiver, state))[0] == 0
+    note = tmp_path / "note.txt"
+    note.write_bytes(b"First line\r\nSecond line\r\n")
+    status, _, err = run(capsys, "note", "--id", "n", "--lat", "1", "--lon", "2", "--text-file", str(note), *_address(receiver, state))
+    assert status == 1
+    assert "a note cannot contain control or text-direction characters" in err
+    assert receiver.record.welcomes == 0 and receiver.record.requests == []
+
+
 def test_files_past_the_limit_are_refused_before_connecting(capsys, tmp_path) -> None:
     big = tmp_path / "big.png"
     big.write_bytes(b"\x89PNG\r\n\x1a\n" + bytes(1_048_576))

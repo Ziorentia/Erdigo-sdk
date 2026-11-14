@@ -268,6 +268,10 @@ Only a person can answer that question, so `pair` refuses a bare code when stand
 as in a pipe, a script or a systemd service. It stops before it contacts the receiver. Use the QR text there, or
 `--fingerprint` with the full 64-digit key, which is part of the QR text.
 
+`note --text-file` sends the file's text exactly as it is, which must be UTF-8. A note may hold line feeds and tabs but
+no carriage returns (spec section 6.3), so a file saved with Windows line endings (CR LF), as Notepad saves a new file,
+is refused before anything is sent, as the .NET and Swift tools refuse it. Save it with LF line endings.
+
 The code is never accepted as a command-line argument, because arguments appear in process lists and shell history. A
 code file must be readable by you alone: on Linux and macOS a regular file you own with mode 0600, on Windows a file
 that grants nobody but you, SYSTEM and the Administrators group. On Windows an entry for OWNER RIGHTS counts as the
