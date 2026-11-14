@@ -2,8 +2,8 @@
 //
 // On macOS and Linux a private folder has mode 0700 and a private file mode 0600, and both must belong to the
 // current user. Node.js cannot read or change a Windows access list without a native module, so on Windows a new
-// folder is restricted to the current user with the system's icacls tool, and nothing is checked when reading. The
-// README says what this means.
+// folder loses what it inherits and is granted to the current user with the system's icacls tool, and nothing is
+// checked when reading. The README says what this means.
 
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -256,8 +256,8 @@ function checkPrivateDirectory(path) {
 }
 
 /**
- * Gives a new folder an access list that grants the current user alone, with nothing inherited from above, using
- * the icacls tool that comes with Windows.
+ * Removes everything a new folder inherits and grants the current user full control, using the icacls tool that comes
+ * with Windows. SYSTEM and the Administrators group may keep access, as the .NET SDK allows.
  * @param {string} path
  */
 function restrictWindowsFolder(path) {
