@@ -278,7 +278,7 @@ final class FileDeviceStore implements LockingDeviceStore
     private static function decodeState(string $data): array
     {
         $root = json_decode($data, true, 16, JSON_THROW_ON_ERROR);
-        $fail = static fn (string $why): never => throw new \UnexpectedValueException($why);
+        $fail = [self::class, 'damaged'];
         if (!is_array($root) || ($root['version'] ?? null) !== 1 || !is_array($root['pairings'] ?? null) || !is_array($root['counters'] ?? null)) {
             $fail('unknown layout');
         }
@@ -320,6 +320,11 @@ final class FileDeviceStore implements LockingDeviceStore
             $counters[(string) $fingerprint] = $value;
         }
         return ['pairings' => $pairings, 'counters' => $counters];
+    }
+
+    private static function damaged(string $why): never
+    {
+        throw new \UnexpectedValueException($why);
     }
 
     /** @param array{pairings: list<ReceiverPairing>, counters: array<string, int>} $state */
