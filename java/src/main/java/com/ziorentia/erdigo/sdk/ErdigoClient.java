@@ -707,7 +707,8 @@ public final class ErdigoClient implements AutoCloseable {
                 }
                 if (retry instanceof RetryPolicy.UpTo upTo) {
                     // Use all the time allowed, with a last try at the end of it.
-                    double remaining = upTo.time().toNanos() / 1e9 - (now - start);
+                    double allowed = upTo.time().getSeconds() + upTo.time().getNano() / 1e9;
+                    double remaining = allowed - (now - start);
                     if (remaining <= 0) {
                         throw new ErdigoException(Kind.NO_ANSWER);
                     }
