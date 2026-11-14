@@ -81,6 +81,8 @@ _advapi32.IsValidSid.argtypes = [wintypes.LPVOID]
 _advapi32.IsValidSid.restype = wintypes.BOOL
 _advapi32.ConvertSidToStringSidW.argtypes = [wintypes.LPVOID, ctypes.POINTER(wintypes.LPWSTR)]
 _advapi32.ConvertSidToStringSidW.restype = wintypes.BOOL
+_advapi32.ConvertStringSidToSidW.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(wintypes.LPVOID)]
+_advapi32.ConvertStringSidToSidW.restype = wintypes.BOOL
 _advapi32.ConvertStringSecurityDescriptorToSecurityDescriptorW.argtypes = [
     wintypes.LPCWSTR, wintypes.DWORD, ctypes.POINTER(wintypes.LPVOID), ctypes.POINTER(wintypes.ULONG),
 ]
@@ -156,14 +158,45 @@ def _current_user_sid_string() -> str:
         _kernel32.LocalFree(ctypes.cast(text, wintypes.HLOCAL))
 
 
+#: OWNER RIGHTS, which stands for whoever owns the object.
+_OWNER_RIGHTS = "S-1-3-4"
+
+
+def _sid_from_string(text: str) -> wintypes.LPVOID:
+    """A SID from its text. The caller frees it with LocalFree."""
+    sid = wintypes.LPVOID()
+    if not _advapi32.ConvertStringSidToSidW(text, ctypes.byref(sid)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return sid
+
+
 def has_private_access_list(path: str) -> bool:
     """True if nobody but the current user, SYSTEM and the Administrators group is allowed anything on ``path``.
+
+    An entry for OWNER RIGHTS counts as the owner, and so is allowed when one of those owns ``path``. Python 3.13 and
+    later give a folder made with mode 0o700 on Windows, as ``tempfile.mkdtemp`` makes it, exactly that entry beside
+    SYSTEM and the Administrators group, and the files made in it inherit it.
 
     A missing access list allows everyone, so it is refused. An allowing entry of a kind this code does not read is
     refused too, rather than guessed at.
     """
     token_user = _current_user_sid()
     user = _sid_pointer(token_user)
+    owner_rights = _sid_from_string(_OWNER_RIGHTS)
+    try:
+        return _has_private_access_list(path, user, owner_rights)
+    finally:
+        _kernel32.LocalFree(ctypes.cast(owner_rights, wintypes.HLOCAL))
+
+
+def _has_private_access_list(path: str, user: wintypes.LPVOID, owner_rights: wintypes.LPVOID) -> bool:
+    def trusted(sid: wintypes.LPVOID) -> bool:
+        return bool(
+            _advapi32.EqualSid(sid, user)
+            or _advapi32.IsWellKnownSid(sid, _WIN_LOCAL_SYSTEM_SID)
+            or _advapi32.IsWellKnownSid(sid, _WIN_BUILTIN_ADMINISTRATORS_SID)
+        )
+
     owner = wintypes.LPVOID()
     dacl = wintypes.LPVOID()
     descriptor = wintypes.LPVOID()
@@ -174,6 +207,7 @@ def has_private_access_list(path: str) -> bool:
     if status != 0:
         raise ctypes.WinError(status)
     try:
+        owner_is_trusted = bool(owner.value) and _advapi32.IsValidSid(owner) and trusted(owner)
         if not dacl.value:
             return False
         information = _AclSizeInformation()
@@ -192,13 +226,11 @@ def has_private_access_list(path: str) -> bool:
             sid = wintypes.LPVOID(ace.value + ctypes.sizeof(_AceHeader) + 4)
             if not _advapi32.IsValidSid(sid):
                 return False
-            trusted = (
-                _advapi32.EqualSid(sid, user)
-                or _advapi32.IsWellKnownSid(sid, _WIN_LOCAL_SYSTEM_SID)
-                or _advapi32.IsWellKnownSid(sid, _WIN_BUILTIN_ADMINISTRATORS_SID)
-            )
-            if not trusted:
-                return False
+            if trusted(sid):
+                continue
+            if owner_is_trusted and _advapi32.EqualSid(sid, owner_rights):
+                continue
+            return False
         return True
     finally:
         _kernel32.LocalFree(ctypes.cast(descriptor, wintypes.HLOCAL))
