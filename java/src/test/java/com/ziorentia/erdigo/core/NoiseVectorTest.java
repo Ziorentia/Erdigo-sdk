@@ -102,7 +102,7 @@ class NoiseVectorTest {
     void tamperedTransportMessageIsRejected() {
         NoiseTransport[] pair = establishedPair();
         byte[] sealed = pair[0].seal("hello".getBytes(StandardCharsets.US_ASCII));
-        sealed[0] ^= 0x01;
+        sealed[0] = (byte) (sealed[0] ^ 0x01);
         assertEquals(NoiseException.Failure.DECRYPTION_FAILED, assertThrows(NoiseException.class, () -> pair[1].open(sealed)).failure());
     }
 
@@ -217,7 +217,7 @@ class NoiseVectorTest {
     void canonicalKeyRule() {
         byte[] key = Noise.publicKey(Noise.newPrivateKey());
         assertTrue(Noise.isCanonicalPublicKey(key));
-        key[31] |= (byte) 0x80;
+        key[31] = (byte) (key[31] | 0x80);
         assertFalse(Noise.isCanonicalPublicKey(key));
         assertFalse(Noise.isCanonicalPublicKey(bytes("edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f")));
         assertTrue(Noise.isCanonicalPublicKey(bytes("ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f")));
