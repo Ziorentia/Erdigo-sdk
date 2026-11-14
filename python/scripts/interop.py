@@ -250,8 +250,9 @@ def main() -> int:
         mock.wait_for(r"\[mock\] paired ")
 
         print("Writing every item kind")
+        # Written as bytes, so that the file has LF line endings on Windows too.
         note_file = work / "note.txt"
-        note_file.write_text("First line\nSecond line, with a link https://example.com that must stay text.", encoding="utf-8")
+        note_file.write_bytes("First line\nSecond line, with a link https://example.com that must stay text.".encode("utf-8"))
         big_png = work / "big.png"
         big_png.write_bytes(png(160, 120, seed=1))
         small_jpeg = work / "small.jpg"
@@ -276,6 +277,16 @@ def main() -> int:
         for step in steps:
             send(*step, *address)
         mock.drain()
+
+        print("A note file with Windows line endings is refused before anything is sent, as by the .NET and Swift tools")
+        # The protocol allows line feeds and tabs in a note, but no carriage return (spec section 6.3).
+        crlf_file = work / "note-crlf.txt"
+        crlf_file.write_bytes(b"First line\r\nSecond line\r\n")
+        refused = send("note", "--id", "crlf", "--lat", "37.572", "--lon", "126.982", "--text-file", str(crlf_file), *address, expect_ok=False)
+        if refused.returncode != 1 or "a note cannot contain control or text-direction characters" not in refused.stderr:
+            raise AssertionError("a note file with carriage returns was not refused as the other tools refuse it")
+        if any(re.match(r"\[mock\] (connected|#\d+ )", line) for line in mock.drain(1.0)):
+            raise AssertionError("the mock was contacted for a note that should have been refused first")
 
         print("Checking what the mock holds")
         mock.command("devices")
