@@ -1,0 +1,70 @@
+name: PHP
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The job only reads the code. A private repository needs this much to check it out.
+permissions:
+  contents: read
+
+jobs:
+  php-sdk:
+    name: PHP SDK (${{ matrix.os }}, PHP ${{ matrix.php }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # PHPUnit 10 is the last for PHP 8.1, and 11 the last for PHP 8.2.
+          - { os: ubuntu-latest, php: '8.1', phpunit: '10' }
+          - { os: ubuntu-latest, php: '8.2', phpunit: '11' }
+          - { os: ubuntu-latest, php: '8.3', phpunit: '12' }
+          - { os: ubuntu-latest, php: '8.4', phpunit: '12' }
+          - { os: ubuntu-latest, php: '8.5', phpunit: '12' }
+          - { os: windows-latest, php: '8.1', phpunit: '10' }
+          - { os: windows-latest, php: '8.5', phpunit: '12' }
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+        working-directory: php
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_NOLOGO: 1
+    steps:
+      # actions/checkout v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      # shivammathur/setup-php 2.37.2
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240
+        with:
+          php-version: ${{ matrix.php }}
+          # Only what the SDK needs: sodium and hash, and sockets for finding receivers.
+          extensions: sodium, sockets
+          tools: phpunit:${{ matrix.phpunit }}
+          coverage: none
+      - name: Check the syntax of every file
+        run: find src bin tests examples autoload.php -name '*.php' -o -name erdigo-send -type f | xargs -n 1 php -l > /dev/null
+      - name: Test
+        run: phpunit
+      # The other editions' mock receiver, for showing that this edition works with them.
+      # actions/setup-dotnet v4.3.1
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+        if: runner.os == 'Linux'
+        with:
+          dotnet-version: 8.0.x
+      - name: Build the .NET mock receiver
+        if: runner.os == 'Linux'
+        working-directory: windows
+        run: dotnet build src/erdigo-send --configuration Release
+      # Pairs with the .NET mock using the QR text and a typed code, and writes every kind of item. The terminal
+      # checks use pseudo terminals, which Windows does not have.
+      - name: Interoperability with the .NET mock receiver
+        if: runner.os == 'Linux'
+        env:
+          # Also find the mock on the network with multicast DNS.
+          ERDIGO_MULTICAST_CHECKS: "1"
+        run: MOCK=../windows/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh

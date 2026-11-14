@@ -1,0 +1,7 @@
+# Composer and PHPUnit
+/vendor/
+/composer.lock
+/composer.phar
+*.phar
+/.phpunit.cache/
+/.phpunit.result.cache

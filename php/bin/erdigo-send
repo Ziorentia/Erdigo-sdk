@@ -1,0 +1,35 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// erdigo-send for PHP. Run it with the PHP command-line interpreter: `php bin/erdigo-send help`.
+
+if (PHP_SAPI !== 'cli') {
+    exit(1);
+}
+
+$autoloaders = [
+    __DIR__ . '/../vendor/autoload.php',     // This package, installed with its own dependencies.
+    __DIR__ . '/../../../autoload.php',      // This package, inside another project's vendor folder.
+    __DIR__ . '/../autoload.php',            // A copy of this folder, without Composer.
+];
+foreach ($autoloaders as $autoloader) {
+    if (is_file($autoloader)) {
+        require $autoloader;
+        break;
+    }
+}
+
+foreach (['sodium', 'hash'] as $extension) {
+    if (!extension_loaded($extension)) {
+        fwrite(STDERR, "erdigo-send: PHP's {$extension} extension is needed.\n");
+        exit(1);
+    }
+}
+if (PHP_INT_SIZE < 8) {
+    fwrite(STDERR, "erdigo-send: 64-bit PHP is needed.\n");
+    exit(1);
+}
+
+exit(Erdigo\Cli\Application::main($argv));
