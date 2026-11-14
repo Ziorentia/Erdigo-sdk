@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import socket
 import threading
 import time
 
@@ -122,20 +123,36 @@ def test_reconnects_and_resends_with_the_same_number_after_a_lost_answer(receive
     device.close()
 
 
+def _close_and_time_a_refusal(receiver: TestReceiver) -> float:
+    """Closes the receiver, checks that its port now refuses connections, and returns how long a refusal takes.
+
+    Windows takes about two seconds to refuse a connection to a closed port on this computer, because it tries again
+    before giving up. Linux and macOS refuse at once."""
+    receiver.close()
+    started = time.monotonic()
+    try:
+        socket.create_connection(("127.0.0.1", receiver.port), timeout=10).close()
+    except OSError:
+        return time.monotonic() - started
+    pytest.fail("the test receiver still accepts connections after it was closed")
+
+
 def test_an_unreachable_receiver_is_retried_for_as_long_as_allowed_then_reported(receiver: TestReceiver) -> None:
     device = Paired(receiver, retry=RetryPolicy.up_to(1.5))
-    receiver.close()
+    refusal = _close_and_time_a_refusal(receiver)
     started = time.monotonic()
     with pytest.raises(ErdigoError) as raised:
         device.client.ping()
     elapsed = time.monotonic() - started
     assert raised.value.kind is ErrorKind.NO_ANSWER
-    assert 1.4 <= elapsed < 5
+    # The 1.5 seconds count from the first failure, and a last attempt starts at their end at the latest. So it takes
+    # at least that long, and at most an attempt, the time allowed and one more attempt, with a second to spare.
+    assert 1.4 <= elapsed < refusal + 1.5 + refusal + 1.0
 
 
 def test_a_request_with_a_timeout_stops_at_it(receiver: TestReceiver) -> None:
     device = Paired(receiver, retry=RetryPolicy.FOREVER)
-    receiver.close()
+    _close_and_time_a_refusal(receiver)
     started = time.monotonic()
     with pytest.raises(TimeoutError):
         device.client.ping(timeout=1.0)

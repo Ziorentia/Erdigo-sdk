@@ -151,3 +151,31 @@ def test_on_windows_a_folder_everyone_can_read_is_refused(tmp_path) -> None:
     with pytest.raises(ErdigoError) as raised:
         FileDeviceStore(str(folder))
     assert raised.value.storage_problem is StorageProblem.INSECURE
+
+
+@pytest.mark.skipif(not WINDOWS, reason="access lists are Windows only")
+def test_on_windows_owner_rights_count_as_the_owner(tmp_path) -> None:
+    """Python 3.13 and later give folders made with mode 0o700 an entry for OWNER RIGHTS, which a file you own may keep."""
+    import subprocess
+
+    from erdigo_sdk import _windows
+
+    path = tmp_path / "code.txt"
+    path.write_text("code", encoding="utf-8")
+    subprocess.run(["icacls", str(path), "/inheritance:r", "/grant:r", "*S-1-3-4:(F)", "*S-1-5-18:(F)"], check=True, capture_output=True)
+    assert _windows.has_private_access_list(str(path))
+    subprocess.run(["icacls", str(path), "/grant", "*S-1-1-0:(R)"], check=True, capture_output=True)
+    assert not _windows.has_private_access_list(str(path))
+
+
+@pytest.mark.skipif(not WINDOWS or sys.version_info < (3, 13), reason="Python 3.13 and later restrict mode 0o700 folders on Windows")
+def test_on_windows_a_code_file_in_a_private_temporary_folder_is_accepted(tmp_path) -> None:
+    import tempfile
+
+    from erdigo_sdk.private_file import read_private
+
+    folder = tempfile.mkdtemp(dir=tmp_path)
+    path = os.path.join(folder, "code.txt")
+    with open(path, "w", encoding="utf-8") as handle:
+        handle.write("code")
+    assert read_private(path, 1024) == b"code"

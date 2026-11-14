@@ -63,17 +63,28 @@ class TestReceiver:
         self.welcome_kinds: Optional[tuple] = None
         self.hello_answer: Optional[object] = None
         self._server = socket.create_server(("127.0.0.1", 0))
+        # The accept loop wakes up often enough to notice close(). See there.
+        self._server.settimeout(0.05)
         self.port = self._server.getsockname()[1]
         self._stopped = False
         self._connections: List[socket.socket] = []
-        threading.Thread(target=self._accept, daemon=True).start()
+        self._accepting = threading.Thread(target=self._accept, daemon=True)
+        self._accepting.start()
 
     @property
     def ticket(self) -> PairingTicket:
         return PairingTicket(self.code, self.fingerprint)
 
     def close(self) -> None:
+        """Stops listening before it returns, so that a new connection is refused on every system.
+
+        Closing a socket that another thread is blocked in accept() on does not stop it listening on Linux: the
+        blocked call keeps it open, and the next connection is accepted and served. So the accept loop, which wakes
+        up every 50 milliseconds, is stopped first, and only then is the socket closed.
+        """
         self._stopped = True
+        if threading.current_thread() is not self._accepting:
+            self._accepting.join(timeout=5)
         self._server.close()
         with self.lock:
             for connection in self._connections:
@@ -105,8 +116,11 @@ class TestReceiver:
         while not self._stopped:
             try:
                 connection, _ = self._server.accept()
+            except socket.timeout:
+                continue
             except OSError:
                 return
+            connection.settimeout(None)
             with self.lock:
                 self._connections.append(connection)
                 self.record.connections += 1

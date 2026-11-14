@@ -250,6 +250,8 @@ yet; check `cryptography`'s security advisories before updating it, and update i
   so `erdigo-send --keychain` is refused.
 - `erdigo-send pair` reads a typed code from the terminal itself on Linux and macOS, with echo off, as the other tools
   do, and from the console on Windows. Either way a code file can be used.
+- On Windows an access-list entry for OWNER RIGHTS is accepted when a trusted account owns the file or folder (see
+  [The `erdigo-send` tool](#the-erdigo-send-tool)). The .NET SDK refuses such an entry.
 
 ## The `erdigo-send` tool
 
@@ -268,7 +270,9 @@ as in a pipe, a script or a systemd service. It stops before it contacts the rec
 
 The code is never accepted as a command-line argument, because arguments appear in process lists and shell history. A
 code file must be readable by you alone: on Linux and macOS a regular file you own with mode 0600, on Windows a file
-that grants nobody but you, SYSTEM and the Administrators group.
+that grants nobody but you, SYSTEM and the Administrators group. On Windows an entry for OWNER RIGHTS counts as the
+file's owner, so it is accepted when you, SYSTEM or the Administrators group own the file. Python 3.13 and later give
+folders made with mode 0o700, such as those from `tempfile.mkdtemp`, exactly that entry.
 
 ## Layout
 
