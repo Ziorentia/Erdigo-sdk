@@ -13,7 +13,8 @@ SDKs and their mock receivers work with each other.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later from the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) on a PC on the same local network. It can
-also write to [Erdigo for Mac](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12).
+also write to [Erdigo for Mac](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12). The app's minimum and recommended systems are listed in
+[System requirements for the app](../README.md#system-requirements-for-the-app).
 
 ## Try it in two minutes
 
