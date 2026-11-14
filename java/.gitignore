@@ -1,0 +1,9 @@
+# Build output
+target/
+
+# Maven and its downloads, when kept inside the checkout (see README)
+.tools/
+
+# Local SDK state, in case someone points --state-dir at the checkout
+identity.key
+pairings.json
