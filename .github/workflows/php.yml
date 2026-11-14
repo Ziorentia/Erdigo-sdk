@@ -52,7 +52,7 @@ jobs:
         run: phpunit
       # The other editions' mock receiver, for showing that this edition works with them.
       # actions/setup-dotnet v4.3.1
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73
         if: runner.os == 'Linux'
         with:
           dotnet-version: 8.0.x
