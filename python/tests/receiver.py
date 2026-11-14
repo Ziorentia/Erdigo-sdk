@@ -33,6 +33,8 @@ class Record:
     """What the receiver saw, for the tests to check."""
 
     connections: int = 0
+    #: Connections closed at once because of ``silent_connections``.
+    silenced: int = 0
     pair_first_messages: int = 0
     pair_requests: List[messages.PairRequest] = field(default_factory=list)
     hellos: int = 0
@@ -57,6 +59,9 @@ class TestReceiver:
         self.approved_kinds: Optional[tuple] = None
         #: Seconds to wait before pairing message 2, as a slow network would.
         self.pair_delay = 0.0
+        #: How many of the next connections to close at once, without a word, as a receiver does with one an address
+        #: may not have.
+        self.silent_connections = 0
         #: Sent in place of the receiver's static key in pairing message 2, to test a device's checks.
         self.advertised_static: Optional[bytes] = None
         self.answer: Answer = lambda envelope: None
@@ -146,6 +151,13 @@ class TestReceiver:
 
     def _serve(self, connection: socket.socket) -> None:
         try:
+            with self.lock:
+                silent = self.silent_connections > 0
+                if silent:
+                    self.silent_connections -= 1
+                    self.record.silenced += 1
+            if silent:
+                return
             connection.settimeout(20)
             mode = protocol.parse_preamble(self._read_exactly(connection, 5))
             if mode is protocol.Mode.PAIR:

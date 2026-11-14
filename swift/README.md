@@ -91,6 +91,8 @@ try store.save(pairing)
 `pair` throws `ErdigoError.keyNotConfirmed`, which a real program should catch. The receiver has heard nothing about this
 device, and the code stays valid. A typed code cannot pair without `confirmKey`. Text from the QR code carries the
 receiver's key, and `Pairing.pair` compares it and stops on a mismatch, so it asks the person nothing.
+After the person confirms the key, the pairing connection is tried up to three times, half a second and then a second
+apart, if it meets silence, because the receiver may still be closing the connection that showed the key.
 `PairingTicket(parsing:)` refuses QR text without a valid fingerprint. The `isatty` line makes a pipe or a file count as
 a no, because nobody is there to see the key and answer, so a program with no terminal should use the QR text. The
 [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this matters.

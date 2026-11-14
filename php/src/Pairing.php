@@ -28,6 +28,11 @@ final class Pairing
 {
     public const SDK_NAME = 'erdigo-php/0.1.0';
 
+    /** How many times the pairing connection is tried after a person confirmed the key. */
+    private const CONFIRMED_ATTEMPTS = 3;
+    /** The wait before the second try, in seconds. Each later try waits that much longer. */
+    private const CONFIRMED_RETRY_WAIT = 0.5;
+
     private function __construct()
     {
     }
@@ -81,6 +86,7 @@ final class Pairing
             self::validateLabel($label);
         }
 
+        $confirmedByAPerson = false;
         if ($ticket->fingerprint === null) {
             if ($confirmKey === null) {
                 throw new ErdigoException(
@@ -93,20 +99,30 @@ final class Pairing
                 throw new ErdigoException(ErrorKind::KeyNotConfirmed);
             }
             $ticket = new PairingTicket($ticket->code, $found);
+            $confirmedByAPerson = true;
         }
 
         $request = new PairRequest([IntegrationV1::VERSION], self::SDK_NAME, $name, ItemKind::canonicalList($kinds));
         $lastError = new ErdigoException(ErrorKind::NoAnswer);
         foreach ($target->pairingCandidates() as [$host, $port]) {
-            try {
-                return self::attempt($host, $port, $ticket, $identity, $request, $label, $handshakeTimeout, $approvalTimeout);
-            } catch (ErdigoException $error) {
-                if ($error->kind === ErrorKind::NoAnswer) {
-                    continue;
+            // After a person has confirmed the key, the receiver has just answered with this code, so silence now is
+            // most likely the receiver still closing the connection that showed the key: a receiver limits how many
+            // unproven connections one address may have at once. Trying again is safe, because nothing about this
+            // device is sent until the receiver has proven the code and its key matches the one confirmed.
+            $tries = $confirmedByAPerson ? self::CONFIRMED_ATTEMPTS : 1;
+            for ($round = 0; $round < $tries; $round++) {
+                if ($round > 0) {
+                    usleep((int) (self::CONFIRMED_RETRY_WAIT * $round * 1e6));
                 }
-                // A definite answer from a receiver holding this code ends the search.
-                $lastError = $error;
-                break;
+                try {
+                    return self::attempt($host, $port, $ticket, $identity, $request, $label, $handshakeTimeout, $approvalTimeout);
+                } catch (ErdigoException $error) {
+                    if ($error->kind !== ErrorKind::NoAnswer) {
+                        // A definite answer from a receiver holding this code ends the search.
+                        $lastError = $error;
+                        break 2;
+                    }
+                }
             }
         }
         throw $lastError;

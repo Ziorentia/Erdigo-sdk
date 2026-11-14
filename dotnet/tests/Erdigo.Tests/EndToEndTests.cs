@@ -493,6 +493,42 @@ public sealed class EndToEndTests : EndToEndBase
         Assert.Equal(ticket.Fingerprint, pairing.Fingerprint);
     }
 
+    /// <summary>The receiver may still be closing the connection that showed the key, and so drop the next one unanswered.</summary>
+    [Fact]
+    public async Task AfterAConfirmedKeyASilentConnectionIsTriedAgain()
+    {
+        var (receiver, port) = await StartReceiverAsync();
+        using var relay = new SilencingRelay(port);
+        var code = receiver.OpenPairingWindow().Code;
+        var yes = new KeyQuestion(true, () =>
+        {
+            relay.SilenceNext(2);
+            return Task.CompletedTask;
+        });
+        var identity = DeviceIdentity.Generate();
+        var pairing = await PairAsync(relay.Port, new PairingTicket(code), identity, "Careful", confirmKey: yes.AskAsync);
+
+        Assert.Equal(receiver.Fingerprint, pairing.Fingerprint);
+        // One connection showed the key, two met silence, and the last one paired.
+        Assert.Equal(2, relay.Silenced);
+        Assert.Equal(4, relay.Connections);
+        Assert.Single(receiver.Events, happened => happened is Receiver.Event.PairingRequested);
+        Assert.Equal(new[] { identity.Fingerprint }, receiver.PairedDevices().Select(device => device.Fingerprint));
+    }
+
+    /// <summary>Without a key a person confirmed a moment ago, silence is reported at once, as by the other SDKs.</summary>
+    [Fact]
+    public async Task QrTextMeetingSilenceIsNotTriedAgain()
+    {
+        var (receiver, port) = await StartReceiverAsync();
+        using var relay = new SilencingRelay(port);
+        var ticket = receiver.OpenPairingWindow();
+        relay.SilenceNext(1);
+        await ExpectAsync(ErdigoErrorKind.NoAnswer, () => PairAsync(relay.Port, ticket, name: "Scanner"));
+        await AssertHeardNoRequestAsync(receiver);
+        Assert.Equal(1, relay.Connections);
+    }
+
     /// <summary>Someone else who knows the code takes the receiver's place between the question and the pairing.</summary>
     [Fact]
     public async Task AKeyOtherThanTheOneConfirmedDoesNotPair()

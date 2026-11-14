@@ -100,7 +100,9 @@ store.Save(pairing);
 
 `confirmKey` runs before the receiver hears about this device, so the receiver still shows its key. If it returns
 false, `PairAsync` throws an `ErdigoException` whose `Kind` is `KeyNotConfirmed`, which a real program should catch.
-The receiver has heard nothing about this device, and the code stays valid. A typed code cannot pair without
+The receiver has heard nothing about this device, and the code stays valid. If it returns true, `PairAsync` tries the
+pairing connection up to three times, half a second and then a second apart, while it meets silence, because the
+receiver may still be closing the connection that showed the key. A typed code cannot pair without
 `confirmKey`. Text from the QR code carries the receiver's key, and `PairAsync` compares it and stops on a mismatch,
 so it asks the person nothing. `PairingTicket.Parse` refuses QR text without a valid fingerprint. The redirection check
 makes a pipe or a file count as a no, because nobody is there to see the key and answer, so a program with no
