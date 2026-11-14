@@ -296,6 +296,11 @@ as in a pipe or a script. It stops before it contacts the receiver. Use the QR t
 full 64-digit key, which is part of the QR text. The code is never accepted as a command-line argument. A code file
 must be readable by you alone: mode 0600 on macOS and Linux; on Windows a file in your own profile folder usually is.
 
+`note --text-file` reads the note from a UTF-8 file. It takes out what editors such as Notepad add: a byte order
+mark at the start, and the carriage return of each Windows line ending (CR LF becomes LF). Nothing else is changed.
+A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
+sent.
+
 ## Layout
 
 | Folder | Contents |

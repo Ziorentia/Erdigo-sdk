@@ -16,18 +16,41 @@ internal static class CommandFiles
 
     public static string PhotoTooLarge => $"a photo is at most {Limits.V1.PhotoBytes} bytes";
 
-    /// <summary>A note file holds the note as UTF-8, with nothing added: no byte order mark, and no trailing newline unless it belongs to the note.</summary>
+    /// <summary>
+    /// A note file holds the note as UTF-8. Two things editors add are taken out, so that a note written in Notepad
+    /// can be sent as it is: a byte order mark at the start, and the carriage return of each Windows line ending
+    /// (CR LF becomes LF). Nothing else is changed: a trailing newline stays, and a carriage return on its own is
+    /// left for the note rules to refuse. The limit applies to the note that is sent, not to the file.
+    /// </summary>
     public static string ReadNote(string path)
     {
-        var data = ReadAtMost(path, Limits.V1.NoteBytes, "note", NoteTooLarge);
+        // Every line feed may come with a carriage return, and a byte order mark is three bytes.
+        var data = ReadAtMost(path, (Limits.V1.NoteBytes * 2) + 3, "note", NoteTooLarge);
+        string text;
         try
         {
-            return Text.StrictUtf8.GetString(data);
+            text = Text.StrictUtf8.GetString(data);
         }
         catch (DecoderFallbackException)
         {
             throw new UsageException("the note file is not UTF-8 text");
         }
+        text = NoteFromFile(text);
+        if (Encoding.UTF8.GetByteCount(text) > Limits.V1.NoteBytes)
+        {
+            throw new UsageException(NoteTooLarge);
+        }
+        return text;
+    }
+
+    /// <summary>The note in a file's text: without a leading byte order mark, and with CR LF turned into LF.</summary>
+    internal static string NoteFromFile(string text)
+    {
+        if (text.StartsWith('﻿'))
+        {
+            text = text[1..];
+        }
+        return text.Replace("\r\n", "\n", StringComparison.Ordinal);
     }
 
     /// <summary>The format is checked by the SDK when the photo is sent, before it connects.</summary>

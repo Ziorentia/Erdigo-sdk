@@ -678,7 +678,7 @@ struct ErdigoSend {
                     case (let value?, nil):
                         text = value
                     case (nil, let path?):
-                        text = try String(contentsOfFile: path, encoding: .utf8)
+                        text = noteFromFile(try String(contentsOfFile: path, encoding: .utf8))
                     default:
                         throw UsageError(message: "give either --text or --text-file")
                     }
@@ -752,4 +752,28 @@ struct ErdigoSend {
             exit(1)
         }
     }
+}
+
+/// The note in a file's text. Two things editors add are taken out, so that a note written in Notepad can be sent as
+/// it is: a byte order mark at the start, and the carriage return of each Windows line ending (CR LF becomes LF).
+/// Nothing else is changed: a trailing newline stays, and a carriage return on its own is left for the note rules to
+/// refuse.
+func noteFromFile(_ text: String) -> String {
+    var scalars = Substring(text).unicodeScalars
+    if scalars.first == "\u{FEFF}" {
+        scalars.removeFirst()
+    }
+    var note = String.UnicodeScalarView()
+    var index = scalars.startIndex
+    while index < scalars.endIndex {
+        let scalar = scalars[index]
+        let next = scalars.index(after: index)
+        if scalar == "\r", next < scalars.endIndex, scalars[next] == "\n" {
+            index = next
+            continue
+        }
+        note.append(scalar)
+        index = next
+    }
+    return String(note)
 }

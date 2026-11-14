@@ -69,17 +69,35 @@ export const NOTE_TOO_LARGE = `a note is at most ${LIMITS_V1.noteBytes} bytes of
 export const PHOTO_TOO_LARGE = `a photo is at most ${LIMITS_V1.photoBytes} bytes`;
 
 /**
- * A note file holds the note as UTF-8, with nothing added: no byte order mark, and no trailing newline unless it
- * belongs to the note.
+ * A note file holds the note as UTF-8. Two things editors add are taken out, so that a note written in Notepad can be
+ * sent as it is: a byte order mark at the start, and the carriage return of each Windows line ending (CR LF becomes
+ * LF). Nothing else is changed: a trailing newline stays, and a carriage return on its own is left for the note rules
+ * to refuse. The limit applies to the note that is sent, not to the file.
  * @param {string} path
  */
 export function readNote(path) {
-  const data = readAtMost(path, LIMITS_V1.noteBytes, 'note', NOTE_TOO_LARGE);
+  // Every line feed may come with a carriage return, and a byte order mark is three bytes.
+  const data = readAtMost(path, LIMITS_V1.noteBytes * 2 + 3, 'note', NOTE_TOO_LARGE);
+  let text;
   try {
-    return strictUtf8.decode(data);
+    text = strictUtf8.decode(data);
   } catch {
     throw new UsageError('the note file is not UTF-8 text');
   }
+  text = noteFromFile(text);
+  if (Buffer.byteLength(text, 'utf8') > LIMITS_V1.noteBytes) {
+    throw new UsageError(NOTE_TOO_LARGE);
+  }
+  return text;
+}
+
+/**
+ * The note in a file's text: without a leading byte order mark, and with CR LF turned into LF.
+ * @param {string} text
+ */
+export function noteFromFile(text) {
+  const rest = text.startsWith('\uFEFF') ? text.slice(1) : text;
+  return rest.replaceAll('\r\n', '\n');
 }
 
 /**

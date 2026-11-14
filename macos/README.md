@@ -178,6 +178,11 @@ Only a person can answer that question, so `pair` refuses a bare code when stand
 as in a pipe or a script. It stops before it contacts the receiver. Use the QR text there, or `--fingerprint` with the
 full 64-digit key, which is part of the QR text.
 
+`note --text-file` reads the note from a UTF-8 file. It takes out what editors such as Notepad add: a byte order
+mark at the start, and the carriage return of each Windows line ending (CR LF becomes LF). Nothing else is changed.
+A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
+sent.
+
 ## Tests
 
 ```bash

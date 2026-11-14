@@ -161,6 +161,12 @@ expect_ok "pin" "$BIN" pin "${STATE[@]}" --id gate --lat 37.5796 --lon 126.977 -
 expect_ok "negative coordinates" "$BIN" pin "${STATE[@]}" --id opera --lat -33.8568 --lon 151.2153
 expect_ok "marker" "$BIN" marker "${STATE[@]}" --id tower --lat 48.8584 --lon 2.2945 --color blue
 expect_ok "note" "$BIN" note "${STATE[@]}" --id meet --lat 37.5663 --lon 126.9779 --text "Meet at the gate"
+printf '\xef\xbb\xbfFirst line\r\nSecond line\r\n' >"$WORK/note-notepad.txt"
+printf 'First line\rSecond line' >"$WORK/note-lone-cr.txt"
+expect_ok "a note file saved by Notepad, with a byte order mark and CR LF" \
+    "$BIN" note "${STATE[@]}" --id notepad --lat 1 --lon 1 --text-file "$WORK/note-notepad.txt"
+expect_refused "a note file with a carriage return on its own" "control or text-direction" \
+    "$BIN" note "${STATE[@]}" --id lone-cr --lat 1 --lon 1 --text-file "$WORK/note-lone-cr.txt"
 expect_ok "track point" "$BIN" track-add "${STATE[@]}" --id walk --lat 37.5663 --lon 126.9779 --ts 1700000000000 --title Walk
 expect_ok "track finish" "$BIN" track-finish "${STATE[@]}" --id walk
 expect_ok "move" "$BIN" move "${STATE[@]}" --id gate --lat 37.58 --lon 126.98

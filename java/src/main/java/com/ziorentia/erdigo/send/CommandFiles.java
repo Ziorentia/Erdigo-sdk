@@ -26,14 +26,32 @@ final class CommandFiles {
     private CommandFiles() {
     }
 
-    /** A note file holds the note as UTF-8, with nothing added: no byte order mark, and no trailing newline unless it belongs to the note. */
+    /**
+     * A note file holds the note as UTF-8. Two things editors add are taken out, so that a note written in Notepad can
+     * be sent as it is: a byte order mark at the start, and the carriage return of each Windows line ending (CR LF
+     * becomes LF). Nothing else is changed: a trailing newline stays, and a carriage return on its own is left for the
+     * note rules to refuse. The limit applies to the note that is sent, not to the file.
+     */
     static String readNote(String path) {
-        byte[] data = readAtMost(path, Limits.V1.noteBytes(), "note", NOTE_TOO_LARGE);
+        // Every line feed may come with a carriage return, and a byte order mark is three bytes.
+        byte[] data = readAtMost(path, Limits.V1.noteBytes() * 2 + 3, "note", NOTE_TOO_LARGE);
+        String text;
         try {
-            return strictUtf8(data);
+            text = strictUtf8(data);
         } catch (CharacterCodingException error) {
             throw new UsageException("the note file is not UTF-8 text");
         }
+        text = noteFromFile(text);
+        if (text.getBytes(StandardCharsets.UTF_8).length > Limits.V1.noteBytes()) {
+            throw new UsageException(NOTE_TOO_LARGE);
+        }
+        return text;
+    }
+
+    /** The note in a file's text: without a leading byte order mark, and with CR LF turned into LF. */
+    static String noteFromFile(String text) {
+        String rest = text.startsWith("\uFEFF") ? text.substring(1) : text;
+        return rest.replace("\r\n", "\n");
     }
 
     /** The format is checked by the SDK when the photo is sent, before it connects. */

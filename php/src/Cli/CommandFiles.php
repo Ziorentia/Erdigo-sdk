@@ -30,14 +30,33 @@ final class CommandFiles
         return 'a photo is at most ' . Limits::v1()->photoBytes . ' bytes';
     }
 
-    /** A note file holds the note as UTF-8, with nothing added: no byte order mark, and no trailing newline unless it belongs to the note. */
+    /**
+     * A note file holds the note as UTF-8. Two things editors add are taken out, so that a note written in Notepad can
+     * be sent as it is: a byte order mark at the start, and the carriage return of each Windows line ending (CR LF
+     * becomes LF). Nothing else is changed: a trailing newline stays, and a carriage return on its own is left for the
+     * note rules to refuse. The limit applies to the note that is sent, not to the file.
+     */
     public static function readNote(string $path): string
     {
-        $data = self::readAtMost($path, Limits::v1()->noteBytes, 'note', self::noteTooLarge());
+        // Every line feed may come with a carriage return, and a byte order mark is three bytes.
+        $data = self::readAtMost($path, Limits::v1()->noteBytes * 2 + 3, 'note', self::noteTooLarge());
         if (!Utf8::isValid($data)) {
             throw new UsageException('the note file is not UTF-8 text');
         }
-        return $data;
+        $text = self::noteFromFile($data);
+        if (strlen($text) > Limits::v1()->noteBytes) {
+            throw new UsageException(self::noteTooLarge());
+        }
+        return $text;
+    }
+
+    /** The note in a file's UTF-8 text: without a leading byte order mark, and with CR LF turned into LF. */
+    public static function noteFromFile(string $text): string
+    {
+        if (str_starts_with($text, "\xEF\xBB\xBF")) {
+            $text = substr($text, 3);
+        }
+        return str_replace("\r\n", "\n", $text);
     }
 
     /** The format is checked by the SDK when the photo is sent, before it connects. */

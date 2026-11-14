@@ -171,18 +171,55 @@ def test_mistakes_are_explained(capsys, tmp_path, arguments, message) -> None:
     assert message in err
 
 
-def test_a_note_file_with_windows_line_endings_is_refused_as_the_other_tools_refuse_it(capsys, receiver: TestReceiver, tmp_path) -> None:
-    """The protocol allows line feeds and tabs in a note, but no carriage return. The .NET and Swift tools send the
-    file as it is and refuse it with this message, so this one does too, rather than changing the note."""
+def test_a_note_file_saved_by_notepad_is_sent_without_its_byte_order_mark_or_carriage_returns(capsys, receiver: TestReceiver, tmp_path) -> None:
+    """The protocol allows line feeds and tabs in a note, but no carriage return, so the tool takes out what Notepad
+    adds, as the other editions' tools do."""
     state = tmp_path / "state"
     code_file = _private_file(tmp_path / "code.txt", receiver.ticket.uri)
     assert run(capsys, "pair", "--name", "x", "--kinds", "note", "--code-file", code_file, *_address(receiver, state))[0] == 0
     note = tmp_path / "note.txt"
-    note.write_bytes(b"First line\r\nSecond line\r\n")
+    note.write_bytes(b"\xef\xbb\xbf" + "First line\r\nSecond é\r\n\r\nend\r\n".encode("utf-8"))
+    status, _, err = run(capsys, "note", "--id", "n", "--lat", "1", "--lon", "2", "--text-file", str(note), *_address(receiver, state))
+    assert status == 0, err
+    assert receiver.record.requests[-1].request.text == "First line\nSecond é\n\nend\n"
+
+
+def test_a_carriage_return_on_its_own_is_refused_before_connecting(capsys, receiver: TestReceiver, tmp_path) -> None:
+    state = tmp_path / "state"
+    code_file = _private_file(tmp_path / "code.txt", receiver.ticket.uri)
+    assert run(capsys, "pair", "--name", "x", "--kinds", "note", "--code-file", code_file, *_address(receiver, state))[0] == 0
+    welcomes = receiver.record.welcomes
+    note = tmp_path / "note.txt"
+    note.write_bytes(b"First line\rSecond line")
     status, _, err = run(capsys, "note", "--id", "n", "--lat", "1", "--lon", "2", "--text-file", str(note), *_address(receiver, state))
     assert status == 1
     assert "a note cannot contain control or text-direction characters" in err
-    assert receiver.record.welcomes == 0 and receiver.record.requests == []
+    assert receiver.record.welcomes == welcomes and receiver.record.requests == []
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        ("\ufeff\ufeffa", "\ufeffa"),
+        ("a\rb", "a\rb"),
+        ("a\r\r\nb", "a\r\nb"),
+        ("a\n\rb", "a\n\rb"),
+        ("a\r", "a\r"),
+    ],
+)
+def test_only_one_byte_order_mark_and_only_cr_lf_pairs_are_changed(text: str, expected: str) -> None:
+    assert cli.note_from_file(text) == expected
+
+
+def test_the_note_limit_counts_the_note_sent_not_the_file(capsys, tmp_path) -> None:
+    lines = 4096 // 2
+    at_limit = tmp_path / "at-limit.txt"
+    at_limit.write_bytes(b"\xef\xbb\xbf" + b"a\r\n" * lines)
+    assert cli.read_note(str(at_limit)) == "a\n" * lines
+    over = tmp_path / "over.txt"
+    over.write_bytes(b"a\r\n" * lines + b"a")
+    status, _, err = run(capsys, "note", "--id", "n", "--lat", "1", "--lon", "2", "--text-file", str(over), "--state-dir", str(tmp_path / "state"))
+    assert status == 1 and "a note is at most 4096 bytes" in err
 
 
 def test_files_past_the_limit_are_refused_before_connecting(capsys, tmp_path) -> None:

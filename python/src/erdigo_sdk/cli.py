@@ -220,6 +220,26 @@ NOTE_TOO_LARGE = f"a note is at most {LIMITS_V1.note_bytes} bytes of UTF-8"
 PHOTO_TOO_LARGE = f"a photo is at most {LIMITS_V1.photo_bytes} bytes"
 
 
+def read_note(path: str) -> str:
+    """A note file holds the note as UTF-8. Two things editors add are taken out, so that a note written in Notepad
+    can be sent as it is: a byte order mark at the start, and the carriage return of each Windows line ending (CR LF
+    becomes LF). Nothing else is changed: a trailing newline stays, and a carriage return on its own is left for the
+    note rules to refuse. The limit applies to the note that is sent, not to the file."""
+    # Every line feed may come with a carriage return, and a byte order mark is three bytes.
+    data = read_at_most(path, LIMITS_V1.note_bytes * 2 + 3, "note", NOTE_TOO_LARGE)
+    text = note_from_file(_decode_utf8(data, "note"))
+    if len(text.encode("utf-8")) > LIMITS_V1.note_bytes:
+        raise UsageError(NOTE_TOO_LARGE)
+    return text
+
+
+def note_from_file(text: str) -> str:
+    """The note in a file's text: without a leading byte order mark, and with CR LF turned into LF."""
+    if text.startswith("\ufeff"):
+        text = text[1:]
+    return text.replace("\r\n", "\n")
+
+
 class _Context:
     def __init__(self, store: FileDeviceStore, redact: bool) -> None:
         self.store = store
@@ -459,9 +479,7 @@ def _prepare_note(options: Options) -> Callable[[ErdigoClient], None]:
     path = options.optional("text-file")
     if (inline is None) == (path is None):
         raise UsageError("give either --text or --text-file")
-    # A note file holds the note as UTF-8, with nothing added: no byte order mark, and no trailing newline unless it
-    # belongs to the note.
-    text = inline if inline is not None else _decode_utf8(read_at_most(path, LIMITS_V1.note_bytes, "note", NOTE_TOO_LARGE), "note")
+    text = inline if inline is not None else read_note(path)
     return lambda client: client.put_note(item_id, at, text)
 
 
