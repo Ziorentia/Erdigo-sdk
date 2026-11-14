@@ -288,7 +288,7 @@ Elsewhere it is kept in a file of mode 0600.
         }
         if (options.Flag("keychain"))
         {
-            throw new UsageException("--keychain belongs to the macOS SDK. This edition keeps the device key with DPAPI on Windows, and in a file of mode 0600 elsewhere.");
+            throw new UsageException("--keychain belongs to the Swift SDK. This edition keeps the device key with DPAPI on Windows, and in a file of mode 0600 elsewhere.");
         }
         return new Context(new FileDeviceStore(directory), options.Flag("redact"));
     }

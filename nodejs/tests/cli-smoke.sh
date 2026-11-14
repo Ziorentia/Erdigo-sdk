@@ -4,11 +4,11 @@
 #
 #     nodejs/tests/cli-smoke.sh
 #
-# The mock is the .NET one by default (build it first with `dotnet build windows/Erdigo.sln`). Set ERDIGO_MOCK_BIN to
+# The mock is the .NET one by default (build it first with `dotnet build dotnet/Erdigo.sln`). Set ERDIGO_MOCK_BIN to
 # another edition's erdigo-send, such as the Swift one at .build/debug/erdigo-send, to use that instead.
 #
 # It needs no terminal of its own, and it makes its own pseudo terminals for whatever has to run in one, with the
-# helper the Swift and .NET checks use. It is a port of windows/tests/cli-smoke.sh, without the checks of the mock
+# helper the Swift and .NET checks use. It is a port of dotnet/tests/cli-smoke.sh, without the checks of the mock
 # itself, which belong to the edition that has it.
 #
 set -u
@@ -16,7 +16,7 @@ set -u
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 NODE_DIR="$(cd "$TESTS_DIR/.." && pwd)"
 ROOT="$(cd "$NODE_DIR/.." && pwd)"
-HELPER="$ROOT/macos/Tests/typed-ahead-check.py"
+HELPER="$ROOT/swift/Tests/typed-ahead-check.py"
 
 # Runs a command that is stopped if it takes too long, so that it cannot hang this script. An alarm
 # survives exec. Only the mocks, which this script stops itself, run without this.
@@ -28,15 +28,15 @@ BIN="$NODE_DIR/bin/erdigo-send.js"
 QUICKSTART="$NODE_DIR/examples/quickstart.js"
 MOCK_BIN="${ERDIGO_MOCK_BIN:-}"
 if [ -z "$MOCK_BIN" ]; then
-    for candidate in "$ROOT/windows/src/erdigo-send/bin/Release/net8.0/erdigo-send" \
-        "$ROOT/windows/src/erdigo-send/bin/Debug/net8.0/erdigo-send" "$ROOT/.build/debug/erdigo-send"; do
+    for candidate in "$ROOT/dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send" \
+        "$ROOT/dotnet/src/erdigo-send/bin/Debug/net8.0/erdigo-send" "$ROOT/.build/debug/erdigo-send"; do
         if [ -x "$candidate" ]; then
             MOCK_BIN="$candidate"
             break
         fi
     done
 fi
-[ -n "$MOCK_BIN" ] && [ -x "$MOCK_BIN" ] || { echo "Build a mock first: dotnet build windows/Erdigo.sln, or set ERDIGO_MOCK_BIN"; exit 1; }
+[ -n "$MOCK_BIN" ] && [ -x "$MOCK_BIN" ] || { echo "Build a mock first: dotnet build dotnet/Erdigo.sln, or set ERDIGO_MOCK_BIN"; exit 1; }
 [ -x "$BIN" ] && [ -x "$QUICKSTART" ] || { echo "The tool and the example must be executable"; exit 1; }
 echo "mock  $MOCK_BIN"
 
@@ -161,7 +161,7 @@ OUTPUT="$(limited "$BIN" SECRET-CODE 2>&1)"
 check "a code as a command is not repeated" bash -c '[[ "$0" != *SECRET-CODE* ]]' "$OUTPUT"
 expect_refused "--state-dir and --profile together are refused" "cannot be used together" \
     "$BIN" identity "${STATE[@]}" --profile other
-expect_refused "--keychain is refused" "belongs to the macOS SDK" "$BIN" identity "${STATE[@]}" --keychain
+expect_refused "--keychain is refused" "belongs to the Swift SDK" "$BIN" identity "${STATE[@]}" --keychain
 expect_refused "there is no mock here" "no mock receiver" "$BIN" serve --mock
 chmod 644 "$WORK/code"
 expect_refused "a readable code file is refused" "mode 0600" \

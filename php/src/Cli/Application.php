@@ -59,7 +59,7 @@ Writing
 Testing without the Erdigo app
   serve --mock
       This edition has no mock receiver of its own. Run the .NET or Swift edition's, for example
-      'dotnet run --project windows/src/erdigo-send -- serve --mock', and use its port here.
+      'dotnet run --project dotnet/src/erdigo-send -- serve --mock', and use its port here.
 
 For pairing and writing commands
   --profile NAME    Use a separate identity and pairings (default: "default").
@@ -131,7 +131,7 @@ TEXT;
             case 'serve':
                 throw new UsageException(
                     "this edition has no mock receiver of its own. Run the .NET or Swift edition's, for example "
-                    . "'dotnet run --project windows/src/erdigo-send -- serve --mock' in the windows folder, and use its port here.",
+                    . "'dotnet run --project dotnet/src/erdigo-send -- serve --mock' in the dotnet folder, and use its port here.",
                 );
             case 'ping':
                 $this->runWrite($arguments, static fn (Options $options) => static fn (ErdigoClient $client) => $client->ping());
@@ -268,7 +268,7 @@ TEXT;
             $directory = FileDeviceStore::defaultDirectory($profile);
         }
         if ($options->flag('keychain')) {
-            throw new UsageException('--keychain belongs to the macOS SDK. This edition keeps the device key in a file only you can read.');
+            throw new UsageException('--keychain belongs to the Swift SDK. This edition keeps the device key in a file only you can read.');
         }
         return [new FileDeviceStore($directory), $options->flag('redact')];
     }

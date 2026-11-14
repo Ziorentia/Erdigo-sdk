@@ -52,7 +52,7 @@ Writing
 Testing without the Erdigo app
   serve --mock
       This edition has no mock receiver. Run the one from the .NET or Swift SDK in this repository, which this
-      tool works with: 'dotnet run --project src/erdigo-send -- serve --mock' in windows/, or
+      tool works with: 'dotnet run --project src/erdigo-send -- serve --mock' in dotnet/, or
       'swift run erdigo-send serve --mock' at the top of the repository.
 
 For pairing and writing commands
@@ -268,7 +268,7 @@ def _make_context(options: Options) -> _Context:
         directory = default_directory(profile)
     if options.flag("keychain"):
         raise UsageError(
-            "--keychain belongs to the macOS SDK. This edition keeps the device key with DPAPI on Windows, and in a file of mode 0600 elsewhere."
+            "--keychain belongs to the Swift SDK. This edition keeps the device key with DPAPI on Windows, and in a file of mode 0600 elsewhere."
         )
     return _Context(FileDeviceStore(directory), options.flag("redact"))
 
@@ -448,7 +448,7 @@ def run_write(arguments: Sequence[str], prepare: Callable[[Options], Callable[[E
 def run_serve(arguments: Sequence[str]) -> None:
     raise UsageError(
         "this edition has no mock receiver. Run the one from the .NET or Swift SDK in this repository, which this tool works with: "
-        "'dotnet run --project src/erdigo-send -- serve --mock' in windows/, or 'swift run erdigo-send serve --mock'."
+        "'dotnet run --project src/erdigo-send -- serve --mock' in dotnet/, or 'swift run erdigo-send serve --mock'."
     )
 
 

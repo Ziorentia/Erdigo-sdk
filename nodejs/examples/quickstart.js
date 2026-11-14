@@ -3,7 +3,7 @@
 //
 // Start a mock receiver in one terminal, from the .NET or the Swift SDK:
 //
-//     dotnet run --project windows/src/erdigo-send -- serve --mock
+//     dotnet run --project dotnet/src/erdigo-send -- serve --mock
 //
 // and run this in another, using the port and code it prints:
 //

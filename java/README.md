@@ -4,8 +4,8 @@ A Java library for writing pins, markers, notes, photos and tracks to an Erdigo 
 Java 17 or later and runs where Java does: Windows, macOS and Linux. It is for the local network only; there is no
 internet path.
 
-It speaks the same [protocol](../spec/integration-v1.md) as the [macOS](../macos/README.md) and
-[Windows](../windows/README.md) SDKs, and was checked against both of their mock receivers. It has no mock receiver of
+It speaks the same [protocol](../spec/integration-v1.md) as the [Swift](../swift/README.md) and
+[.NET](../dotnet/README.md) SDKs, and was checked against both of their mock receivers. It has no mock receiver of
 its own: develop against the .NET or Swift one, as described below.
 
 **Android has not been tested.** The library uses only the JDK, but it has not been built or run on Android, and its
@@ -31,7 +31,7 @@ On Windows, use `mvnw.cmd` in place of `./mvnw`. This builds `target/erdigo-send
 the shared vectors in `spec/`, so use a full clone.
 
 You also need a mock receiver from another SDK in this repository. With the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0),
-start one from the `windows` folder in another terminal (on a Mac, `swift run erdigo-send serve --mock` in the
+start one from the `dotnet` folder in another terminal (on a Mac, `swift run erdigo-send serve --mock` in the
 repository's root does the same):
 
 ```bash
@@ -259,7 +259,7 @@ Discovery sends one-shot multicast DNS queries ([RFC 6762, section 5.1](https://
 from an ordinary port, over IPv4, and reads the answers with the small reader above. Receivers answer such a query
 directly, so it needs neither port 5353 nor a Bonjour service. It is used only when no address is given.
 
-## Differences from the macOS and Windows SDKs
+## Differences from the Swift and .NET SDKs
 
 - **No mock receiver.** `erdigo-send serve` is refused with a pointer to the .NET and Swift mocks, which this tool
   works with.
@@ -318,7 +318,7 @@ sent.
 ```
 
 ```bash
-./mvnw -B package && dotnet build ../windows/src/erdigo-send -c Release && tests/cli-smoke.sh
+./mvnw -B package && dotnet build ../dotnet/src/erdigo-send -c Release && tests/cli-smoke.sh
 ```
 
 What has been checked:

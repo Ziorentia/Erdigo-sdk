@@ -8,8 +8,8 @@ cron job that reads its readings in its own way and sends them through the SDK. 
 Raspberry Pi or any other ARM board.** Its tests run on Linux (x64) and Windows (x64) in CI, and on macOS (Apple
 silicon) locally.
 
-It speaks the same [protocol](../spec/integration-v1.md) as the [macOS](../macos/README.md) and
-[Windows](../windows/README.md) SDKs, and its `erdigo-send` tool has the same commands and options as theirs. It has no
+It speaks the same [protocol](../spec/integration-v1.md) as the [Swift](../swift/README.md) and
+[.NET](../dotnet/README.md) SDKs, and its `erdigo-send` tool has the same commands and options as theirs. It has no
 mock receiver of its own: develop against the mock that comes with either of them. CI pairs with the .NET mock and
 writes every item kind to it, and the same was done with the Swift mock on a Mac.
 
@@ -41,7 +41,7 @@ it, which needs Rust; use the 64-bit system where you can. Neither has been trie
 ## Try it in two minutes
 
 Start a mock receiver from one of the other SDKs in one terminal. With the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0),
-in the `windows` folder:
+in the `dotnet` folder:
 
 ```bash
 dotnet run --project src/erdigo-send -- serve --mock
@@ -208,7 +208,7 @@ in `identity.dpapi`, encrypted with [DPAPI](https://learn.microsoft.com/windows/
 for the current user, with entropy that ties it to this purpose, called through `ctypes`. DPAPI keeps the key from other
 users and from someone who copies the file to another computer. It does not protect against a program running as you,
 an administrator, or someone with your password and a copy of your profile. The
-[Windows SDK guide](../windows/README.md#what-dpapi-does-not-protect-against) says more.
+[.NET SDK guide](../dotnet/README.md#what-dpapi-does-not-protect-against) says more.
 
 The store tells these apart, and never makes a new key over an old one:
 
@@ -239,7 +239,7 @@ the packages these bring with them. Regenerate it after changing a version, with
 [`requirements/test.in`](requirements/test.in). Nothing checks these packages against a list of known vulnerabilities
 yet; check `cryptography`'s security advisories before updating it, and update it when one affects you.
 
-## Differences from the macOS and Windows SDKs
+## Differences from the Swift and .NET SDKs
 
 - **No mock receiver.** `erdigo-send serve --mock` says to use the .NET or Swift one, which this edition works with.
 - **Synchronous.** Methods block until the receiver answers, and take `timeout=` in seconds where the others take a
@@ -309,7 +309,7 @@ defence the tests cover was also removed in turn to check that its test then fai
 To check this edition against another one's mock receiver, build that mock and run, for example:
 
 ```bash
-python scripts/interop.py --cwd ../windows -- dotnet run --project src/erdigo-send --
+python scripts/interop.py --cwd ../dotnet -- dotnet run --project src/erdigo-send --
 python scripts/interop.py --cwd .. -- swift run erdigo-send
 ```
 

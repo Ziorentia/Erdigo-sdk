@@ -1,5 +1,5 @@
 <Project>
-  <!-- Every package and its exact version, in one place. windows/README.md says why each one is here. -->
+  <!-- Every package and its exact version, in one place. dotnet/README.md says why each one is here. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>

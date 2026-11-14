@@ -42,13 +42,13 @@ jobs:
       # Exactly what the lock files say, checked against nuget.org's list of known vulnerabilities, as the .NET
       # workflow does.
       - name: Build the .NET mock receiver
-        working-directory: windows
+        working-directory: dotnet
         run: |
           dotnet restore src/erdigo-send --locked-mode -p:NuGetAuditMode=all
           dotnet build src/erdigo-send --no-restore --configuration Release
       - name: Locate the mock receiver
         run: |
-          MOCK="$GITHUB_WORKSPACE/windows/src/erdigo-send/bin/Release/net8.0/erdigo-send"
+          MOCK="$GITHUB_WORKSPACE/dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send"
           if [ "$RUNNER_OS" = "Windows" ]; then
             MOCK="$(cygpath -w "$MOCK.exe")"
           fi

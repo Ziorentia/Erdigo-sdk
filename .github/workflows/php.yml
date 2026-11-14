@@ -58,7 +58,7 @@ jobs:
           dotnet-version: 8.0.x
       - name: Build the .NET mock receiver
         if: runner.os == 'Linux'
-        working-directory: windows
+        working-directory: dotnet
         run: dotnet build src/erdigo-send --configuration Release
       # Pairs with the .NET mock using the QR text and a typed code, and writes every kind of item. The terminal
       # checks use pseudo terminals, which Windows does not have.
@@ -67,4 +67,4 @@ jobs:
         env:
           # Also find the mock on the network with multicast DNS.
           ERDIGO_MULTICAST_CHECKS: "1"
-        run: MOCK=../windows/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh
+        run: MOCK=../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh

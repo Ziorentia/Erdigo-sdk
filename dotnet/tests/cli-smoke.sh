@@ -1,17 +1,17 @@
 #!/bin/bash
 # Runs the .NET erdigo-send against its own mock receiver and checks what comes out, on macOS or Linux.
 #
-#     dotnet build windows/Erdigo.sln && windows/tests/cli-smoke.sh
+#     dotnet build dotnet/Erdigo.sln && dotnet/tests/cli-smoke.sh
 #
 # It needs no terminal of its own, and it makes its own pseudo terminals for whatever has to run in one, with the
-# helper the Swift SDK's checks use. It is a port of macos/Tests/cli-smoke.sh. Where the .NET tools behave
+# helper the Swift SDK's checks use. It is a port of swift/Tests/cli-smoke.sh. Where the .NET tools behave
 # differently, the check says so.
 #
 set -u
 
 TESTS_DIR="$(cd "$(dirname "$0")" && pwd)"
 WINDOWS_DIR="$(cd "$TESTS_DIR/.." && pwd)"
-HELPER="$WINDOWS_DIR/../macos/Tests/typed-ahead-check.py"
+HELPER="$WINDOWS_DIR/../swift/Tests/typed-ahead-check.py"
 CONFIGURATION="${CONFIGURATION:-Debug}"
 
 # Runs a command that is stopped if it takes too long, so that it cannot hang this script. An alarm
@@ -22,7 +22,7 @@ limited() {
 
 BIN="$WINDOWS_DIR/src/erdigo-send/bin/$CONFIGURATION/net8.0/erdigo-send"
 QUICKSTART="$WINDOWS_DIR/examples/Quickstart/bin/$CONFIGURATION/net8.0/erdigo-example-quickstart"
-[ -x "$BIN" ] && [ -x "$QUICKSTART" ] || { echo "Build first: dotnet build windows/Erdigo.sln"; exit 1; }
+[ -x "$BIN" ] && [ -x "$QUICKSTART" ] || { echo "Build first: dotnet build dotnet/Erdigo.sln"; exit 1; }
 
 # File modes and digests are spelled differently on macOS and Linux.
 mode_of() {

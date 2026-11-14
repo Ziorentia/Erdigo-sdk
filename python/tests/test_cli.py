@@ -154,7 +154,7 @@ def test_pair_write_list_identity_and_forget(capsys, receiver: TestReceiver, tmp
         (["marker", "--id", "p", "--lat", "1", "--lon", "2", "--color", "pink"], "--color must be one of"),
         (["note", "--id", "n", "--lat", "1", "--lon", "2"], "give either --text or --text-file"),
         (["track-add", "--id", "t", "--lat", "1", "--lon", "2", "--ts", "1.5"], "--ts must be whole milliseconds"),
-        (["pin", "--id", "p", "--lat", "1", "--lon", "2", "--keychain"], "--keychain belongs to the macOS SDK"),
+        (["pin", "--id", "p", "--lat", "1", "--lon", "2", "--keychain"], "--keychain belongs to the Swift SDK"),
         (["pin", "--id", "p", "--lat", "1", "--lon", "2", "--profile", "a", "--state-dir", "b"], "cannot be used together"),
         (["pin", "--id", "p", "--lat", "1", "--lon", "2", "--profile", "a/b"], "--profile may contain only"),
         (["pin", "--id", "p", "--lat", "1", "--lon", "2", "--yes", "1"], "--yes does not apply to this command"),
