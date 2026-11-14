@@ -63,9 +63,10 @@ public final class ErdigoException extends RuntimeException {
 
     private final Kind kind;
     private final String detail;
-    private final ReceiverError receiverError;
+    // Not carried when an exception is serialized: neither type is serializable, and both are details of one answer.
+    private final transient ReceiverError receiverError;
     private final ItemKind itemKind;
-    private final List<Integer> supported;
+    private final transient List<Integer> supported;
     private final Long lastSeq;
     private final StorageProblem storageProblem;
 

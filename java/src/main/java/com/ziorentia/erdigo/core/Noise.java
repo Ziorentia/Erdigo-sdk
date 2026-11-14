@@ -107,7 +107,7 @@ public final class Noise {
         for (int index = 0; index < DH_LENGTH; index++) {
             bigEndian[index] = uBytes[DH_LENGTH - 1 - index];
         }
-        bigEndian[0] &= 0x7F;
+        bigEndian[0] = (byte) (bigEndian[0] & 0x7F);
         BigInteger u = new BigInteger(1, bigEndian).mod(PRIME);
         try {
             KeyFactory factory = KeyFactory.getInstance("XDH");
