@@ -7,10 +7,6 @@ CI, but the device key is protected only on Windows (see [Where things are kept]
 It is a port of the [Swift SDK](../swift/README.md) and speaks the same [protocol](../spec/integration-v1.md). The two
 SDKs and their mock receivers work with each other.
 
-> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
-> Microsoft Store, so this SDK can be used with the real app on a Windows PC now. It is still waiting for review on the
-> Mac App Store. This notice will be removed once the Mac review is complete.
-
 To use the SDK with a real map, install Erdigo 2.17.23 or later from the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) on a PC on the same local network. It can
 also write to [Erdigo for Mac](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12). The app's minimum and recommended systems are listed in
