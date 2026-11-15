@@ -1,0 +1,50 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read the [discussion rules](https://github.com/Ziorentia/Erdigo-sdk/blob/main/CONTRIBUTING.md#discussion-rules) first.
+
+        **Found a security problem?** Do not post it here. Report it privately, as [SECURITY.md](https://github.com/Ziorentia/Erdigo-sdk/blob/main/SECURITY.md) says.
+  - type: checkboxes
+    id: before
+    attributes:
+      label: Before you post
+      description: This repository is public, and a post cannot be fully erased.
+      options:
+        - label: I searched Discussions and the issues for the same idea.
+          required: true
+        - label: I removed pairing codes, QR codes, keys, fingerprints, coordinates, addresses and map screenshots. Adding `--redact` to an `erdigo-send` command helps with this.
+          required: true
+  - type: dropdown
+    id: sdk
+    attributes:
+      label: Which SDK
+      options:
+        - All of them, or the protocol
+        - Swift
+        - ".NET"
+        - Python
+        - Node.js
+        - Java
+        - PHP
+        - A new language
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this let you do?
+      description: The problem you have, or what you are trying to build.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: A change to the protocol affects every SDK and the Erdigo app, so say why the SDK alone cannot do it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Other ways you thought of

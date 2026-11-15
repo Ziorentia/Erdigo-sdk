@@ -1,0 +1,23 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read the [discussion rules](https://github.com/Ziorentia/Erdigo-sdk/blob/main/CONTRIBUTING.md#discussion-rules) first.
+
+        **Found a security problem?** Do not post it here. Report it privately, as [SECURITY.md](https://github.com/Ziorentia/Erdigo-sdk/blob/main/SECURITY.md) says.
+
+        For a question about using an SDK, the Q&A category gets you an answer that can be marked as solved.
+  - type: checkboxes
+    id: before
+    attributes:
+      label: Before you post
+      description: This repository is public, and a post cannot be fully erased.
+      options:
+        - label: I removed pairing codes, QR codes, keys, fingerprints, coordinates, addresses and map screenshots. Adding `--redact` to an `erdigo-send` command helps with this.
+          required: true
+  - type: textarea
+    id: message
+    attributes:
+      label: Your message
+    validations:
+      required: true

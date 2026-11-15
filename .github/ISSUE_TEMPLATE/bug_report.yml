@@ -5,6 +5,7 @@ body:
     attributes:
       value: |
         **Found a security problem?** Please do not file it here. See [SECURITY.md](https://github.com/Ziorentia/Erdigo-sdk/blob/main/SECURITY.md).
+        **Have a question rather than a bug?** Ask it in [Discussions](https://github.com/Ziorentia/Erdigo-sdk/discussions/categories/q-a).
   - type: checkboxes
     id: redacted
     attributes:
