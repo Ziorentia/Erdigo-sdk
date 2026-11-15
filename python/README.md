@@ -230,7 +230,7 @@ may hold a copy.
 |---|---|---|
 | `cryptography` | 50.0.2 | X25519 and ChaCha20-Poly1305, from OpenSSL. SHA-256, HMAC and HKDF come from Python itself. The Noise handshakes are implemented in this package and checked against the official vectors. |
 | `zeroconf` | 0.154.0 (0.152.0 on Python 3.10) | Optional, for finding receivers on the network. |
-| `pytest`, `setuptools` | 9.2.0, 80.9.0 | Tests and building only. |
+| `pytest`, `setuptools` | 9.2.0, 84.2.1 | Tests and building only. |
 
 The runtime version is pinned in [`pyproject.toml`](pyproject.toml), so every install gets the version that was tested.
 CI installs exactly what [`requirements/test.txt`](requirements/test.txt) lists, with a hash for every file, including

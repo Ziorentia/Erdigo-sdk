@@ -4,4 +4,4 @@ cryptography==50.0.2
 zeroconf==0.154.0 ; python_version >= "3.11"
 zeroconf==0.152.0 ; python_version < "3.11"
 pytest==9.2.0
-setuptools==80.9.0
+setuptools==84.2.1
