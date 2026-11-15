@@ -5,7 +5,7 @@ get around what the [threat model](spec/threat-model.md) promises.
 
 ## Reporting a problem
 
-**Please do not open a public issue.** Use GitHub's private reporting instead: on this repository's
+**Please do not open a public issue or discussion.** Use GitHub's private reporting instead: on this repository's
 [Security tab](https://github.com/Ziorentia/Erdigo-sdk/security), choose **Report a vulnerability**.
 
 Please remove real data from your report: keys, device or receiver fingerprints, pairing codes and QR codes,

@@ -132,6 +132,15 @@ the [.NET SDK guide](dotnet/README.md).
 - [Test vectors](spec/vectors/README.md)
 - [Reporting a security problem](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+
+## Questions and ideas
+
+Ask questions, share ideas and show what you built in
+[Discussions](https://github.com/Ziorentia/Erdigo-sdk/discussions). Please read the
+[discussion rules](CONTRIBUTING.md#discussion-rules) first. Report bugs as
+[issues](https://github.com/Ziorentia/Erdigo-sdk/issues), and security problems privately, as
+[SECURITY.md](SECURITY.md) says.
 
 ## Status of the security work
 

@@ -3,3 +3,9 @@ contact_links:
   - name: Report a security problem
     url: https://github.com/Ziorentia/Erdigo-sdk/security/advisories/new
     about: Please report these privately.
+  - name: Ask a question
+    url: https://github.com/Ziorentia/Erdigo-sdk/discussions/categories/q-a
+    about: How to use an SDK or erdigo-send. Please read the discussion rules first.
+  - name: Suggest an idea
+    url: https://github.com/Ziorentia/Erdigo-sdk/discussions/categories/ideas
+    about: New features, new languages and changes to the protocol start here.

@@ -1,0 +1,45 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read the [discussion rules](https://github.com/Ziorentia/Erdigo-sdk/blob/main/CONTRIBUTING.md#discussion-rules) first.
+
+        **Found a security problem?** Do not post it here. Report it privately, as [SECURITY.md](https://github.com/Ziorentia/Erdigo-sdk/blob/main/SECURITY.md) says.
+  - type: checkboxes
+    id: before
+    attributes:
+      label: Before you post
+      description: This repository is public, and a post cannot be fully erased.
+      options:
+        - label: I searched Discussions, the issues and the SDK guides.
+          required: true
+        - label: I removed pairing codes, QR codes, keys, fingerprints, coordinates, addresses and map screenshots. Adding `--redact` to an `erdigo-send` command helps with this.
+          required: true
+  - type: dropdown
+    id: sdk
+    attributes:
+      label: SDK
+      options:
+        - Swift
+        - ".NET"
+        - Python
+        - Node.js
+        - Java
+        - PHP
+        - The protocol, or more than one SDK
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit and system
+      description: The commit, and the system with its runtime version, for example "1a2b3c4, Windows 11, Python 3.12". Add the Erdigo app version if the app is involved.
+    validations:
+      required: true
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: What you want to do, what you tried, and what happened. The smallest code and output that shows it helps most.
+    validations:
+      required: true
