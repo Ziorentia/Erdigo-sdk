@@ -13,10 +13,6 @@ It speaks the same [protocol](../spec/integration-v1.md) as the [Swift](../swift
 mock receiver of its own: develop against the mock that comes with either of them. CI pairs with the .NET mock and
 writes every item kind to it, and the same was done with the Swift mock on a Mac.
 
-> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
-> Microsoft Store and still waiting for review on the Mac App Store. Until it is released there, write to Erdigo on a
-> Windows PC or develop against a mock receiver as described below. This notice will be removed once the Mac review is complete.
-
 To use the SDK with a real map, install Erdigo 2.17.23 or later on a Mac from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) or on a PC from the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US), on the same local network. The app's

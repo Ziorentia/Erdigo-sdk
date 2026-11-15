@@ -10,11 +10,6 @@ The SDKs carry what your program sends; they do not read sensors or drones thems
 or positions from the device in its own way and sends them through the SDK. There is no ready-made integration for any
 particular drone or board.
 
-> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
-> [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US), so every SDK can now be used with the real app on a Windows PC. It is still
-> waiting for review on the Mac App Store. Until it is released there, write to Erdigo on a Windows PC or develop
-> against the mock receiver included with each SDK. This notice will be removed once the Mac review is complete.
-
 ## Get the Erdigo app
 
 The SDKs send to the Erdigo app, which must be running on a Mac or a Windows PC on the same local network. Install it

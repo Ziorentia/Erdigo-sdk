@@ -13,10 +13,6 @@ works with the other SDKs' mock receivers and with the Erdigo app on a Mac or a 
 > a delivery's position, cannot reach the app, and this SDK cannot change that. Sending from the internet would need a
 > separate relay, which is not part of this protocol.
 
-> **Store status.** Erdigo 2.17.23, the first version of the app that accepts these connections, is out on the
-> Microsoft Store and still waiting for review on the Mac App Store. Until it is released there, write to Erdigo on a
-> Windows PC or develop against a mock receiver as described below. This notice will be removed once the Mac review is complete.
-
 To use the SDK with a real map, install Erdigo 2.17.23 or later from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) or the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) on a computer on the same local network. The
