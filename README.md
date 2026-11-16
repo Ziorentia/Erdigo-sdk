@@ -56,7 +56,8 @@ streams use the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and
 
 - **Write only.** A device can add, move and delete its own items. It cannot read the map, anyone's location or
   anything else.
-- **Local network only.** There is no internet path.
+- **Local network only.** There is no internet path into the app. To bring in data from the internet, a gateway on
+  the app's network fetches it, as [Sending from the internet](#sending-from-the-internet) explains.
 - **Permission first.** A person types a one-time code from the app into the device, then confirms the request in
   the app.
 - **Silent to strangers.** The app answers nothing until a device proves it is allowed. Someone scanning the network
@@ -106,6 +107,13 @@ On Windows, install the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotne
 `dotnet run --project src/erdigo-send -- serve --mock`. The two SDKs and their mock receivers work with each other. See
 the [.NET SDK guide](dotnet/README.md).
 
+## Sending from the internet
+
+A drone on a mobile network or a sensor in a field cannot reach the app directly. Every SDK has an example of the way
+around it: the devices send to a small **relay** on the internet over HTTPS, and a **gateway** on the app's local
+network fetches from the relay and writes to the app as a paired device. Nothing connects into the local network, and no
+router port is opened. See [Sending from the internet: a cloud relay and a gateway](docs/cloud-relay.md).
+
 ## Things to know
 
 - **Line endings in notes.** A note may hold line feeds and tabs, but no carriage return (CR, spec section 6.3).
@@ -116,7 +124,8 @@ the [.NET SDK guide](dotnet/README.md).
     sent. Turn `\r\n` into `\n` and drop a leading BOM before you send text that came from a Windows file or
     program.
 - **Local network only.** The device and the Erdigo app must be on the same local network. A server on the internet,
-  such as a web shop, cannot reach the app.
+  such as a web shop, cannot reach the app, but a gateway on the app's network can fetch from it (see
+  [Sending from the internet](#sending-from-the-internet)).
 - **The mock receiver is for testing.** It stores nothing and draws no map. Use the real app to see items on a map.
 
 ## Documentation
@@ -127,6 +136,7 @@ the [.NET SDK guide](dotnet/README.md).
 - [Node.js SDK guide](nodejs/README.md)
 - [Java SDK guide](java/README.md)
 - [PHP SDK guide](php/README.md)
+- [Sending from the internet: a cloud relay and a gateway](docs/cloud-relay.md)
 - [Protocol specification](spec/integration-v1.md), for building an SDK in another language or a receiver
 - [Threat model](spec/threat-model.md): what this protects against, and what it does not
 - [Test vectors](spec/vectors/README.md)

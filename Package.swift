@@ -22,6 +22,8 @@ let package = Package(
         ),
         .executableTarget(name: "erdigo-vectors", dependencies: ["ErdigoCore"], path: "swift/Tools/erdigo-vectors"),
         .executableTarget(name: "erdigo-example-quickstart", dependencies: ["ErdigoSDK"], path: "swift/Examples/quickstart"),
+        .executableTarget(name: "erdigo-example-relay", dependencies: ["ErdigoSDK"], path: "swift/Examples/cloud-relay"),
+        .executableTarget(name: "erdigo-example-gateway", dependencies: ["ErdigoSDK"], path: "swift/Examples/cloud-gateway"),
         .testTarget(
             name: "ErdigoTests",
             dependencies: ["ErdigoCore", "ErdigoSDK", "ErdigoMockReceiver", "erdigo-send"],

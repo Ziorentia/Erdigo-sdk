@@ -278,14 +278,90 @@ that grants nobody but you, SYSTEM and the Administrators group. On Windows an e
 file's owner, so it is accepted when you, SYSTEM or the Administrators group own the file. Python 3.13 and later give
 folders made with mode 0o700, such as those from `tempfile.mkdtemp`, exactly that entry.
 
+## Cloud relay example
+
+The app takes connections only from its own local network. For data that starts on the internet,
+[`examples/cloud_relay`](examples/cloud_relay) has the two programs of the [cloud relay guide](../docs/cloud-relay.md):
+
+- `relay.py` runs on a server and holds what your devices send it over HTTPS until the gateway fetches it. It uses
+  only the Python standard library, so the one file can be copied to a server and run with Python 3.10 or later. It
+  speaks plain HTTP behind an HTTPS reverse proxy, and keeps its queue in memory.
+- `gateway.py` runs on the app's local network. It fetches from the relay over outgoing HTTPS and writes to the app
+  through this SDK, as a paired device. It needs the SDK installed as above.
+
+Neither is part of the installed package. From the root of the clone, with the virtual environment of
+[Install](#install) and the tokens and addresses as placeholders:
+
+```bash
+# On the server, which needs only Python and this one file
+ERDIGO_RELAY_SOURCE_TOKENS=SOURCE_TOKEN ERDIGO_RELAY_GATEWAY_TOKEN=GATEWAY_TOKEN \
+  python3 python/examples/cloud_relay/relay.py --listen 127.0.0.1:8080
+
+# On a computer on the app's network: pair once, then run
+.venv/bin/python python/examples/cloud_relay/gateway.py pair --name "Cloud gateway" --host APP_HOST --port APP_PORT
+ERDIGO_RELAY_TOKEN=GATEWAY_TOKEN .venv/bin/python python/examples/cloud_relay/gateway.py run --relay https://relay.example.com
+```
+
+On Windows the gateway runs as `.venv\Scripts\python python\examples\cloud_relay\gateway.py`, with
+`ERDIGO_RELAY_TOKEN` set in the environment first.
+
+`pair` reads the code or the QR text from the keyboard, or from `--code-file`, as `erdigo-send pair` does. Without
+`--host` and `--port` both commands look for the app on the network, which needs the optional discovery package. The
+gateway keeps its key, its pairing and its place in the relay's queue (`relay-state.json`) in the profile
+`cloud-gateway`, or in `--state-dir`; `erdigo-send list --profile cloud-gateway` shows its pairing. `run --once` does
+not hold its fetches open, and stops as soon as the relay has nothing more. The relay API, every option, the exit codes
+and how to deploy both are in the [guide](../docs/cloud-relay.md).
+
+While the app is out of reach or paused, the SDK keeps the operation and sends the same request again by itself, after
+1, 2, 4 ... up to 60 seconds, with the same sequence number, so the app applies it once even if its answer was lost
+(spec sections 7 and 13). Without `--once` the gateway gives the SDK `RetryPolicy.FOREVER`, so this goes on for as long
+as the app stays away; the gateway prints `No answer from the Erdigo app; trying again.` once per operation, without a
+time, since only the SDK knows when it tries next. Ctrl+C, or `SIGTERM` on Linux and macOS, stops the gateway during
+that wait too, with exit code 0, and the operation stays on the relay.
+
+With `--once` the SDK gets `RetryPolicy.up_to(30)`, which gives up on an app it cannot connect to. That count starts
+again at every new connection, so an app that takes every connection but never answers, or whose answers are all lost,
+would keep it trying. The gateway therefore keeps its own count for each operation, from the first sign of trouble with
+it: a connection the SDK made for it and then lost, or an answer that says "not now". It connects first and then sends,
+and a watcher thread looks at `client.limits` while the request runs. Once the operation has been in trouble for 30
+seconds the gateway gives up on it. The SDK cannot be stopped from another thread, so the store the gateway gives the
+client refuses the next connect counter, and the request ends at its next connection without sending anything again.
+An app that never answers shows trouble only when the SDK stops waiting for the answer, after 15 seconds, so that case
+takes about 45 to 50 seconds. A request still going over a working connection is never cut short, so the time the SDK
+spends pacing a track's points, up to about 100 seconds for 100 points, cannot make the gateway give up on a slow but
+healthy operation.
+
+The gateway then exits with code 3, as it does when the relay could not be reached or answered `408`, `429` or a server
+error for about 30 seconds. For the relay the time each try takes counts too, so a relay that takes the connection and
+never answers is given up on in about 30 seconds as well. What was fetched stays on the relay, and the next run sends it
+again as a new request, so a `track` operation's points can then appear twice.
+
+What was checked: [`tests/test_cloud_relay.py`](tests/test_cloud_relay.py) runs the relay against every case in
+[`cloud-relay-cases.json`](../docs/cloud-relay-cases.json), and against the rest of the API: tokens, the order of the
+checks, size limits, whole batches, a full queue, epochs, expiry with a test clock, paging, waiting, slow clients, its
+start-up checks and its log. [`tests/test_cloud_gateway.py`](tests/test_cloud_gateway.py) runs the relay, the gateway
+and the test receiver together: every operation kind, a second run, kinds the person did not allow, the app out of
+reach with and without `--once` (an answer lost before a long outage is sent again with the same sequence number, and
+Ctrl+C and `SIGTERM` stop the gateway while the SDK waits), a proxy in front of the test receiver that loses every
+answer or holds every answer back (given up on with `--once`; lost answers waited out without it; the same request
+with the same number each time), a track paced for longer than `--once` allows, also right after a "not now", which
+is not given up on, the relay out of reach with `--once` (nothing listening,
+server errors, and a relay that never answers), a relay restart, wrong tokens, answers that break the API, and HTTPS
+with a test certificate. CI runs [`scripts/cloud_relay_interop.py`](scripts/cloud_relay_interop.py) against the .NET
+mock on Linux and Windows, and it was run locally against the Swift mock. **Not checked:** a real server behind an
+HTTPS proxy, the released app, a Raspberry Pi, and this gateway with the other editions' relays. No security audit has
+been done.
+
 ## Layout
 
 | Path | Contents |
 |---|---|
 | `src/erdigo_sdk/` | The library: `noise.py` (the handshakes), `strict_json.py` and `messages.py` (the wire format), `model.py`, `pairing.py`, `client.py`, `store.py`, `private_file.py` and `_windows.py` (DPAPI and access lists), `discovery.py`, and `cli.py` (the tool) |
 | `examples/quickstart.py` | A complete small program |
+| `examples/cloud_relay/` | The [cloud relay example](#cloud-relay-example): `relay.py` and `gateway.py` |
 | `tests/` | Unit, vector and end-to-end tests, with a small scripted receiver in `tests/receiver.py` |
 | `scripts/interop.py` | Pairs with the .NET or Swift mock receiver and writes every item kind to it |
+| `scripts/cloud_relay_interop.py` | Runs the cloud relay example end to end against the .NET or Swift mock receiver |
 | `requirements/` | The exact versions and hashes CI installs |
 
 ## Tests

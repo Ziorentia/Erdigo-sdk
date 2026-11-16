@@ -224,6 +224,10 @@ while (true) {
             $request = $envelope->request;
             $note(['event' => 'request', 'seq' => $seq, 'json' => $plaintext]);
             $entry = $scripted();
+            // Runs the request, then ends the connection instead of answering, as when an answer is lost on the way.
+            $loseAnswer = $entry !== null && ($entry['lose_answer'] ?? false);
+            // Runs the request, then keeps the connection open without ever answering, until the device ends it.
+            $holdAnswer = $entry !== null && ($entry['hold_answer'] ?? false);
             if ($entry !== null && ($entry['drop'] ?? false)) {
                 $note(['event' => 'dropped']);
                 break;
@@ -292,6 +296,22 @@ while (true) {
                         $photo = null;
                     }
                 }
+            }
+            if ($loseAnswer) {
+                $note(['event' => 'answer_lost', 'seq' => $seq]);
+                break;
+            }
+            if ($holdAnswer) {
+                $note(['event' => 'answer_held', 'seq' => $seq]);
+                $stream->armDeadline(120.0);
+                try {
+                    while (true) {
+                        $stream->readFrame();
+                    }
+                } catch (Throwable) {
+                    // The device ended the connection, or two minutes passed.
+                }
+                break;
             }
             $stream->sendFrame($transport->seal(Wire::encodeReceiverMessage($answer)));
         }

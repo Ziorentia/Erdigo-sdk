@@ -109,6 +109,18 @@
           "xunit.extensibility.core": "[2.9.3]"
         }
       },
+      "erdigo-gateway": {
+        "type": "Project",
+        "dependencies": {
+          "Erdigo.Sdk": "[0.1.0, )"
+        }
+      },
+      "erdigo-relay": {
+        "type": "Project",
+        "dependencies": {
+          "Erdigo.Core": "[0.1.0, )"
+        }
+      },
       "erdigo-send": {
         "type": "Project",
         "dependencies": {

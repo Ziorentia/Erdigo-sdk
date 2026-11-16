@@ -1,0 +1,2325 @@
+{
+ "about": "Cases for POST /v1/ops of the example cloud relays, from docs/cloud-relay.md. Send each operation in valid_ops alone, as {\"ops\":[op]}: the relay answers 200. Send each one in invalid_ops alone: the relay answers 400 with error invalid_op and index 0, and takes nothing. Send each body in raw_bodies as it is, with Content-Type application/json: the relay answers 400 with one of the errors listed. body_base64 holds bytes that JSON text cannot. A batch of exactly 100 operations and the photo size limit (1048576 bytes decoded) are left to each relay's own tests, to keep this file small.",
+ "valid_ops": [
+  {
+   "name": "pin with only the required fields",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "pin with a title",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "Seoul City Hall"
+   }
+  },
+  {
+   "name": "pin at the largest coordinates",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 90,
+    "lon": 180
+   }
+  },
+  {
+   "name": "pin at the smallest coordinates",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": -90,
+    "lon": -180
+   }
+  },
+  {
+   "name": "pin with integer coordinates",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37,
+    "lon": 127
+   }
+  },
+  {
+   "name": "pin with a 64-character id",
+   "op": {
+    "op": "pin",
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "pin with dashes and underscores in the id",
+   "op": {
+    "op": "pin",
+    "id": "drone-1_pos",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "pin with a 200-character title of emoji",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00"
+   }
+  },
+  {
+   "name": "pin with accented letters in the title",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "Caf\u00e9 r\u00e9sum\u00e9"
+   }
+  },
+  {
+   "name": "marker without a color",
+   "op": {
+    "op": "marker",
+    "id": "m1",
+    "lat": 1.5,
+    "lon": 2.5
+   }
+  },
+  {
+   "name": "marker with a color and a title",
+   "op": {
+    "op": "marker",
+    "id": "m1",
+    "lat": 1.5,
+    "lon": 2.5,
+    "color": "gray",
+    "title": "Gate"
+   }
+  },
+  {
+   "name": "marker colored red",
+   "op": {
+    "op": "marker",
+    "id": "m-red",
+    "lat": 0,
+    "lon": 0,
+    "color": "red"
+   }
+  },
+  {
+   "name": "marker colored orange",
+   "op": {
+    "op": "marker",
+    "id": "m-orange",
+    "lat": 0,
+    "lon": 0,
+    "color": "orange"
+   }
+  },
+  {
+   "name": "marker colored yellow",
+   "op": {
+    "op": "marker",
+    "id": "m-yellow",
+    "lat": 0,
+    "lon": 0,
+    "color": "yellow"
+   }
+  },
+  {
+   "name": "marker colored green",
+   "op": {
+    "op": "marker",
+    "id": "m-green",
+    "lat": 0,
+    "lon": 0,
+    "color": "green"
+   }
+  },
+  {
+   "name": "marker colored blue",
+   "op": {
+    "op": "marker",
+    "id": "m-blue",
+    "lat": 0,
+    "lon": 0,
+    "color": "blue"
+   }
+  },
+  {
+   "name": "marker colored purple",
+   "op": {
+    "op": "marker",
+    "id": "m-purple",
+    "lat": 0,
+    "lon": 0,
+    "color": "purple"
+   }
+  },
+  {
+   "name": "note with a line feed and a tab",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": "line one\nline\ttwo"
+   }
+  },
+  {
+   "name": "note of exactly 4096 bytes",
+   "op": {
+    "op": "note",
+    "id": "n2",
+    "lat": 0,
+    "lon": 0,
+    "text": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9"
+   }
+  },
+  {
+   "name": "photo, a 1x1 PNG",
+   "op": {
+    "op": "photo",
+    "id": "ph1",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+   }
+  },
+  {
+   "name": "photo, a PNG with a title",
+   "op": {
+    "op": "photo",
+    "id": "ph2",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+    "title": "View"
+   }
+  },
+  {
+   "name": "photo whose bytes start like a JPEG (the relay checks no more)",
+   "op": {
+    "op": "photo",
+    "id": "ph3",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/jpeg",
+    "data": "/9j/4AAQSkZJRgABAQ=="
+   }
+  },
+  {
+   "name": "photo of only the PNG signature",
+   "op": {
+    "op": "photo",
+    "id": "ph4",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgo="
+   }
+  },
+  {
+   "name": "track with one point and no time",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point at the lowest altitude and time 0",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "ts": 0,
+      "alt": -1000
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point at the highest altitude and time",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "ts": 9007199254740991,
+      "alt": 100000
+     }
+    ]
+   }
+  },
+  {
+   "name": "track with 100 points and a title",
+   "op": {
+    "op": "track",
+    "id": "t2",
+    "title": "Flight 7",
+    "points": [
+     {
+      "lat": 37.5,
+      "lon": 126.9,
+      "ts": 1700000000000
+     },
+     {
+      "lat": 37.5001,
+      "lon": 126.9,
+      "ts": 1700000001000
+     },
+     {
+      "lat": 37.5002,
+      "lon": 126.9,
+      "ts": 1700000002000
+     },
+     {
+      "lat": 37.5003,
+      "lon": 126.9,
+      "ts": 1700000003000
+     },
+     {
+      "lat": 37.5004,
+      "lon": 126.9,
+      "ts": 1700000004000
+     },
+     {
+      "lat": 37.5005,
+      "lon": 126.9,
+      "ts": 1700000005000
+     },
+     {
+      "lat": 37.5006,
+      "lon": 126.9,
+      "ts": 1700000006000
+     },
+     {
+      "lat": 37.5007,
+      "lon": 126.9,
+      "ts": 1700000007000
+     },
+     {
+      "lat": 37.5008,
+      "lon": 126.9,
+      "ts": 1700000008000
+     },
+     {
+      "lat": 37.5009,
+      "lon": 126.9,
+      "ts": 1700000009000
+     },
+     {
+      "lat": 37.501,
+      "lon": 126.9,
+      "ts": 1700000010000
+     },
+     {
+      "lat": 37.5011,
+      "lon": 126.9,
+      "ts": 1700000011000
+     },
+     {
+      "lat": 37.5012,
+      "lon": 126.9,
+      "ts": 1700000012000
+     },
+     {
+      "lat": 37.5013,
+      "lon": 126.9,
+      "ts": 1700000013000
+     },
+     {
+      "lat": 37.5014,
+      "lon": 126.9,
+      "ts": 1700000014000
+     },
+     {
+      "lat": 37.5015,
+      "lon": 126.9,
+      "ts": 1700000015000
+     },
+     {
+      "lat": 37.5016,
+      "lon": 126.9,
+      "ts": 1700000016000
+     },
+     {
+      "lat": 37.5017,
+      "lon": 126.9,
+      "ts": 1700000017000
+     },
+     {
+      "lat": 37.5018,
+      "lon": 126.9,
+      "ts": 1700000018000
+     },
+     {
+      "lat": 37.5019,
+      "lon": 126.9,
+      "ts": 1700000019000
+     },
+     {
+      "lat": 37.502,
+      "lon": 126.9,
+      "ts": 1700000020000
+     },
+     {
+      "lat": 37.5021,
+      "lon": 126.9,
+      "ts": 1700000021000
+     },
+     {
+      "lat": 37.5022,
+      "lon": 126.9,
+      "ts": 1700000022000
+     },
+     {
+      "lat": 37.5023,
+      "lon": 126.9,
+      "ts": 1700000023000
+     },
+     {
+      "lat": 37.5024,
+      "lon": 126.9,
+      "ts": 1700000024000
+     },
+     {
+      "lat": 37.5025,
+      "lon": 126.9,
+      "ts": 1700000025000
+     },
+     {
+      "lat": 37.5026,
+      "lon": 126.9,
+      "ts": 1700000026000
+     },
+     {
+      "lat": 37.5027,
+      "lon": 126.9,
+      "ts": 1700000027000
+     },
+     {
+      "lat": 37.5028,
+      "lon": 126.9,
+      "ts": 1700000028000
+     },
+     {
+      "lat": 37.5029,
+      "lon": 126.9,
+      "ts": 1700000029000
+     },
+     {
+      "lat": 37.503,
+      "lon": 126.9,
+      "ts": 1700000030000
+     },
+     {
+      "lat": 37.5031,
+      "lon": 126.9,
+      "ts": 1700000031000
+     },
+     {
+      "lat": 37.5032,
+      "lon": 126.9,
+      "ts": 1700000032000
+     },
+     {
+      "lat": 37.5033,
+      "lon": 126.9,
+      "ts": 1700000033000
+     },
+     {
+      "lat": 37.5034,
+      "lon": 126.9,
+      "ts": 1700000034000
+     },
+     {
+      "lat": 37.5035,
+      "lon": 126.9,
+      "ts": 1700000035000
+     },
+     {
+      "lat": 37.5036,
+      "lon": 126.9,
+      "ts": 1700000036000
+     },
+     {
+      "lat": 37.5037,
+      "lon": 126.9,
+      "ts": 1700000037000
+     },
+     {
+      "lat": 37.5038,
+      "lon": 126.9,
+      "ts": 1700000038000
+     },
+     {
+      "lat": 37.5039,
+      "lon": 126.9,
+      "ts": 1700000039000
+     },
+     {
+      "lat": 37.504,
+      "lon": 126.9,
+      "ts": 1700000040000
+     },
+     {
+      "lat": 37.5041,
+      "lon": 126.9,
+      "ts": 1700000041000
+     },
+     {
+      "lat": 37.5042,
+      "lon": 126.9,
+      "ts": 1700000042000
+     },
+     {
+      "lat": 37.5043,
+      "lon": 126.9,
+      "ts": 1700000043000
+     },
+     {
+      "lat": 37.5044,
+      "lon": 126.9,
+      "ts": 1700000044000
+     },
+     {
+      "lat": 37.5045,
+      "lon": 126.9,
+      "ts": 1700000045000
+     },
+     {
+      "lat": 37.5046,
+      "lon": 126.9,
+      "ts": 1700000046000
+     },
+     {
+      "lat": 37.5047,
+      "lon": 126.9,
+      "ts": 1700000047000
+     },
+     {
+      "lat": 37.5048,
+      "lon": 126.9,
+      "ts": 1700000048000
+     },
+     {
+      "lat": 37.5049,
+      "lon": 126.9,
+      "ts": 1700000049000
+     },
+     {
+      "lat": 37.505,
+      "lon": 126.9,
+      "ts": 1700000050000
+     },
+     {
+      "lat": 37.5051,
+      "lon": 126.9,
+      "ts": 1700000051000
+     },
+     {
+      "lat": 37.5052,
+      "lon": 126.9,
+      "ts": 1700000052000
+     },
+     {
+      "lat": 37.5053,
+      "lon": 126.9,
+      "ts": 1700000053000
+     },
+     {
+      "lat": 37.5054,
+      "lon": 126.9,
+      "ts": 1700000054000
+     },
+     {
+      "lat": 37.5055,
+      "lon": 126.9,
+      "ts": 1700000055000
+     },
+     {
+      "lat": 37.5056,
+      "lon": 126.9,
+      "ts": 1700000056000
+     },
+     {
+      "lat": 37.5057,
+      "lon": 126.9,
+      "ts": 1700000057000
+     },
+     {
+      "lat": 37.5058,
+      "lon": 126.9,
+      "ts": 1700000058000
+     },
+     {
+      "lat": 37.5059,
+      "lon": 126.9,
+      "ts": 1700000059000
+     },
+     {
+      "lat": 37.506,
+      "lon": 126.9,
+      "ts": 1700000060000
+     },
+     {
+      "lat": 37.5061,
+      "lon": 126.9,
+      "ts": 1700000061000
+     },
+     {
+      "lat": 37.5062,
+      "lon": 126.9,
+      "ts": 1700000062000
+     },
+     {
+      "lat": 37.5063,
+      "lon": 126.9,
+      "ts": 1700000063000
+     },
+     {
+      "lat": 37.5064,
+      "lon": 126.9,
+      "ts": 1700000064000
+     },
+     {
+      "lat": 37.5065,
+      "lon": 126.9,
+      "ts": 1700000065000
+     },
+     {
+      "lat": 37.5066,
+      "lon": 126.9,
+      "ts": 1700000066000
+     },
+     {
+      "lat": 37.5067,
+      "lon": 126.9,
+      "ts": 1700000067000
+     },
+     {
+      "lat": 37.5068,
+      "lon": 126.9,
+      "ts": 1700000068000
+     },
+     {
+      "lat": 37.5069,
+      "lon": 126.9,
+      "ts": 1700000069000
+     },
+     {
+      "lat": 37.507,
+      "lon": 126.9,
+      "ts": 1700000070000
+     },
+     {
+      "lat": 37.5071,
+      "lon": 126.9,
+      "ts": 1700000071000
+     },
+     {
+      "lat": 37.5072,
+      "lon": 126.9,
+      "ts": 1700000072000
+     },
+     {
+      "lat": 37.5073,
+      "lon": 126.9,
+      "ts": 1700000073000
+     },
+     {
+      "lat": 37.5074,
+      "lon": 126.9,
+      "ts": 1700000074000
+     },
+     {
+      "lat": 37.5075,
+      "lon": 126.9,
+      "ts": 1700000075000
+     },
+     {
+      "lat": 37.5076,
+      "lon": 126.9,
+      "ts": 1700000076000
+     },
+     {
+      "lat": 37.5077,
+      "lon": 126.9,
+      "ts": 1700000077000
+     },
+     {
+      "lat": 37.5078,
+      "lon": 126.9,
+      "ts": 1700000078000
+     },
+     {
+      "lat": 37.5079,
+      "lon": 126.9,
+      "ts": 1700000079000
+     },
+     {
+      "lat": 37.508,
+      "lon": 126.9,
+      "ts": 1700000080000
+     },
+     {
+      "lat": 37.5081,
+      "lon": 126.9,
+      "ts": 1700000081000
+     },
+     {
+      "lat": 37.5082,
+      "lon": 126.9,
+      "ts": 1700000082000
+     },
+     {
+      "lat": 37.5083,
+      "lon": 126.9,
+      "ts": 1700000083000
+     },
+     {
+      "lat": 37.5084,
+      "lon": 126.9,
+      "ts": 1700000084000
+     },
+     {
+      "lat": 37.5085,
+      "lon": 126.9,
+      "ts": 1700000085000
+     },
+     {
+      "lat": 37.5086,
+      "lon": 126.9,
+      "ts": 1700000086000
+     },
+     {
+      "lat": 37.5087,
+      "lon": 126.9,
+      "ts": 1700000087000
+     },
+     {
+      "lat": 37.5088,
+      "lon": 126.9,
+      "ts": 1700000088000
+     },
+     {
+      "lat": 37.5089,
+      "lon": 126.9,
+      "ts": 1700000089000
+     },
+     {
+      "lat": 37.509,
+      "lon": 126.9,
+      "ts": 1700000090000
+     },
+     {
+      "lat": 37.5091,
+      "lon": 126.9,
+      "ts": 1700000091000
+     },
+     {
+      "lat": 37.5092,
+      "lon": 126.9,
+      "ts": 1700000092000
+     },
+     {
+      "lat": 37.5093,
+      "lon": 126.9,
+      "ts": 1700000093000
+     },
+     {
+      "lat": 37.5094,
+      "lon": 126.9,
+      "ts": 1700000094000
+     },
+     {
+      "lat": 37.5095,
+      "lon": 126.9,
+      "ts": 1700000095000
+     },
+     {
+      "lat": 37.5096,
+      "lon": 126.9,
+      "ts": 1700000096000
+     },
+     {
+      "lat": 37.5097,
+      "lon": 126.9,
+      "ts": 1700000097000
+     },
+     {
+      "lat": 37.5098,
+      "lon": 126.9,
+      "ts": 1700000098000
+     },
+     {
+      "lat": 37.5099,
+      "lon": 126.9,
+      "ts": 1700000099000
+     }
+    ]
+   }
+  },
+  {
+   "name": "finish_track",
+   "op": {
+    "op": "finish_track",
+    "id": "t1"
+   }
+  },
+  {
+   "name": "move",
+   "op": {
+    "op": "move",
+    "id": "p1",
+    "lat": -12.25,
+    "lon": 45.5
+   }
+  },
+  {
+   "name": "delete",
+   "op": {
+    "op": "delete",
+    "id": "p1"
+   }
+  }
+ ],
+ "invalid_ops": [
+  {
+   "name": "no op field",
+   "op": {
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "unknown op",
+   "op": {
+    "op": "circle",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "op is not a string",
+   "op": {
+    "op": 1,
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "op in capitals",
+   "op": {
+    "op": "PIN",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "pin without an id",
+   "op": {
+    "op": "pin",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "empty id",
+   "op": {
+    "op": "pin",
+    "id": "",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "65-character id",
+   "op": {
+    "op": "pin",
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "id with a space",
+   "op": {
+    "op": "pin",
+    "id": "a b",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "id with a dot",
+   "op": {
+    "op": "pin",
+    "id": "a.b",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "id with a non-ASCII letter",
+   "op": {
+    "op": "pin",
+    "id": "caf\u00e9",
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "id that is a number",
+   "op": {
+    "op": "pin",
+    "id": 5,
+    "lat": 37.5663,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "latitude above 90",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 90.5,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "latitude below -90",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": -90.5,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "longitude above 180",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 180.5
+   }
+  },
+  {
+   "name": "longitude below -180",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": -180.5
+   }
+  },
+  {
+   "name": "latitude as a string",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": "37.5",
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "latitude null",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": null,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "latitude true",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": true,
+    "lon": 126.9779
+   }
+  },
+  {
+   "name": "pin without a longitude",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663
+   }
+  },
+  {
+   "name": "empty title",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": ""
+   }
+  },
+  {
+   "name": "201-character title",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00\ud83d\ude00"
+   }
+  },
+  {
+   "name": "title with a line feed",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\nb"
+   }
+  },
+  {
+   "name": "title with a tab",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\tb"
+   }
+  },
+  {
+   "name": "title with a carriage return",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\rb"
+   }
+  },
+  {
+   "name": "title with U+0000",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u0000b"
+   }
+  },
+  {
+   "name": "title with U+001F",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u001fb"
+   }
+  },
+  {
+   "name": "title with U+007F",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u007fb"
+   }
+  },
+  {
+   "name": "title with U+0085",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u0085b"
+   }
+  },
+  {
+   "name": "title with U+009F",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u009fb"
+   }
+  },
+  {
+   "name": "title with U+061C",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u061cb"
+   }
+  },
+  {
+   "name": "title with U+200E",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u200eb"
+   }
+  },
+  {
+   "name": "title with U+200F",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u200fb"
+   }
+  },
+  {
+   "name": "title with U+202A",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u202ab"
+   }
+  },
+  {
+   "name": "title with U+202E",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u202eb"
+   }
+  },
+  {
+   "name": "title with U+2066",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u2066b"
+   }
+  },
+  {
+   "name": "title with U+2069",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u2069b"
+   }
+  },
+  {
+   "name": "title with U+2028",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u2028b"
+   }
+  },
+  {
+   "name": "title with U+2029",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\u2029b"
+   }
+  },
+  {
+   "name": "title with U+FEFF",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": "a\ufeffb"
+   }
+  },
+  {
+   "name": "title that is not a string",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "title": 7
+   }
+  },
+  {
+   "name": "pin with a color",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "color": "red"
+   }
+  },
+  {
+   "name": "pin with text",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "text": "hello"
+   }
+  },
+  {
+   "name": "pin with an unknown field",
+   "op": {
+    "op": "pin",
+    "id": "p1",
+    "lat": 37.5663,
+    "lon": 126.9779,
+    "speed": 3
+   }
+  },
+  {
+   "name": "marker with an unknown color",
+   "op": {
+    "op": "marker",
+    "id": "m1",
+    "lat": 0,
+    "lon": 0,
+    "color": "pink"
+   }
+  },
+  {
+   "name": "marker color in capitals",
+   "op": {
+    "op": "marker",
+    "id": "m1",
+    "lat": 0,
+    "lon": 0,
+    "color": "Red"
+   }
+  },
+  {
+   "name": "note without text",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0
+   }
+  },
+  {
+   "name": "note with empty text",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": ""
+   }
+  },
+  {
+   "name": "note with a carriage return",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": "a\r\nb"
+   }
+  },
+  {
+   "name": "note with U+202A",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": "a\u202ab"
+   }
+  },
+  {
+   "name": "note with U+FEFF",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": "\ufeffa"
+   }
+  },
+  {
+   "name": "note of 4097 bytes",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": "\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9\u00e9a"
+   }
+  },
+  {
+   "name": "note with a title",
+   "op": {
+    "op": "note",
+    "id": "n1",
+    "lat": 0,
+    "lon": 0,
+    "text": "a",
+    "title": "t"
+   }
+  },
+  {
+   "name": "photo of an unknown type",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/gif",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+   }
+  },
+  {
+   "name": "photo type image/jpg",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/jpg",
+    "data": "/9j/4AAQSkZJRgABAQ=="
+   }
+  },
+  {
+   "name": "photo without a type",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+   }
+  },
+  {
+   "name": "photo without data",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png"
+   }
+  },
+  {
+   "name": "photo with empty data",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": ""
+   }
+  },
+  {
+   "name": "photo data in the URL-safe alphabet",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/jpeg",
+    "data": "_9j_4A=="
+   }
+  },
+  {
+   "name": "photo data with a line break",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAf\nFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+   }
+  },
+  {
+   "name": "photo data without padding",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgo"
+   }
+  },
+  {
+   "name": "photo data not as an encoder writes it",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgp="
+   }
+  },
+  {
+   "name": "photo of PNG bytes called a JPEG",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/jpeg",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+   }
+  },
+  {
+   "name": "photo of JPEG bytes called a PNG",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "/9j/4AAQSkZJRgABAQ=="
+   }
+  },
+  {
+   "name": "photo data that is not base64",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "not base64!"
+   }
+  },
+  {
+   "name": "photo with a color",
+   "op": {
+    "op": "photo",
+    "id": "ph",
+    "lat": 0,
+    "lon": 0,
+    "type": "image/png",
+    "data": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+    "color": "red"
+   }
+  },
+  {
+   "name": "track without points",
+   "op": {
+    "op": "track",
+    "id": "t1"
+   }
+  },
+  {
+   "name": "track with no points",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": []
+   }
+  },
+  {
+   "name": "track with 101 points",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 37.5,
+      "lon": 126.9,
+      "ts": 1700000000000
+     },
+     {
+      "lat": 37.5001,
+      "lon": 126.9,
+      "ts": 1700000001000
+     },
+     {
+      "lat": 37.5002,
+      "lon": 126.9,
+      "ts": 1700000002000
+     },
+     {
+      "lat": 37.5003,
+      "lon": 126.9,
+      "ts": 1700000003000
+     },
+     {
+      "lat": 37.5004,
+      "lon": 126.9,
+      "ts": 1700000004000
+     },
+     {
+      "lat": 37.5005,
+      "lon": 126.9,
+      "ts": 1700000005000
+     },
+     {
+      "lat": 37.5006,
+      "lon": 126.9,
+      "ts": 1700000006000
+     },
+     {
+      "lat": 37.5007,
+      "lon": 126.9,
+      "ts": 1700000007000
+     },
+     {
+      "lat": 37.5008,
+      "lon": 126.9,
+      "ts": 1700000008000
+     },
+     {
+      "lat": 37.5009,
+      "lon": 126.9,
+      "ts": 1700000009000
+     },
+     {
+      "lat": 37.501,
+      "lon": 126.9,
+      "ts": 1700000010000
+     },
+     {
+      "lat": 37.5011,
+      "lon": 126.9,
+      "ts": 1700000011000
+     },
+     {
+      "lat": 37.5012,
+      "lon": 126.9,
+      "ts": 1700000012000
+     },
+     {
+      "lat": 37.5013,
+      "lon": 126.9,
+      "ts": 1700000013000
+     },
+     {
+      "lat": 37.5014,
+      "lon": 126.9,
+      "ts": 1700000014000
+     },
+     {
+      "lat": 37.5015,
+      "lon": 126.9,
+      "ts": 1700000015000
+     },
+     {
+      "lat": 37.5016,
+      "lon": 126.9,
+      "ts": 1700000016000
+     },
+     {
+      "lat": 37.5017,
+      "lon": 126.9,
+      "ts": 1700000017000
+     },
+     {
+      "lat": 37.5018,
+      "lon": 126.9,
+      "ts": 1700000018000
+     },
+     {
+      "lat": 37.5019,
+      "lon": 126.9,
+      "ts": 1700000019000
+     },
+     {
+      "lat": 37.502,
+      "lon": 126.9,
+      "ts": 1700000020000
+     },
+     {
+      "lat": 37.5021,
+      "lon": 126.9,
+      "ts": 1700000021000
+     },
+     {
+      "lat": 37.5022,
+      "lon": 126.9,
+      "ts": 1700000022000
+     },
+     {
+      "lat": 37.5023,
+      "lon": 126.9,
+      "ts": 1700000023000
+     },
+     {
+      "lat": 37.5024,
+      "lon": 126.9,
+      "ts": 1700000024000
+     },
+     {
+      "lat": 37.5025,
+      "lon": 126.9,
+      "ts": 1700000025000
+     },
+     {
+      "lat": 37.5026,
+      "lon": 126.9,
+      "ts": 1700000026000
+     },
+     {
+      "lat": 37.5027,
+      "lon": 126.9,
+      "ts": 1700000027000
+     },
+     {
+      "lat": 37.5028,
+      "lon": 126.9,
+      "ts": 1700000028000
+     },
+     {
+      "lat": 37.5029,
+      "lon": 126.9,
+      "ts": 1700000029000
+     },
+     {
+      "lat": 37.503,
+      "lon": 126.9,
+      "ts": 1700000030000
+     },
+     {
+      "lat": 37.5031,
+      "lon": 126.9,
+      "ts": 1700000031000
+     },
+     {
+      "lat": 37.5032,
+      "lon": 126.9,
+      "ts": 1700000032000
+     },
+     {
+      "lat": 37.5033,
+      "lon": 126.9,
+      "ts": 1700000033000
+     },
+     {
+      "lat": 37.5034,
+      "lon": 126.9,
+      "ts": 1700000034000
+     },
+     {
+      "lat": 37.5035,
+      "lon": 126.9,
+      "ts": 1700000035000
+     },
+     {
+      "lat": 37.5036,
+      "lon": 126.9,
+      "ts": 1700000036000
+     },
+     {
+      "lat": 37.5037,
+      "lon": 126.9,
+      "ts": 1700000037000
+     },
+     {
+      "lat": 37.5038,
+      "lon": 126.9,
+      "ts": 1700000038000
+     },
+     {
+      "lat": 37.5039,
+      "lon": 126.9,
+      "ts": 1700000039000
+     },
+     {
+      "lat": 37.504,
+      "lon": 126.9,
+      "ts": 1700000040000
+     },
+     {
+      "lat": 37.5041,
+      "lon": 126.9,
+      "ts": 1700000041000
+     },
+     {
+      "lat": 37.5042,
+      "lon": 126.9,
+      "ts": 1700000042000
+     },
+     {
+      "lat": 37.5043,
+      "lon": 126.9,
+      "ts": 1700000043000
+     },
+     {
+      "lat": 37.5044,
+      "lon": 126.9,
+      "ts": 1700000044000
+     },
+     {
+      "lat": 37.5045,
+      "lon": 126.9,
+      "ts": 1700000045000
+     },
+     {
+      "lat": 37.5046,
+      "lon": 126.9,
+      "ts": 1700000046000
+     },
+     {
+      "lat": 37.5047,
+      "lon": 126.9,
+      "ts": 1700000047000
+     },
+     {
+      "lat": 37.5048,
+      "lon": 126.9,
+      "ts": 1700000048000
+     },
+     {
+      "lat": 37.5049,
+      "lon": 126.9,
+      "ts": 1700000049000
+     },
+     {
+      "lat": 37.505,
+      "lon": 126.9,
+      "ts": 1700000050000
+     },
+     {
+      "lat": 37.5051,
+      "lon": 126.9,
+      "ts": 1700000051000
+     },
+     {
+      "lat": 37.5052,
+      "lon": 126.9,
+      "ts": 1700000052000
+     },
+     {
+      "lat": 37.5053,
+      "lon": 126.9,
+      "ts": 1700000053000
+     },
+     {
+      "lat": 37.5054,
+      "lon": 126.9,
+      "ts": 1700000054000
+     },
+     {
+      "lat": 37.5055,
+      "lon": 126.9,
+      "ts": 1700000055000
+     },
+     {
+      "lat": 37.5056,
+      "lon": 126.9,
+      "ts": 1700000056000
+     },
+     {
+      "lat": 37.5057,
+      "lon": 126.9,
+      "ts": 1700000057000
+     },
+     {
+      "lat": 37.5058,
+      "lon": 126.9,
+      "ts": 1700000058000
+     },
+     {
+      "lat": 37.5059,
+      "lon": 126.9,
+      "ts": 1700000059000
+     },
+     {
+      "lat": 37.506,
+      "lon": 126.9,
+      "ts": 1700000060000
+     },
+     {
+      "lat": 37.5061,
+      "lon": 126.9,
+      "ts": 1700000061000
+     },
+     {
+      "lat": 37.5062,
+      "lon": 126.9,
+      "ts": 1700000062000
+     },
+     {
+      "lat": 37.5063,
+      "lon": 126.9,
+      "ts": 1700000063000
+     },
+     {
+      "lat": 37.5064,
+      "lon": 126.9,
+      "ts": 1700000064000
+     },
+     {
+      "lat": 37.5065,
+      "lon": 126.9,
+      "ts": 1700000065000
+     },
+     {
+      "lat": 37.5066,
+      "lon": 126.9,
+      "ts": 1700000066000
+     },
+     {
+      "lat": 37.5067,
+      "lon": 126.9,
+      "ts": 1700000067000
+     },
+     {
+      "lat": 37.5068,
+      "lon": 126.9,
+      "ts": 1700000068000
+     },
+     {
+      "lat": 37.5069,
+      "lon": 126.9,
+      "ts": 1700000069000
+     },
+     {
+      "lat": 37.507,
+      "lon": 126.9,
+      "ts": 1700000070000
+     },
+     {
+      "lat": 37.5071,
+      "lon": 126.9,
+      "ts": 1700000071000
+     },
+     {
+      "lat": 37.5072,
+      "lon": 126.9,
+      "ts": 1700000072000
+     },
+     {
+      "lat": 37.5073,
+      "lon": 126.9,
+      "ts": 1700000073000
+     },
+     {
+      "lat": 37.5074,
+      "lon": 126.9,
+      "ts": 1700000074000
+     },
+     {
+      "lat": 37.5075,
+      "lon": 126.9,
+      "ts": 1700000075000
+     },
+     {
+      "lat": 37.5076,
+      "lon": 126.9,
+      "ts": 1700000076000
+     },
+     {
+      "lat": 37.5077,
+      "lon": 126.9,
+      "ts": 1700000077000
+     },
+     {
+      "lat": 37.5078,
+      "lon": 126.9,
+      "ts": 1700000078000
+     },
+     {
+      "lat": 37.5079,
+      "lon": 126.9,
+      "ts": 1700000079000
+     },
+     {
+      "lat": 37.508,
+      "lon": 126.9,
+      "ts": 1700000080000
+     },
+     {
+      "lat": 37.5081,
+      "lon": 126.9,
+      "ts": 1700000081000
+     },
+     {
+      "lat": 37.5082,
+      "lon": 126.9,
+      "ts": 1700000082000
+     },
+     {
+      "lat": 37.5083,
+      "lon": 126.9,
+      "ts": 1700000083000
+     },
+     {
+      "lat": 37.5084,
+      "lon": 126.9,
+      "ts": 1700000084000
+     },
+     {
+      "lat": 37.5085,
+      "lon": 126.9,
+      "ts": 1700000085000
+     },
+     {
+      "lat": 37.5086,
+      "lon": 126.9,
+      "ts": 1700000086000
+     },
+     {
+      "lat": 37.5087,
+      "lon": 126.9,
+      "ts": 1700000087000
+     },
+     {
+      "lat": 37.5088,
+      "lon": 126.9,
+      "ts": 1700000088000
+     },
+     {
+      "lat": 37.5089,
+      "lon": 126.9,
+      "ts": 1700000089000
+     },
+     {
+      "lat": 37.509,
+      "lon": 126.9,
+      "ts": 1700000090000
+     },
+     {
+      "lat": 37.5091,
+      "lon": 126.9,
+      "ts": 1700000091000
+     },
+     {
+      "lat": 37.5092,
+      "lon": 126.9,
+      "ts": 1700000092000
+     },
+     {
+      "lat": 37.5093,
+      "lon": 126.9,
+      "ts": 1700000093000
+     },
+     {
+      "lat": 37.5094,
+      "lon": 126.9,
+      "ts": 1700000094000
+     },
+     {
+      "lat": 37.5095,
+      "lon": 126.9,
+      "ts": 1700000095000
+     },
+     {
+      "lat": 37.5096,
+      "lon": 126.9,
+      "ts": 1700000096000
+     },
+     {
+      "lat": 37.5097,
+      "lon": 126.9,
+      "ts": 1700000097000
+     },
+     {
+      "lat": 37.5098,
+      "lon": 126.9,
+      "ts": 1700000098000
+     },
+     {
+      "lat": 37.5099,
+      "lon": 126.9,
+      "ts": 1700000099000
+     },
+     {
+      "lat": 37.51,
+      "lon": 126.9,
+      "ts": 1700000100000
+     }
+    ]
+   }
+  },
+  {
+   "name": "track points not a list",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": {
+     "lat": 1,
+     "lon": 2
+    }
+   }
+  },
+  {
+   "name": "track point without a latitude",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lon": 2
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point with an unknown field",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "speed": 3
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point that is not an object",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     [
+      1,
+      2
+     ]
+    ]
+   }
+  },
+  {
+   "name": "track point with a fractional time",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "ts": 1.5
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point with a negative time",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "ts": -1
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point with a time of 2^53",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "ts": 9007199254740992
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point with the time as a string",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "ts": "0"
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point below -1000 m",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "alt": -1000.5
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point above 100000 m",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2,
+      "alt": 100000.5
+     }
+    ]
+   }
+  },
+  {
+   "name": "track point out of range",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "points": [
+     {
+      "lat": 91,
+      "lon": 2
+     }
+    ]
+   }
+  },
+  {
+   "name": "track with a top-level latitude",
+   "op": {
+    "op": "track",
+    "id": "t1",
+    "lat": 1,
+    "points": [
+     {
+      "lat": 1,
+      "lon": 2
+     }
+    ]
+   }
+  },
+  {
+   "name": "finish_track with a title",
+   "op": {
+    "op": "finish_track",
+    "id": "t1",
+    "title": "x"
+   }
+  },
+  {
+   "name": "finish_track without an id",
+   "op": {
+    "op": "finish_track"
+   }
+  },
+  {
+   "name": "move without a latitude",
+   "op": {
+    "op": "move",
+    "id": "p1",
+    "lon": 1
+   }
+  },
+  {
+   "name": "move with a title",
+   "op": {
+    "op": "move",
+    "id": "p1",
+    "lat": 1,
+    "lon": 1,
+    "title": "x"
+   }
+  },
+  {
+   "name": "delete with coordinates",
+   "op": {
+    "op": "delete",
+    "id": "p1",
+    "lat": 1,
+    "lon": 1
+   }
+  },
+  {
+   "name": "delete without an id",
+   "op": {
+    "op": "delete"
+   }
+  },
+  {
+   "name": "delete_all, which the relay does not offer",
+   "op": {
+    "op": "delete_all"
+   }
+  }
+ ],
+ "raw_bodies": [
+  {
+   "name": "empty body",
+   "body": "",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "not JSON",
+   "body": "hello",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "JSON null",
+   "body": "null",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "a JSON array",
+   "body": "[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}]",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "something after the object",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}]} x",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "two objects",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}]}{\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}]}",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "duplicate top-level key",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}],\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}]}",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "duplicate key in an operation",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"a\",\"id\":\"b\",\"lat\":0,\"lon\":0}]}",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "a number too large to be finite",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"a\",\"lat\":1e400,\"lon\":0}]}",
+   "errors": [
+    "invalid_json",
+    "invalid_op"
+   ]
+  },
+  {
+   "name": "an unpaired surrogate in a title",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"a\",\"lat\":0,\"lon\":0,\"title\":\"a\\ud800b\"}]}",
+   "errors": [
+    "invalid_json",
+    "invalid_op"
+   ]
+  },
+  {
+   "name": "an empty object",
+   "body": "{}",
+   "errors": [
+    "invalid_body"
+   ]
+  },
+  {
+   "name": "no operations",
+   "body": "{\"ops\":[]}",
+   "errors": [
+    "invalid_body"
+   ]
+  },
+  {
+   "name": "ops is not a list",
+   "body": "{\"ops\":{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}}",
+   "errors": [
+    "invalid_body"
+   ]
+  },
+  {
+   "name": "an unknown top-level field",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}],\"source\":\"x\"}",
+   "errors": [
+    "invalid_body"
+   ]
+  },
+  {
+   "name": "101 operations",
+   "body": "{\"ops\":[{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779},{\"op\":\"pin\",\"id\":\"p1\",\"lat\":37.5663,\"lon\":126.9779}]}",
+   "errors": [
+    "invalid_body"
+   ]
+  },
+  {
+   "name": "an operation that is not an object",
+   "body": "{\"ops\":[1]}",
+   "errors": [
+    "invalid_op"
+   ]
+  },
+  {
+   "name": "a byte order mark first",
+   "body_base64": "77u/eyJvcHMiOlt7Im9wIjoicGluIiwiaWQiOiJwMSIsImxhdCI6MzcuNTY2MywibG9uIjoxMjYuOTc3OX1dfQ==",
+   "errors": [
+    "invalid_json"
+   ]
+  },
+  {
+   "name": "invalid UTF-8 in a title",
+   "body_base64": "eyJvcHMiOlt7Im9wIjoicGluIiwiaWQiOiJhIiwibGF0IjowLCJsb24iOjAsInRpdGxlIjoiYf9iIn1dfQ==",
+   "errors": [
+    "invalid_json"
+   ]
+  }
+ ]
+}

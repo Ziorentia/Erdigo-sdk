@@ -301,6 +301,85 @@ mark at the start, and the carriage return of each Windows line ending (CR LF be
 A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
 sent.
 
+## Cloud relay example
+
+The app takes connections only from its own local network. To send to it from the internet, for example from a drone
+on a mobile network, [`examples/cloud-relay/`](examples/cloud-relay/) has two programs, written with Node.js and this
+SDK and nothing else:
+
+- **`relay.js`** runs on a server that can be reached from the internet, behind an HTTPS reverse proxy. Devices send
+  operations to it, and it keeps them in memory until the gateway is done with them, or for `--keep-hours` at most.
+- **`gateway.js`** runs on a computer on the same local network as the app. It fetches from the relay with outgoing
+  HTTPS requests, and writes to the app as a paired device.
+
+Run the relay with two tokens, each 32 to 256 characters from `A`-`Z`, `a`-`z`, `0`-`9`, `-`, `_`, `.` and `~`:
+
+```bash
+ERDIGO_RELAY_SOURCE_TOKENS=SOURCE_TOKEN ERDIGO_RELAY_GATEWAY_TOKEN=GATEWAY_TOKEN \
+  node nodejs/examples/cloud-relay/relay.js --listen 127.0.0.1:8080
+```
+
+Pair the gateway once. It asks for the code or the QR text, as `erdigo-send pair` does, or reads it from a file only
+you can read with `--code-file`:
+
+```bash
+node nodejs/examples/cloud-relay/gateway.js pair --name "Cloud gateway"
+```
+
+Then run it:
+
+```bash
+ERDIGO_RELAY_TOKEN=GATEWAY_TOKEN node nodejs/examples/cloud-relay/gateway.js run --relay https://relay.example.com
+```
+
+To try both on one computer with a mock receiver, add `--host 127.0.0.1 --port PORT` to both gateway commands and
+give `run` the relay's `http://127.0.0.1:8080`. With `--once`, `run` stops when nothing more is waiting. The gateway
+keeps its key, its pairing and its place in the relay's queue in the `cloud-gateway` profile, in the folder shown in
+[Where things are kept](#where-things-are-kept), or in `--state-dir`. A token typed in front of a command stays in the
+shell's history, so on a server keep it in a file only you can read. [`docs/cloud-relay.md`](../docs/cloud-relay.md)
+has everything else: the HTTP API, what the gateway prints and its exit codes, security, and deployment.
+
+While the app is out of reach, the SDK keeps the operation and sends the same request again with the same sequence
+number (`RetryPolicy.forever`, or `RetryPolicy.upTo(30_000)` with `--once`), so the app applies it once even if its
+answer was lost. The SDK counts its 30 seconds from the last connection it made, so an app that takes every connection
+but never answers, or whose answers are all lost, would keep it trying. With `--once` the gateway therefore also counts,
+from the first sign of trouble with an operation, and exits with code 3 if the app has not taken it 30 seconds later.
+The signs are a try that failed, and the connection going away while the operation is being sent, which the gateway
+sees in `client.limits`: each connection brings its own limits. Time the SDK spends pacing a track's points before it
+sends is not counted, so a slow track is not given up. An app that never answers shows trouble only when the SDK stops
+waiting for the answer, after 15 seconds, so that case takes about 45 seconds. The SDK does not say when it tries next,
+so the gateway prints `No answer from the Erdigo app; trying again.` without a time, then at most once a minute.
+
+Only one `run` at a time may use a profile, because two gateways with one key would take each other's connection.
+Node.js has no file locks, so while `run` uses a profile it keeps a file only you can read, `.gateway.lock`, holding its
+process id, in the profile's folder, and removes it when it stops. Another `run` on that profile exits with code 1 and
+names that process. A lock whose process has ended, for example because the gateway was killed, is taken over. A lock
+that is a link, or that someone else could replace, is refused. If a process id left in a lock has since gone to
+another program, remove the file.
+
+What was checked:
+
+- `tests/cloud-relay.test.js` runs the relay against every case in
+  [`docs/cloud-relay-cases.json`](../docs/cloud-relay-cases.json), and the rest of the API: each token's role, the order
+  of 404, 405 and 401, sizes and limits, epochs, expiry with a clock of its own, paging, and waiting for operations.
+- `tests/cloud-gateway.test.js` runs the gateway against that relay and this edition's test receiver: every kind of
+  operation, nothing applied twice, an answer lost on the way back (the same request is sent again and applied once),
+  refusals, an app or a relay that cannot be reached or does not answer (status 3 after about 30 seconds), every answer
+  from the app lost on the way and an app that takes the connection and never answers (status 3 after about 30 and 45
+  seconds, the operation applied once and still on the relay), a track the app paces for 35 seconds (not given up), a
+  second `run` on a state folder in use (status 1), a lock left by a process that has ended, a lock that is a link, a
+  restarted relay, expired operations, and relay answers that break the API (status 2).
+- `tests/cloud-gateway-https.test.js` puts the relay behind a small TLS proxy, with a certificate it makes with the
+  `openssl` tool, and checks that the gateway fetches over HTTPS and refuses a certificate it cannot check.
+- `tests/cloud-gateway-mock.test.js` and `tests/cloud-relay-smoke.sh` run both programs, as above, with another
+  edition's mock. The script also starts a second `run` on the profile of one that is running. CI runs every one of
+  these with the .NET mock, on Linux and Windows with Node.js 20 and 22 (the script on Linux only). They were also run
+  by hand on a Mac with Node.js 25, with both the .NET and the Swift mock.
+
+Not checked: the released Erdigo app; a real reverse proxy such as Caddy or nginx, and a certificate from a real
+authority; finding the app without `--host`; typing a code for `gateway pair`; stopping the programs with Ctrl+C on
+Windows; and running for days. Neither program has had a security audit.
+
 ## Layout
 
 | Path | Contents |
@@ -311,9 +390,11 @@ sent.
 | `src/cli/` | The command-line tool and the terminal helpers |
 | `bin/erdigo-send.js` | The command-line tool's entry point |
 | `examples/quickstart.js` | A complete small program |
+| `examples/cloud-relay/` | The [cloud relay example](#cloud-relay-example): `relay.js`, `gateway.js` and their code in `lib/` |
 | `index.d.ts`, `terminal.d.ts` | Type declarations |
 | `tests/*.test.js` | Unit, vector, end-to-end and interoperability tests |
 | `tests/cli-smoke.sh` | Checks of the command-line tool and the example, on macOS and Linux |
+| `tests/cloud-relay-smoke.sh` | The cloud relay example run as its section shows, on macOS and Linux |
 
 ## Tests
 

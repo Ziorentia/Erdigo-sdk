@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <!--
+    The Web SDK adds ASP.NET Core as a framework reference, which comes with .NET itself, so the relay is served by
+    Kestrel without any package. Nothing else from ASP.NET Core is used: no configuration files, no routing, no logging.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>erdigo-relay</AssemblyName>
+    <RootNamespace>Erdigo.Examples.CloudRelay</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Erdigo.Core\Erdigo.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+</Project>
