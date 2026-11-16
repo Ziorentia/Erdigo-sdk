@@ -223,6 +223,17 @@ final class CloudRelayExample {
         return process;
     }
 
+    /**
+     * A file for the output of a program that the test stops. Windows can hold the file for a moment after the program
+     * has ended, and a test folder with a held file in it cannot be removed, so the file is not put in one. It is
+     * removed when the tests end.
+     */
+    static Path outputOfStoppedProgram() throws IOException {
+        Path output = Files.createTempFile("erdigo-cloud-relay-test", ".txt");
+        output.toFile().deleteOnExit();
+        return output;
+    }
+
     /** Runs a program of the example to its end, or fails the test after {@code limit}. */
     static Result run(Path work, Duration limit, String mainClass, List<String> args, Map<String, String> env) throws Exception {
         Path output = Files.createTempFile(work, "output", ".txt");

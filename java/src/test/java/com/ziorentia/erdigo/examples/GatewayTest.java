@@ -5,6 +5,7 @@ import static com.ziorentia.erdigo.examples.CloudRelayExample.discard;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.fetch;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.gateway;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.launch;
+import static com.ziorentia.erdigo.examples.CloudRelayExample.outputOfStoppedProgram;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.post;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.relayEnvironment;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.token;
@@ -470,7 +471,7 @@ class GatewayTest {
         fake.answer("{\"epoch\":\"" + EPOCH + "\",\"reset\":true,\"missed\":false,\"ops\":[]}",
                 "{\"epoch\":\"" + EPOCH + "\",\"reset\":false,\"missed\":false,\"ops\":[]}");
         Path paired = madeUpPairing("paired", unusedPort());
-        Path output = work.resolve("output.txt");
+        Path output = outputOfStoppedProgram();
         Process process = launch(GATEWAY, List.of("run", "--relay", fake.url(), "--state-dir", paired.toString()),
                 withToken(gatewayToken), output);
         try {
@@ -503,7 +504,7 @@ class GatewayTest {
     void refusesASecondRunOnAProfileInUse() throws Exception {
         InProcessRelay relay = relay();
         Path paired = madeUpPairing("paired", unusedPort());
-        Path output = work.resolve("output.txt");
+        Path output = outputOfStoppedProgram();
         Process first = launch(GATEWAY, List.of("run", "--relay", relay.url, "--state-dir", paired.toString()),
                 withToken(gatewayToken), output);
         try {
