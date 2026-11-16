@@ -47,3 +47,8 @@ jobs:
       - name: Command-line checks
         if: runner.os == 'Linux'
         run: CONFIGURATION=Release tests/cli-smoke.sh
+      # The cloud relay and gateway examples as built programs, with the mock receiver: their command lines, exit codes
+      # and output. The Test step runs the same code in one process on both systems, including the relay cases in docs/.
+      - name: Cloud relay checks
+        if: runner.os == 'Linux'
+        run: CONFIGURATION=Release tests/cloud-relay-smoke.sh

@@ -60,6 +60,11 @@ jobs:
       # pseudo terminal, which Windows does not have.
       - name: Interop with the .NET mock receiver
         run: python scripts/interop.py --cwd ../dotnet -- dotnet run --no-build --configuration Release --project src/erdigo-send --
+      # The cloud relay example end to end: its relay, its gateway paired with the .NET mock, every operation kind,
+      # a second run, a gateway allowed pins only, a relay restart, refused tokens, and the mock stopped (about 30
+      # seconds). The relay's conformance tests and the gateway's tests against the test receiver ran in Test.
+      - name: Cloud relay example with the .NET mock receiver
+        run: python scripts/cloud_relay_interop.py --cwd ../dotnet -- dotnet run --no-build --configuration Release --project src/erdigo-send --
       # Finds the .NET mock through its multicast DNS advertisement, without an address. The mock then listens on the
       # runner's network, which nobody else shares.
       - name: Discovery of the .NET mock receiver

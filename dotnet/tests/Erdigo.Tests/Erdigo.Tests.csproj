@@ -17,6 +17,10 @@
     <ProjectReference Include="..\..\src\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj" />
     <!-- For the command-line tool's own helpers, such as how it reads files. -->
     <ProjectReference Include="..\..\src\erdigo-send\erdigo-send.csproj" />
+    <!-- The cloud relay and gateway examples, run in this process. The gateway's types are reached through an alias,
+         because it compiles erdigo-send's keyboard helpers into itself too. -->
+    <ProjectReference Include="..\..\examples\CloudRelay\CloudRelay.csproj" />
+    <ProjectReference Include="..\..\examples\CloudGateway\CloudGateway.csproj" Aliases="gateway" />
   </ItemGroup>
 
   <ItemGroup>

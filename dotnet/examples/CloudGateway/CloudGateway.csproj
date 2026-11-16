@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>erdigo-gateway</AssemblyName>
+    <RootNamespace>Erdigo.Examples.CloudGateway</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
+  </ItemGroup>
+
+  <!-- The pairing code is read from the keyboard exactly as erdigo-send reads it. -->
+  <ItemGroup>
+    <Compile Include="..\..\src\erdigo-send\TerminalInput.cs" Link="Shared\TerminalInput.cs" />
+    <Compile Include="..\..\src\erdigo-send\UnixTerminal.cs" Link="Shared\UnixTerminal.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+</Project>

@@ -10,8 +10,8 @@ works with the other SDKs' mock receivers and with the Erdigo app on a Mac or a 
 
 > **Local network only.** The device running PHP and the computer running the Erdigo app must be on the same local
 > network. The protocol has no internet path, by design: a server on the internet, for example a shop that wants to send
-> a delivery's position, cannot reach the app, and this SDK cannot change that. Sending from the internet would need a
-> separate relay, which is not part of this protocol.
+> a delivery's position, cannot reach the app, and this SDK cannot change that. To send from the internet, use a relay
+> and a gateway, as the [cloud relay example](#cloud-relay-example) does; the protocol itself stays local.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) or the
@@ -339,6 +339,146 @@ mark at the start, and the carriage return of each Windows line ending (CR LF be
 A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
 sent.
 
+## Cloud relay example
+
+The Erdigo app takes connections only from its own local network. To bring in data from the internet, a relay on a web
+server holds what your devices send it, and a gateway on the app's local network fetches it and writes it to the app as
+a paired device. [`examples/cloud-relay`](examples/cloud-relay) has both, written with PHP and this SDK only:
+
+- `relay.php`, the relay: a script for a web server, such as Apache, nginx with PHP-FPM, or shared hosting. It keeps its
+  queue in a data folder, and holds no device key.
+- `gateway.php`, the gateway: a command-line program for a computer on the app's network that stays on, such as a NAS.
+
+[Sending from the internet](../docs/cloud-relay.md) explains when you need them, the relay's API, what the gateway
+does, its exit codes, and their security. This section covers what is particular to PHP.
+
+### The relay
+
+Every request goes to `relay.php`, which reads its settings from the web server's environment:
+
+| Variable | Value |
+|---|---|
+| `ERDIGO_RELAY_SOURCE_TOKENS` | One or more source tokens, separated by commas. |
+| `ERDIGO_RELAY_GATEWAY_TOKEN` | The gateway token. It must differ from every source token. |
+| `ERDIGO_RELAY_DATA_DIR` | An absolute path to a folder outside the web root, on a local disk, where the queue is kept. It is created with mode 0700 if it is missing. |
+| `ERDIGO_RELAY_KEEP_HOURS` | How long an operation waits for the gateway: 1 to 168 hours, 24 by default. |
+| `ERDIGO_RELAY_BASE_PATH` | The path the relay is under, such as `/erdigo-relay`, if it is not at the top of its site. |
+| `ERDIGO_RELAY_LOG` | `0` turns off the line the relay writes in PHP's error log for each request. That line never holds a token or what an operation holds. |
+| `ERDIGO_RELAY_CONFIG` | An INI file outside the web root with any of the settings above, by the same names, for a host where you cannot set variables. Others must not be able to read it (mode 600 or 640). |
+
+The PHP that runs the relay needs `display_errors` off, or PHP writes its own warnings into the answers, which are
+then not JSON, and `post_max_size` of at least `2M`, or PHP empties valid batches. The relay checks both on every
+request.
+
+Before putting it online, check the settings as the user the web server runs PHP as. `check` exits with 1 and says what
+is wrong. It sees the command line's PHP settings, which may differ from the web server's:
+
+```bash
+ERDIGO_RELAY_CONFIG=/etc/erdigo-relay.ini php examples/cloud-relay/relay.php check
+```
+
+A relay with a setting wrong answers every request with `500 {"error":"not_configured"}`, and says why in PHP's error
+log. With nginx and PHP-FPM, behind HTTPS:
+
+```nginx
+location / {
+    client_max_body_size 2m;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME /srv/Erdigo-sdk/php/examples/cloud-relay/relay.php;
+    fastcgi_param ERDIGO_RELAY_CONFIG /etc/erdigo-relay.ini;
+    fastcgi_pass unix:/run/php/php-fpm.sock;
+}
+```
+
+In the PHP-FPM pool that runs it, `php_admin_flag[display_errors] = off` turns the warnings off.
+
+With Apache, or on shared hosting, give the relay a folder of the site with two files in it: `index.php`, holding
+`<?php require '/home/you/Erdigo-sdk/php/examples/cloud-relay/relay.php';`, and this `.htaccess`. For a folder such as
+`/erdigo-relay`, also set `ERDIGO_RELAY_BASE_PATH`. Where PHP runs as CGI or PHP-FPM rather than as Apache's module,
+Apache refuses the `php_flag` line: leave it out, and put `display_errors = Off` in a `.user.ini` file next to
+`index.php` instead.
+
+```apache
+RewriteEngine On
+RewriteRule ^ index.php [L]
+CGIPassAuth On
+LimitRequestBody 2097152
+SetEnv ERDIGO_RELAY_CONFIG /home/you/erdigo-relay.ini
+php_flag display_errors off
+```
+
+To try it on one computer, PHP's built-in server does the same. Give it a few workers, since it otherwise answers one
+request at a time and a fetch that waits holds up sending:
+
+```bash
+ERDIGO_RELAY_SOURCE_TOKENS=SOURCE_TOKEN ERDIGO_RELAY_GATEWAY_TOKEN=GATEWAY_TOKEN ERDIGO_RELAY_DATA_DIR=/tmp/erdigo-relay \
+    PHP_CLI_SERVER_WORKERS=4 php -d display_errors=0 -S 127.0.0.1:8080 examples/cloud-relay/relay.php
+```
+
+The other editions' relays take a command line, and this one its web server's settings instead. It is reached where the
+web server listens, HTTPS is the web server's, `ERDIGO_RELAY_KEEP_HOURS` takes the place of `--keep-hours` and `check`
+that of the start-up line, and the web server starts and stops it. A fetch that finds nothing waiting is held until
+something arrives, for at most 10 seconds rather than the whole `wait`, because it keeps a PHP worker busy all that
+time. So any gateway asks about every 10 seconds while nothing is waiting, and one worker is busy with it most of the
+time. It locks its data folder for each request, which needs a local disk: file locks are not reliable on network file
+systems. It holds no device key, so unlike the SDK it can run on shared hosting, but whoever runs the host can read what
+waits in its data folder.
+
+### The gateway
+
+```bash
+php examples/cloud-relay/gateway.php pair --name "Cloud gateway" --host 192.168.1.20 --port 52345 --code-file /path/to/qr-text
+ERDIGO_RELAY_TOKEN=GATEWAY_TOKEN php examples/cloud-relay/gateway.php run --relay https://relay.example.com
+```
+
+`pair` reads the code as `erdigo-send pair` does. `run` needs PHP's openssl extension for an `https://` relay, checks
+the relay's certificate against the system's trusted certificates, and never follows a redirect. The gateway keeps its
+key, its pairing and `relay-state.json` in the profile `cloud-gateway`, a folder next to erdigo-send's profiles (see
+[Where things are kept](#where-things-are-kept)), or in `--state-dir`, and only one `run` at a time may use it. Ctrl+C
+or `SIGTERM` stops it with exit code 0 where PHP has the pcntl extension; without it, PHP ends as usual, which is as
+safe, because the place is only ever saved whole. While the app cannot be reached, the SDK holds the operation and sends
+it again with the same sequence number (`RetryPolicy::forever()`, or `RetryPolicy::upTo(30)` with `--once`), so an
+answer lost on the way does not make the app apply it twice; the gateway says once per operation that it is trying
+again. The SDK counts its 30 seconds from the last connection it made, so an app that takes every connection but never
+answers, or whose answers are all lost, would keep it trying. With `--once` the gateway therefore keeps its own count
+for each operation, from the first sign of trouble: the SDK connecting again for it, which the gateway sees through the
+device store the SDK calls before each connection, or an answer that says "not now". If the app has not taken the
+operation about 30 seconds later, the gateway exits with code 3 and the operation stays on the relay. The time the SDK
+spends pacing a track to the app's point rate is not trouble, so a slow operation is never given up. An app that never
+answers shows trouble only when the SDK stops waiting for the answer, after 15 seconds, so that case takes about 50
+seconds. With `--once`, exit code 3 also means that the relay could not be reached for about 30 seconds. On a NAS,
+`run --once` every minute from its task scheduler works as well as a `run` that stays up; a run that starts while the
+last one is still going exits with 1.
+
+### What was checked
+
+- `tests/cloud-relay-check.php` runs the relay under PHP's built-in server and checks every case in
+  [`cloud-relay-cases.json`](../docs/cloud-relay-cases.json), the order of 404, 405 and 401, each token's role, 415,
+  413 and a body of exactly 2 MiB, a body over `post_max_size` answered in JSON, 100 operations, a photo of 1048576
+  bytes and of one byte more, whole batches, `queue_full`, epochs, forgetting, paging by number and by size, expiry with
+  the relay's clock moved forward, a fetch held until something arrives or for at most 10 seconds, the settings `check`
+  refuses, `display_errors` on and a small `post_max_size` refused, and batches sent at once to four PHP workers.
+- `tests/cloud-gateway-check.php` runs the gateway with the scripted receiver of these tests. It checks that an answer
+  lost on the way makes the gateway send the operation again with the same sequence number, and that `SIGTERM` stops a
+  gateway that is waiting for the app. With `--once`, it checks that the gateway exits with 3, the operation left on
+  the relay, about 30 seconds after the first answer was lost when every answer is lost, and within a minute when the
+  app takes the request and never answers, each time sending the same request again on new connections; and that a
+  track the SDK paces for about 35 seconds, whose answer is then lost once, is not given up.
+- `tests/cloud-relay-smoke.sh` pairs the gateway with the .NET mock receiver, with the QR text and with a typed code,
+  and sends every kind of operation through the relay. It checks what the mock holds, that a second run applies
+  nothing, that a gateway allowed only pins refuses the rest with `not_permitted` and moves on, that with the app or the
+  relay down `--once` exits with 3 and the operations stay on the relay, a relay that starts a new numbering, expired
+  operations, HTTPS through a front with a test certificate, trusted and not, `SIGTERM`, and the mistakes that exit
+  with 1 and 2. It also passed against the Swift mock receiver.
+- `tests/Unit/CloudRelayTest.php` checks the same rules for operations, queries and relay addresses in this process.
+
+CI runs the first three on Linux with PHP 8.1 to 8.5, and the last with the other PHPUnit tests, on Windows too. They
+were also run on macOS with PHP 8.5. The tests give the tokens to the programs only in their environment.
+
+Not checked: Apache, nginx, PHP-FPM and shared hosting, and the PHP settings shown for them, since the relay ran only
+under PHP's built-in server; the relay and the gateway on Windows; a NAS; the released Erdigo app; a certificate from a
+public authority; and runs longer than a few minutes.
+
 ## Differences from the other SDKs
 
 - **No mock receiver.** `serve --mock` points to the .NET and Swift editions' mocks, which this edition is tested
@@ -364,8 +504,9 @@ sent.
 | `bin/erdigo-send` | The command-line tool's entry point |
 | `autoload.php` | Loads the classes without Composer |
 | `examples/quickstart.php` | A complete small program |
+| `examples/cloud-relay` | The [cloud relay example](#cloud-relay-example): a relay for a web server, and a gateway |
 | `tests/Unit` | PHPUnit tests: the vectors, the model, the store, pairing, the client and the tool |
-| `tests/Support` | A scripted receiver the tests run in a process of their own, which can give any answer |
+| `tests/Support` | A scripted receiver the tests run in a process of their own, which can give any answer, and helpers for the cloud relay checks |
 | `tests/cli-smoke.sh` | Checks of the tool and the example against the .NET or Swift mock receiver, on macOS and Linux |
 
 ## Tests
@@ -381,6 +522,14 @@ MOCK=../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh
 Run them in the `php` folder of a full clone, since they read the shared vectors in `spec/`. The second needs a built
 mock receiver of another edition (`dotnet build dotnet/src/erdigo-send --configuration Release`, or `swift build` for
 `.build/debug/erdigo-send`) and Python 3, for the pseudo terminals.
+
+The [cloud relay example](#cloud-relay-example) has checks of its own, which read `docs/` and need the same mock:
+
+```bash
+php tests/cloud-relay-check.php
+php tests/cloud-gateway-check.php
+MOCK=../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cloud-relay-smoke.sh
+```
 
 What they cover:
 

@@ -304,6 +304,79 @@ mark at the start, and the carriage return of each Windows line ending (CR LF be
 A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
 sent.
 
+## Cloud relay example
+
+The Erdigo app takes connections only from its own local network. Two example programs bring data from the internet
+in anyway, as [docs/cloud-relay.md](../docs/cloud-relay.md) describes:
+
+- **`erdigo-relay`** ([`examples/CloudRelay`](examples/CloudRelay)) runs on a server that can be reached from the
+  internet, behind an HTTPS reverse proxy. Devices send operations to it, and it keeps them in memory until the
+  gateway is done with them. It is served by Kestrel, part of ASP.NET Core, which comes with the .NET SDK, so it
+  needs no package. A server that runs it needs the ASP.NET Core runtime.
+- **`erdigo-gateway`** ([`examples/CloudGateway`](examples/CloudGateway)) runs on a computer on the app's local
+  network. It fetches from the relay with outgoing HTTPS requests and writes to the app through this SDK, as a paired
+  device.
+
+In the `dotnet` folder, start the relay. It reads its tokens from the environment, never from arguments:
+
+```bash
+ERDIGO_RELAY_SOURCE_TOKENS=SOURCE_TOKEN ERDIGO_RELAY_GATEWAY_TOKEN=GATEWAY_TOKEN \
+  dotnet run --project examples/CloudRelay -- --listen 127.0.0.1:8080
+```
+
+Pair the gateway once, as `erdigo-send pair` does: type the code when asked, or give a file only you can read with
+`--code-file`. Then run it:
+
+```bash
+dotnet run --project examples/CloudGateway -- pair --name "Cloud gateway"
+ERDIGO_RELAY_TOKEN=GATEWAY_TOKEN dotnet run --project examples/CloudGateway -- run --relay https://relay.example.com
+```
+
+In PowerShell, set the token first with `$env:ERDIGO_RELAY_TOKEN = "GATEWAY_TOKEN"`. The gateway keeps its key, its
+pairing and its place in the relay's queue in the `cloud-gateway` profile's folder, or in `--state-dir`. On Windows the
+key is protected with DPAPI, so run the gateway as the user who paired it. The guide has everything else: the relay
+API, every option, the exit codes, security and deploying.
+
+While the app is out of reach, the SDK keeps the operation and sends the same request again with the same sequence
+number (spec section 13), with `RetryPolicy.Forever`, or `RetryPolicy.UpTo` 30 seconds with `--once`, so the app
+applies it once even if its answer was lost. The SDK counts its 30 seconds from the last connection it made, so an app
+that takes every connection but never answers, or whose answers are all lost, would keep it trying. With `--once` the
+gateway therefore also counts, from the first sign of trouble with an operation: a try that failed, or the connection
+the SDK was sending it over going away (it watches `ErdigoClient.Limits`, a new object for each connection). If the app
+has not taken the operation 30 seconds later, the gateway cancels the request through its `CancellationToken` and exits
+with code 3, and the operation stays on the relay. Time the SDK spends waiting for the app's limits before it sends,
+up to about 100 seconds for 100 points, is not trouble. An app that never answers shows trouble only when the SDK stops
+waiting for the answer, after 15 seconds, so that case takes about 45 seconds. The SDK does not say when it tries next,
+so the gateway prints `No answer from the Erdigo app; trying again.` once per operation, without a time. Ctrl+C or
+`SIGTERM` ends the wait at once.
+
+Only one `run` at a time may use a profile or state folder. A running gateway keeps `.gateway.lock` in that folder
+locked until it ends (`FileShare.None`: a sharing mode on Windows and an advisory `flock` lock elsewhere, which the
+system lets go if the process dies). A second `run` exits with code 1 and one line saying so. The SDK locks its own
+files only while it writes them, so that alone would not keep a second run out.
+
+What was checked:
+
+- `tests/Erdigo.Tests` runs the relay against every case in
+  [`docs/cloud-relay-cases.json`](../docs/cloud-relay-cases.json) and the rest of the guide: tokens and their roles,
+  the order of checks, sizes, the whole-or-nothing batch, a full queue, epochs, expiry with a test clock, paging and
+  waiting fetches. It runs the gateway between that relay and the mock receiver: every kind of operation, running
+  again, kinds the person did not allow, the app or the relay out of reach (with `--once`, also a relay that takes the
+  connection and never answers), an answer from the app lost on the way
+  (a track's point is still applied once), and with `--once`, every answer lost, an app that takes each connection
+  and never answers, and a track the SDK paces for longer than `--once` waits, which is not given up. It also checks a
+  second `run` on a profile in use, a relay that starts again, expired operations, wrong tokens, and answers that break
+  the API.
+- `tests/cloud-relay-smoke.sh` does much the same with the built programs, through their command lines, including a
+  second `run` while another holds the profile, and `SIGTERM` to the first.
+- Both ran on macOS. CI runs the first on Windows and Linux, and the second on Linux.
+- By hand, the built gateway wrote to the Swift SDK's mock receiver, also through a proxy in front of it: with
+  `--once` it gave up after 30 seconds when every answer was lost and after 45 seconds when the app never answered,
+  with the operation still on the relay, and applied a track once when one answer was lost.
+
+Not checked: the real Erdigo app, a real HTTPS proxy in front of the relay, finding the app without `--host` and
+`--port`, pairing with a typed code, and a gateway left running for days or as a service.
+
 ## Layout
 
 | Folder | Contents |
@@ -313,8 +386,10 @@ sent.
 | `src/Erdigo.MockReceiver` | The mock receiver |
 | `src/erdigo-send` | The command-line tool |
 | `examples/Quickstart` | A complete small program |
+| `examples/CloudRelay`, `examples/CloudGateway` | The [cloud relay example](#cloud-relay-example) |
 | `tests/Erdigo.Tests` | Unit, vector and end-to-end tests |
 | `tests/cli-smoke.sh` | Checks of the command-line tool and the example, on macOS and Linux |
+| `tests/cloud-relay-smoke.sh` | Checks of the cloud relay example's programs, on macOS and Linux |
 
 ## Tests
 
@@ -323,7 +398,7 @@ dotnet test Erdigo.sln
 ```
 
 ```bash
-dotnet build Erdigo.sln && tests/cli-smoke.sh
+dotnet build Erdigo.sln && tests/cli-smoke.sh && tests/cloud-relay-smoke.sh
 ```
 
 The tests use the official Noise vectors and every integration-v1 vector, and run the SDK against the mock receiver

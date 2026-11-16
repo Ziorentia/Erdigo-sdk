@@ -7,3 +7,6 @@ target/
 # Local SDK state, in case someone points --state-dir at the checkout
 identity.key
 pairings.json
+
+# The cloud relay gateway's place in a relay's queue, for the same reason
+relay-state.json

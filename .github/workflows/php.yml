@@ -50,6 +50,16 @@ jobs:
         run: find src bin tests examples autoload.php -name '*.php' -o -name erdigo-send -type f | xargs -n 1 php -l > /dev/null
       - name: Test
         run: phpunit
+      # The cloud relay example over HTTP, under PHP's built-in server: every case in docs/cloud-relay-cases.json and the
+      # rest of the relay API. The file mode checks need Linux.
+      - name: Cloud relay conformance
+        if: runner.os == 'Linux'
+        run: php tests/cloud-relay-check.php
+      # The cloud gateway with the scripted receiver of these tests: an answer lost on the way is resent with the same
+      # sequence number, and SIGTERM stops a gateway while the SDK is trying to reach the app.
+      - name: Cloud gateway with the scripted receiver
+        if: runner.os == 'Linux'
+        run: php tests/cloud-gateway-check.php
       # The other editions' mock receiver, for showing that this edition works with them.
       # actions/setup-dotnet v4.3.1
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
@@ -68,3 +78,8 @@ jobs:
           # Also find the mock on the network with multicast DNS.
           ERDIGO_MULTICAST_CHECKS: "1"
         run: MOCK=../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cli-smoke.sh
+      # The cloud relay and gateway end to end: pairing with the .NET mock, every kind of operation through the relay,
+      # refusals, the app or the relay down, a relay restart, HTTPS with a test certificate and the exit codes.
+      - name: Cloud relay and gateway with the .NET mock receiver
+        if: runner.os == 'Linux'
+        run: MOCK=../dotnet/src/erdigo-send/bin/Release/net8.0/erdigo-send tests/cloud-relay-smoke.sh

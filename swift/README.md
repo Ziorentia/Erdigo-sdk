@@ -181,6 +181,63 @@ mark at the start, and the carriage return of each Windows line ending (CR LF be
 A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
 sent.
 
+## Cloud relay example
+
+The app takes connections only from its own local network. Two example programs bring in data from devices on the
+internet. [`Examples/cloud-relay`](Examples/cloud-relay) is a relay: devices send operations to it over HTTPS, and it
+holds them. [`Examples/cloud-gateway`](Examples/cloud-gateway) is a gateway on the app's local network: it fetches from
+the relay with outgoing requests only and writes to the app through the SDK, as a paired device.
+[The cloud relay guide](../docs/cloud-relay.md) explains everything else: when you need this, the HTTP API, HTTPS and
+deployment, and what each token allows.
+
+Run the relay. It takes its tokens from the environment, never from the command line:
+
+```bash
+ERDIGO_RELAY_SOURCE_TOKENS=SOURCE_TOKEN ERDIGO_RELAY_GATEWAY_TOKEN=GATEWAY_TOKEN \
+  swift run erdigo-example-relay --listen 127.0.0.1:8080
+```
+
+It speaks plain HTTP, so put an HTTPS reverse proxy in front of it. It uses Network.framework and runs on macOS only. A
+Linux server can run another edition's relay. The Swift gateway was tried by hand with each of them, on one computer.
+
+Pair the gateway once, on a Mac on the app's local network. Start pairing in the **Devices** tab of the app's
+settings, then type the code or the QR text when asked. With a typed code you also compare the receiver's key and type
+`yes`, as with `erdigo-send pair`.
+
+```bash
+swift run erdigo-example-gateway pair --name "Cloud gateway"
+```
+
+Then run it:
+
+```bash
+ERDIGO_RELAY_TOKEN=GATEWAY_TOKEN swift run erdigo-example-gateway run --relay https://relay.example.com
+```
+
+`--once` stops when the relay has nothing more. The gateway keeps its key, its pairing and its place in the relay's
+queue (`relay-state.json`) in the `cloud-gateway` profile, or in `--state-dir DIR`. To try both on one Mac, start
+`swift run erdigo-send serve --mock --code-file code.txt`, pair with `--host 127.0.0.1 --port PORT --code-file code.txt`,
+and run with `--relay http://127.0.0.1:8080 --host 127.0.0.1 --port PORT`.
+
+While the app is out of reach, the SDK keeps the operation and sends the same request again with the same sequence
+number (`RetryPolicy.forever`, or `.upTo(30)` with `--once`), so the app applies it once even if its answer was lost.
+The SDK counts its 30 seconds from the last connection it made, so an app that takes every connection but never answers,
+or whose answers are all lost, would keep it trying. With `--once` the gateway therefore also counts, from the first
+sign of trouble with an operation, and exits with code 3 if the app has not taken it 30 seconds later. An app that never
+answers shows trouble only when the SDK stops waiting for the answer, after 15 seconds, so that case takes about 45
+seconds. The SDK does not say when it tries next, so the gateway prints `No answer from the Erdigo app; trying again.`
+once per operation, without a time. Ctrl+C or `SIGTERM` ends the wait at once, and the operation stays on the relay.
+
+What was checked: `CloudRelayTests` runs the relay over real sockets against every case in
+[`cloud-relay-cases.json`](../docs/cloud-relay-cases.json) and the rest of the API: tokens, the order of checks, size
+limits, a full queue, epochs, expiry, paging and waiting fetches. `CloudGatewayTests` runs the relay, the gateway and
+the mock receiver together: every kind of operation, nothing applied twice, an answer from the app lost on the way back
+(a track's points are still applied once), kinds the person did not allow, the app out of reach, never answering, losing
+every answer or answering in a way the SDK cannot use, stopping while the SDK waits for the app, a relay that restarts,
+answers at once or never, a wrong token and answers outside the API. `swift/Tests/cloud-relay-smoke.sh` runs the
+commands above with curl. CI runs all of them on macOS. What was not checked: the real Erdigo app, a real HTTPS proxy,
+the internet, long runs and heavy load. The programs have not had a security audit.
+
 ## Tests
 
 ```bash

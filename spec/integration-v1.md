@@ -25,6 +25,9 @@ Item kinds: `pin`, `marker`, `note` (text only), `photo` (JPEG or PNG only) and 
 Not in version 1: reading anything, video or cameras, messages between people, internet relay, joining
 friend sharing, HEIC images, and short codes.
 
+A program on the receiver's local network can still fetch data from the internet and write it as a paired device. That
+happens outside this protocol, and the [cloud relay guide](../docs/cloud-relay.md) shows how.
+
 The reasoning, and what this design does not protect against, is in [threat-model.md](threat-model.md).
 
 ## 2. Transport

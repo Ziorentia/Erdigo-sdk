@@ -297,6 +297,89 @@ mark at the start, and the carriage return of each Windows line ending (CR LF be
 A carriage return on its own is refused before anything is sent, and the 4096-byte limit counts the note as it is
 sent.
 
+## Cloud relay example
+
+The app takes connections only from its own local network. To bring in data from the internet, `examples/cloud-relay`
+has the two programs of [Sending from the internet](../docs/cloud-relay.md). Each is one file that runs from source
+with the SDK's jar on the class path. They are examples to read and adapt, and are not in the jar.
+
+- `Relay.java` runs on a server, behind an HTTPS proxy. Devices send operations to it with a source token, and it keeps
+  them in memory until the gateway is done with them. It uses the JDK's HTTP server and the SDK's strict JSON reader and
+  checks.
+- `Gateway.java` runs on the app's local network. `pair` pairs it once: it hands over to `erdigo-send pair`, so the code
+  is read exactly as above. `run` fetches from the relay over HTTPS and writes to the app as that paired device.
+
+Build the jar as above. In the `java` folder, start the relay with the two tokens in the environment (on Windows, set
+them with `set` or `$env:` instead of `export`):
+
+```bash
+export ERDIGO_RELAY_SOURCE_TOKENS=SOURCE_TOKEN
+export ERDIGO_RELAY_GATEWAY_TOKEN=GATEWAY_TOKEN
+java -cp target/erdigo-send.jar examples/cloud-relay/Relay.java --listen 127.0.0.1:8080
+```
+
+On a computer on the app's network, pair the gateway once, then run it:
+
+```bash
+java -cp target/erdigo-send.jar examples/cloud-relay/Gateway.java pair --name "Cloud gateway"
+export ERDIGO_RELAY_TOKEN=GATEWAY_TOKEN
+java -cp target/erdigo-send.jar examples/cloud-relay/Gateway.java run --relay https://relay.example.com
+```
+
+Add `--host` and `--port` to give the app's address, and `--once` to stop when the relay has nothing more. The gateway
+keeps its key, its pairing and its place in the relay's queue (`relay-state.json`) in the `cloud-gateway` profile, or
+in `--state-dir`. Only one `run` at a time may use a profile: a run holds a `FileChannel.tryLock` on `.gateway.lock` in
+that folder for as long as it runs, and a second `run` on the same profile or `--state-dir` ends at once with code 1.
+Everything else, from the HTTP API to running behind Caddy, is in the [guide](../docs/cloud-relay.md).
+
+While the app cannot be reached, the SDK sends the same request again with the same sequence number, so an operation
+whose answer was lost on the way is not applied twice. The gateway gives it `RetryPolicy.forever()`, or
+`RetryPolicy.upTo(Duration.ofSeconds(30))` with `--once`. That policy counts from the last connection the SDK made, so
+an app that takes every connection but never answers, or whose answers are all lost, would keep it trying. With `--once`
+the gateway therefore also counts, for each operation, from the first sign of trouble: a try that failed, or the
+connection it was sending on going away, which a thread beside it sees in `client.limits()` (the gateway calls
+`client.connect()` first, so it knows when sending starts). If the app has not taken the operation 30 seconds later, the
+gateway interrupts the request and exits with code 3. An app that never answers shows trouble only when the SDK stops
+waiting for the answer, after 15 seconds, so that case takes about 45 seconds. The SDK keeps its connection while it
+paces a track's points, so that wait is no trouble, and a long track is never given up. The gateway prints
+`No answer from the Erdigo app; trying again.` once for that operation, and Ctrl+C or `SIGTERM` stops the wait, leaving
+the operation on the relay.
+
+`./mvnw -B verify` tests both programs. The end-to-end tests run only when `ERDIGO_MOCK` names a mock receiver's
+`erdigo-send`, such as the .NET one; `tests/cloud-relay-smoke.sh` runs the commands above against that mock.
+
+What has been checked:
+
+- The relay against every case in [`cloud-relay-cases.json`](../docs/cloud-relay-cases.json) and the rest of the API:
+  404, 405 and 401 in that order, each token only for its own use, 411, 413 (announced and read) and 415, 100
+  operations and a photo of 1048576 bytes but no more, batches taken whole, `queue_full` with small limits, epochs and
+  forgetting, `missed` with a clock the tests move, pages by count and by 4 MiB, held fetches, a log without tokens or
+  contents, and refusing to start with bad tokens or on another address. Also that 40 clients sending their headers
+  slowly do not hold up others, and that 32 bodies of 2 MiB at once fit in a heap of 256 MiB. The relay reads and
+  checks only as many bodies at once as its heap allows, and answers `queue_full` to one that waits too long.
+- The gateway with the .NET mock: pairing from the code file, every kind of operation, nothing applied twice, a refusal
+  by the app printed and skipped, `not_permitted` for kinds not allowed, a relay started again, and a wrong token (exit
+  2). Also an answer lost on the way, through a proxy that cuts both connections once the mock has answered: the SDK
+  sends the request again with the same sequence number, and the track's two points are there once. With `--once`,
+  every answer lost on the way, and an app that takes each connection and never answers: exit 3 after about 30 and 45
+  seconds, with the track's points applied once and the operation left on the relay. Without a receiver: mistakes in
+  the command line and environment (exit 1), a second run on a state folder another run is using (exit 1 at once),
+  answers that break the API (exit 2), the app or the relay out of reach with `--once` (exit 3 after about 30 seconds,
+  with the operations left on the relay), and a pause of about 5 seconds between fetches when a relay answers at once
+  with nothing.
+- Both stop with status 0 on SIGTERM, the gateway also within a few seconds while the SDK waits for an app that cannot
+  be reached, leaving the operation on the relay.
+- CI runs all of this on Ubuntu and Windows with Java 17 and 21, except SIGTERM and the smoke script, which run on Ubuntu
+  only. It was also run by hand on a Mac, where the gateway also worked with the Python and Node.js relays, and the
+  Node.js gateway with this relay.
+
+What has not:
+
+- **A real HTTPS proxy, the internet and the real app.** Only plain HTTP on this computer, and the mock.
+- **Many slow clients.** Each connection holds a thread until its request is in, for up to 60 seconds, and the JDK's
+  server takes at most 256 connections. A relay that can be reached without a buffering proxy in front can be stalled
+  by enough slow clients. Heavy load was not measured either.
+
 ## Layout
 
 | Folder | Contents |
@@ -304,8 +387,10 @@ sent.
 | `src/main/java/com/ziorentia/erdigo/core` | The wire format, strict JSON, framing and the Noise handshakes |
 | `src/main/java/com/ziorentia/erdigo/sdk` | Identity, pairing, the device store, discovery and the client |
 | `src/main/java/com/ziorentia/erdigo/send` | The command-line tool |
-| `src/test/java` | Unit, vector, scripted-receiver and interop tests |
+| `src/test/java` | Unit, vector, scripted-receiver and interop tests, and the cloud relay example's tests |
+| `examples/cloud-relay` | The cloud relay example: a relay and a gateway, run from source |
 | `tests/cli-smoke.sh` | Checks of the command-line tool against the .NET mock, on macOS and Linux |
+| `tests/cloud-relay-smoke.sh` | The cloud relay example's commands against the .NET mock, on macOS and Linux |
 
 ## Tests
 

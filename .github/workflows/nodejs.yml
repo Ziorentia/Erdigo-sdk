@@ -45,7 +45,8 @@ jobs:
         run: |
           dotnet restore Erdigo.sln --locked-mode -p:NuGetAuditMode=all
           dotnet build src/erdigo-send --no-restore --configuration Release
-      # The Node.js SDK has no dependencies, so there is nothing to install.
+      # The Node.js SDK has no dependencies, so there is nothing to install. The tests include the cloud relay example's:
+      # the relay against docs/cloud-relay-cases.json, and the gateway end to end with the .NET mock.
       - name: Test
         working-directory: nodejs
         env:
@@ -57,3 +58,7 @@ jobs:
       - name: Command-line checks
         if: runner.os == 'Linux'
         run: nodejs/tests/cli-smoke.sh
+      # The cloud relay example run as its README section shows, with curl as the device and the .NET mock as the app.
+      - name: Cloud relay example
+        if: runner.os == 'Linux'
+        run: nodejs/tests/cloud-relay-smoke.sh

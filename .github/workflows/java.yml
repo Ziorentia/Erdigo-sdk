@@ -77,9 +77,27 @@ jobs:
           grep -q 'tests="4"' "$REPORT"
           # Only the multicast test may be skipped, and only where it is not asked for.
           if [ "$RUNNER_OS" = "Linux" ]; then grep -q 'skipped="0"' "$REPORT"; else grep -q 'skipped="1"' "$REPORT"; fi
+      # The cloud relay example runs in the same verify: the relay against the shared cases and under load, and the
+      # gateway end to end against the mock. Only the SIGTERM tests may be skipped, on Windows, which has no SIGTERM.
+      - name: The cloud relay example's tests ran
+        run: |
+          REPORTS=java/target/surefire-reports
+          grep -q 'tests="20"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayConformanceTest.xml"
+          grep -q 'skipped="0"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayConformanceTest.xml"
+          grep -q 'tests="2"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayHardeningTest.xml"
+          grep -q 'skipped="0"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayHardeningTest.xml"
+          grep -q 'tests="4"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.GatewayMockTest.xml"
+          grep -q 'skipped="0"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.GatewayMockTest.xml"
+          grep -q 'tests="11"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.GatewayTest.xml"
+          if [ "$RUNNER_OS" = "Windows" ]; then SKIPPED=2; else SKIPPED=0; fi
+          grep -q "skipped=\"$SKIPPED\"" "$REPORTS/TEST-com.ziorentia.erdigo.examples.GatewayTest.xml"
       - name: The tool runs from its jar
         run: java -jar java/target/erdigo-send.jar help
       # The checks drive the tool through pseudo terminals, which Windows does not have.
       - name: Command-line checks
         if: runner.os == 'Linux'
         run: java/tests/cli-smoke.sh
+      # The README's commands for the cloud relay example, run from source with the jar, against the mock.
+      - name: Cloud relay example from source
+        if: runner.os == 'Linux'
+        run: java/tests/cloud-relay-smoke.sh

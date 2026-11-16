@@ -123,6 +123,11 @@ later could read it.
 
 **Image decoders can have bugs.** The checks narrow what reaches the system decoder, but do not eliminate the risk.
 
+**A gateway that relays from the internet carries the relay's trust.** The protocol ends at the gateway (see the
+[cloud relay guide](../docs/cloud-relay.md)). Whoever holds a source token for its relay can write through it, within
+the kinds the person allowed and the limits above, and whoever runs the relay sees what passes through it in plain text.
+To the receiver the gateway is one paired device, so removing it cuts off everything that reached the map through it.
+
 **The mock receiver is a test tool.** It listens on the loopback interface by default. It follows the protocol's rules,
 with these differences: it allows every pairing request unless started with `--ask`; it keeps everything in memory, so a
 restart forgets devices, counters, sequence numbers and items, and the recording rule in spec 7 does not apply to it; it
