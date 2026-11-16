@@ -4,6 +4,7 @@ import static com.ziorentia.erdigo.examples.CloudRelayExample.HTTP;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.RELAY;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.discard;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.launch;
+import static com.ziorentia.erdigo.examples.CloudRelayExample.outputOfStoppedProgram;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.post;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.relayEnvironment;
 import static com.ziorentia.erdigo.examples.CloudRelayExample.request;
@@ -67,8 +68,7 @@ class RelayHardeningTest {
     /** The relay as a program, with the heap a small server gives it by default. */
     @Test
     void keepsWithinASmallHeapWhenManyLargeBodiesArriveAtOnce() throws Exception {
-        // Not in a folder the test must remove: on Windows a stopped program can hold its output file a little longer.
-        Path output = Files.createTempFile("erdigo-relay-hardening", ".txt");
+        Path output = outputOfStoppedProgram();
         Process process = launch(List.of("-Xmx256m"), RELAY, List.of("--listen", "127.0.0.1:0"),
                 relayEnvironment(source, gateway), output);
         try {
@@ -111,20 +111,6 @@ class RelayHardeningTest {
             if (!process.waitFor(15, TimeUnit.SECONDS)) {
                 process.destroyForcibly().waitFor(15, TimeUnit.SECONDS);
             }
-            deleteWhenLetGo(output);
         }
-    }
-
-    /** Removes a file once no program holds it, trying for a few seconds; one that is still held goes when the tests end. */
-    private static void deleteWhenLetGo(Path file) throws InterruptedException {
-        for (int attempt = 0; attempt < 50; attempt++) {
-            try {
-                Files.deleteIfExists(file);
-                return;
-            } catch (java.io.IOException held) {
-                Thread.sleep(100);
-            }
-        }
-        file.toFile().deleteOnExit();
     }
 }
