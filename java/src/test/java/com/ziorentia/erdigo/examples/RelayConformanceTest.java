@@ -21,7 +21,12 @@ import com.ziorentia.erdigo.examples.CloudRelayExample.InProcessRelay;
 import com.ziorentia.erdigo.examples.CloudRelayExample.Reply;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.Socket;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -486,15 +491,79 @@ class RelayConformanceTest {
 
     @Test
     void writesOneLineForEachRequest() throws Exception {
-        int before = logBytes.toString(StandardCharsets.UTF_8).split("\n", -1).length;
+        // Lines end as the system ends them: with \r\n on Windows.
+        int before = logBytes.toString(StandardCharsets.UTF_8).split("\\R", -1).length;
         post(url, source, batch(pin("drone-1")));
         fetch(url, gateway, "");
         send(request(url + "/v1/health", null).GET().build());
         send(request(url + "/elsewhere?token=" + source, null).GET().build());
         Thread.sleep(200);
-        String[] lines = logBytes.toString(StandardCharsets.UTF_8).split("\n", -1);
+        String[] lines = logBytes.toString(StandardCharsets.UTF_8).split("\\R", -1);
         assertEquals(before + 4, lines.length);
         assertTrue(lines[lines.length - 2].endsWith(" GET (other) 404"), lines[lines.length - 2]);
+    }
+
+    /**
+     * The JDK's server closes a connection whose request body the relay did not read, so the answer says so: a client
+     * that sent its next request on it would get no answer. Other connections stay open.
+     */
+    @Test
+    void saysWhenItClosesAConnection() throws Exception {
+        try (Socket socket = new Socket("127.0.0.1", relay.port)) {
+            socket.setSoTimeout(10_000);
+            OutputStream output = socket.getOutputStream();
+            InputStream input = socket.getInputStream();
+
+            List<String> refused = exchange(output, input, "GET /elsewhere HTTP/1.1\r\nHost: relay\r\n\r\n");
+            assertTrue(refused.get(0).contains(" 404 "), refused.toString());
+            assertFalse(closes(refused), refused.toString());
+
+            String body = batch(pin("kept-open"));
+            List<String> taken = exchange(output, input, "POST /v1/ops HTTP/1.1\r\nHost: relay\r\nAuthorization: Bearer " + source
+                    + "\r\nContent-Type: application/json\r\nContent-Length: " + body.length() + "\r\n\r\n" + body);
+            assertTrue(taken.get(0).contains(" 200 "), taken.toString());
+            assertFalse(closes(taken), taken.toString());
+
+            List<String> unread = exchange(output, input, "POST /v1/ops HTTP/1.1\r\nHost: relay\r\nAuthorization: Bearer " + source
+                    + "\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhello");
+            assertTrue(unread.get(0).contains(" 415 "), unread.toString());
+            assertTrue(closes(unread), unread.toString());
+        }
+    }
+
+    /** Sends one request and reads its answer: the status line and the headers, with the body skipped. */
+    private static List<String> exchange(OutputStream output, InputStream input, String request) throws IOException {
+        output.write(request.getBytes(StandardCharsets.UTF_8));
+        output.flush();
+        List<String> head = new ArrayList<>();
+        StringBuilder line = new StringBuilder();
+        int length = 0;
+        while (true) {
+            int next = input.read();
+            if (next < 0) {
+                throw new EOFException("the relay closed the connection before answering");
+            }
+            if (next != '\n') {
+                line.append((char) next);
+                continue;
+            }
+            String text = line.toString().strip();
+            line.setLength(0);
+            if (text.isEmpty()) {
+                break;
+            }
+            head.add(text);
+            if (text.regionMatches(true, 0, "Content-Length:", 0, 15)) {
+                length = Integer.parseInt(text.substring(15).strip());
+            }
+        }
+        input.readNBytes(length);
+        return head;
+    }
+
+    private static boolean closes(List<String> head) {
+        return head.stream().anyMatch(line -> line.regionMatches(true, 0, "Connection:", 0, 11)
+                && line.substring(11).strip().equalsIgnoreCase("close"));
     }
 
     @Test

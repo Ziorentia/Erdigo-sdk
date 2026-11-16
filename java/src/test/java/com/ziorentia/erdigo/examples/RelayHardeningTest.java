@@ -27,13 +27,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 /** What slow or heavy requests cost the example relay: neither may take the whole relay down. */
 class RelayHardeningTest {
-    @TempDir
-    Path work;
-
     private final String source = token();
     private final String gateway = token();
 
@@ -71,7 +67,8 @@ class RelayHardeningTest {
     /** The relay as a program, with the heap a small server gives it by default. */
     @Test
     void keepsWithinASmallHeapWhenManyLargeBodiesArriveAtOnce() throws Exception {
-        Path output = work.resolve("relay.txt");
+        // Not in a folder the test must remove: on Windows a stopped program can hold its output file a little longer.
+        Path output = Files.createTempFile("erdigo-relay-hardening", ".txt");
         Process process = launch(List.of("-Xmx256m"), RELAY, List.of("--listen", "127.0.0.1:0"),
                 relayEnvironment(source, gateway), output);
         try {
@@ -112,8 +109,22 @@ class RelayHardeningTest {
         } finally {
             process.destroy();
             if (!process.waitFor(15, TimeUnit.SECONDS)) {
-                process.destroyForcibly();
+                process.destroyForcibly().waitFor(15, TimeUnit.SECONDS);
+            }
+            deleteWhenLetGo(output);
+        }
+    }
+
+    /** Removes a file once no program holds it, trying for a few seconds; one that is still held goes when the tests end. */
+    private static void deleteWhenLetGo(Path file) throws InterruptedException {
+        for (int attempt = 0; attempt < 50; attempt++) {
+            try {
+                Files.deleteIfExists(file);
+                return;
+            } catch (java.io.IOException held) {
+                Thread.sleep(100);
             }
         }
+        file.toFile().deleteOnExit();
     }
 }

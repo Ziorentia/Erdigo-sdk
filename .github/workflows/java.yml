@@ -82,7 +82,7 @@ jobs:
       - name: The cloud relay example's tests ran
         run: |
           REPORTS=java/target/surefire-reports
-          grep -q 'tests="20"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayConformanceTest.xml"
+          grep -q 'tests="21"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayConformanceTest.xml"
           grep -q 'skipped="0"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayConformanceTest.xml"
           grep -q 'tests="2"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayHardeningTest.xml"
           grep -q 'skipped="0"' "$REPORTS/TEST-com.ziorentia.erdigo.examples.RelayHardeningTest.xml"

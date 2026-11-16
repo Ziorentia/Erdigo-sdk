@@ -401,19 +401,27 @@ public final class Relay implements AutoCloseable {
 
     // Requests
 
+    /** What has happened to one request so far. */
+    private static final class Progress {
+        /** An answer has been started. */
+        boolean answered;
+        /** The request body has been read to its end, so the connection can be used again. */
+        boolean bodyRead;
+    }
+
     private void handle(HttpExchange exchange) {
         String method = exchange.getRequestMethod();
         String path = exchange.getRequestURI().getRawPath();
         int status = 0;
-        boolean[] answered = {false};
+        Progress progress = new Progress();
         try {
-            status = route(exchange, method, path == null ? "" : path, answered);
+            status = route(exchange, method, path == null ? "" : path, progress);
         } catch (IOException error) {
             // The client went away.
         } catch (RuntimeException error) {
-            if (!answered[0]) {
+            if (!progress.answered) {
                 try {
-                    status = send(exchange, 500, failure("internal_error"), answered);
+                    status = send(exchange, 500, failure("internal_error"), progress);
                 } catch (IOException ignored) {
                     // The client went away.
                 }
@@ -428,26 +436,26 @@ public final class Relay implements AutoCloseable {
         }
     }
 
-    private int route(HttpExchange exchange, String method, String path, boolean[] answered) throws IOException {
+    private int route(HttpExchange exchange, String method, String path, Progress progress) throws IOException {
         if (path.equals("/v1/health")) {
             if (!method.equals("GET")) {
-                return refuse(exchange, 405, "method_not_allowed", answered);
+                return refuse(exchange, 405, "method_not_allowed", progress);
             }
-            finishEmptyBody(exchange);
-            return send(exchange, 200, HEALTHY, answered);
+            finishEmptyBody(exchange, progress);
+            return send(exchange, 200, HEALTHY, progress);
         }
         if (!path.equals("/v1/ops")) {
-            return refuse(exchange, 404, "not_found", answered);
+            return refuse(exchange, 404, "not_found", progress);
         }
         boolean posting = method.equals("POST");
         if (!posting && !method.equals("GET")) {
-            return refuse(exchange, 405, "method_not_allowed", answered);
+            return refuse(exchange, 405, "method_not_allowed", progress);
         }
         Role role = role(exchange.getRequestHeaders());
         if (posting ? role != Role.SOURCE : role != Role.GATEWAY) {
-            return refuse(exchange, 401, "unauthorized", answered);
+            return refuse(exchange, 401, "unauthorized", progress);
         }
-        return posting ? take(exchange, answered) : give(exchange, answered);
+        return posting ? take(exchange, progress) : give(exchange, progress);
     }
 
     /** Every token is compared, each through its SHA-256, so the time taken says nothing about which one is close. */
@@ -471,37 +479,38 @@ public final class Relay implements AutoCloseable {
 
     // Sending: POST /v1/ops
 
-    private int take(HttpExchange exchange, boolean[] answered) throws IOException {
+    private int take(HttpExchange exchange, Progress progress) throws IOException {
         Headers headers = exchange.getRequestHeaders();
         if (!isJson(headers.get("Content-Type"))) {
-            return refuse(exchange, 415, "unsupported_media_type", answered);
+            return refuse(exchange, 415, "unsupported_media_type", progress);
         }
         String transfer = headers.getFirst("Transfer-Encoding");
         boolean chunked = transfer != null && transfer.toLowerCase(Locale.ROOT).contains("chunked");
         String length = headers.getFirst("Content-Length");
         if (!chunked) {
             if (length == null || !length.trim().matches("[0-9]{1,18}")) {
-                return refuse(exchange, 411, "length_required", answered);
+                return refuse(exchange, 411, "length_required", progress);
             }
             if (Long.parseLong(length.trim()) > MAX_BODY_BYTES) {
-                return refuse(exchange, 413, "too_large", answered);
+                return refuse(exchange, 413, "too_large", progress);
             }
         }
         // What a body costs in memory is bounded before it is read, and again before it is parsed into a tree.
         int announced = chunked ? MAX_BODY_BYTES + 1 : (int) Long.parseLong(length.trim());
         int reservedKiB = announced / 1024 + 1;
         if (!acquire(bodyKiB, reservedKiB)) {
-            return busy(exchange, answered);
+            return busy(exchange, progress);
         }
         List<byte[]> taken = new ArrayList<>();
         byte[] refused;
         try {
             byte[] body = readAtMost(exchange.getRequestBody(), MAX_BODY_BYTES, chunked ? 16 * 1024 : announced);
             if (body == null) {
-                return refuse(exchange, 413, "too_large", answered);
+                return refuse(exchange, 413, "too_large", progress);
             }
+            progress.bodyRead = true;
             if (!acquire(checks, 1)) {
-                return busy(exchange, answered);
+                return busy(exchange, progress);
             }
             try {
                 refused = check(body, taken);
@@ -512,7 +521,7 @@ public final class Relay implements AutoCloseable {
             bodyKiB.release(reservedKiB);
         }
         if (refused != null) {
-            return send(exchange, 400, refused, answered);
+            return send(exchange, 400, refused, progress);
         }
         long takenBytes = 0;
         for (byte[] json : taken) {
@@ -540,10 +549,10 @@ public final class Relay implements AutoCloseable {
             lock.unlock();
         }
         if (last < 0) {
-            return refuse(exchange, 503, "queue_full", answered);
+            return refuse(exchange, 503, "queue_full", progress);
         }
         byte[] answer = JsonWriter.encode(JsonWriter.object().put("accepted", (long) taken.size()).put("last_seq", last).build());
-        return send(exchange, 200, answer, answered);
+        return send(exchange, 200, answer, progress);
     }
 
     /**
@@ -593,9 +602,9 @@ public final class Relay implements AutoCloseable {
     }
 
     /** Too many bodies at once for the memory set aside: as for a full queue, the source sends again later. */
-    private static int busy(HttpExchange exchange, boolean[] answered) throws IOException {
+    private static int busy(HttpExchange exchange, Progress progress) throws IOException {
         exchange.getResponseHeaders().set("Retry-After", "30");
-        return refuse(exchange, 503, "queue_full", answered);
+        return refuse(exchange, 503, "queue_full", progress);
     }
 
     /** {@code application/json}, with nothing but an optional {@code charset=utf-8}. */
@@ -849,12 +858,12 @@ public final class Relay implements AutoCloseable {
         return value < minimum || value > maximum ? -1 : value;
     }
 
-    private int give(HttpExchange exchange, boolean[] answered) throws IOException {
+    private int give(HttpExchange exchange, Progress progress) throws IOException {
         Query query = query(exchange.getRequestURI().getRawQuery());
         if (query == null) {
-            return refuse(exchange, 400, "invalid_query", answered);
+            return refuse(exchange, 400, "invalid_query", progress);
         }
-        finishEmptyBody(exchange);
+        finishEmptyBody(exchange, progress);
         ByteArrayOutputStream answer = new ByteArrayOutputStream();
         lock.lock();
         try {
@@ -893,9 +902,9 @@ public final class Relay implements AutoCloseable {
             lock.unlock();
         }
         if (answer == null) {
-            return refuse(exchange, 400, "invalid_query", answered);
+            return refuse(exchange, 400, "invalid_query", progress);
         }
-        return send(exchange, 200, answer.toByteArray(), answered);
+        return send(exchange, 200, answer.toByteArray(), progress);
     }
 
     private boolean holdsAfter(long seq) {
@@ -942,13 +951,24 @@ public final class Relay implements AutoCloseable {
 
     // Answers
 
-    /** Reads a request body that should be empty, so that the connection can be used again. A real body is left unread. */
-    private static void finishEmptyBody(HttpExchange exchange) throws IOException {
+    /**
+     * Reads a request body that should be empty, so that the connection can be used again. False when the request may
+     * have a body: it is left unread, and the JDK's server closes the connection after the answer.
+     */
+    private static boolean finishEmptyBody(HttpExchange exchange, Progress progress) throws IOException {
+        if (progress.bodyRead) {
+            return true;
+        }
         Headers headers = exchange.getRequestHeaders();
         String length = headers.getFirst("Content-Length");
-        if (headers.getFirst("Transfer-Encoding") == null && (length == null || length.trim().equals("0"))) {
-            exchange.getRequestBody().read();
+        // A POST with neither a length nor chunks may still be followed by a body, so its connection is not used again.
+        boolean empty = headers.getFirst("Transfer-Encoding") == null
+                && (length == null ? !exchange.getRequestMethod().equals("POST") : length.trim().equals("0"));
+        if (empty && exchange.getRequestBody().read() < 0) {
+            progress.bodyRead = true;
+            return true;
         }
+        return false;
     }
 
     private static byte[] failure(String error) {
@@ -959,15 +979,19 @@ public final class Relay implements AutoCloseable {
         return JsonWriter.encode(JsonWriter.object().put("error", error).put("reason", reason).build());
     }
 
-    private static int refuse(HttpExchange exchange, int status, String error, boolean[] answered) throws IOException {
-        return send(exchange, status, failure(error), answered);
+    private static int refuse(HttpExchange exchange, int status, String error, Progress progress) throws IOException {
+        return send(exchange, status, failure(error), progress);
     }
 
-    private static int send(HttpExchange exchange, int status, byte[] body, boolean[] answered) throws IOException {
+    private static int send(HttpExchange exchange, int status, byte[] body, Progress progress) throws IOException {
         Headers headers = exchange.getResponseHeaders();
         headers.set("Content-Type", "application/json");
         headers.set("Cache-Control", "no-store");
-        answered[0] = true;
+        if (!finishEmptyBody(exchange, progress)) {
+            // Said, so that a client does not send its next request on a connection that is about to close.
+            headers.set("Connection", "close");
+        }
+        progress.answered = true;
         boolean head = exchange.getRequestMethod().equals("HEAD");
         exchange.sendResponseHeaders(status, head ? -1 : body.length);
         if (!head) {
