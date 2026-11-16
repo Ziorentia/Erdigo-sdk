@@ -322,5 +322,5 @@ python scripts/interop.py --cwd .. -- swift run erdigo-send
   finding the mock through its advertisement.
 - Locally on a Mac (Apple silicon, Python 3.14): the same against the Swift mock.
 - **Not checked:** a real Raspberry Pi or any ARM board, Python 3.11 to 3.13, macOS in CI, discovery on Windows or
-  macOS or of a real receiver, and the released Erdigo app, which does not yet include a receiver.
+  macOS or of a real receiver, and the real Erdigo app, which accepts these connections from version 2.17.23.
 - **No independent security audit has been done.**

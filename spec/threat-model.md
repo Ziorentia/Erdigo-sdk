@@ -136,4 +136,6 @@ keeps no last-connection time; and it prints the pairing code. It has not been h
 - Silence (bytes and timing), removal, replay, code reuse, pause and the limits in spec 11 have tests against the mock
   receiver, over real TCP.
 - **No independent security audit has been done.**
-- **The released Erdigo app does not yet include a receiver, so nothing here has been checked against a release of it.**
+- **The tests above run against the mock receivers, not against the Erdigo app.** The receiver in the app (from
+  version 2.17.23) is tested outside this repository, and the Swift and .NET SDKs were also checked against the real
+  app on their platforms: pairing, sending items and reconnecting.

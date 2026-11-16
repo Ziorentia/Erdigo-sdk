@@ -349,7 +349,8 @@ What was checked, and where:
 
 Not checked:
 
-- **The released Erdigo app**, which does not yet accept these connections.
+- **The real Erdigo app**, which accepts these connections from version 2.17.23. This SDK has so far been checked
+  against the mock receivers only.
 - **Typing a code or an answer on Windows.** The command-line checks need pseudo terminals, which Windows does not
   have, so the Windows console path was not exercised.
 - **Discovery on Windows and in CI**, which depends on the network passing multicast.

@@ -1,7 +1,8 @@
 # Erdigo integration protocol, version 1
 
-**Status: draft.** The wire format may still change before the first release of a receiver. The released Erdigo
-app does not yet accept these connections. Until it does, use the mock receiver that comes with each SDK.
+**Status: released.** The Erdigo app for Mac and for Windows accepts these connections from version 2.17.23. A change
+that would break devices that already work with version 1 would come as a new protocol version (section 5.3). The mock
+receiver that comes with each SDK is for testing without the app.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as described in RFC 2119.
 
