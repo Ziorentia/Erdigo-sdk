@@ -406,7 +406,8 @@ access-list checks run too.
 
 What has **not** been tested:
 
-- The released Erdigo app, which is not out yet. Only the mock receivers of the other editions.
+- The real Erdigo app, which accepts these connections from version 2.17.23. Only the mock receivers of the other
+  editions were used.
 - A real NAS. Nothing was run on a Synology, a QNAP or another NAS, or on ARM hardware; it was run on macOS (Apple
   silicon) and on GitHub's Linux (x64) and Windows runners.
 - PHP under a web server (PHP-FPM or Apache's module). The tests run PHP from the command line; the web-request
