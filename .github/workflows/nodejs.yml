@@ -36,7 +36,7 @@ jobs:
           node-version: ${{ matrix.node }}
       # The .NET SDK's mock receiver, which the Node.js SDK is checked against. This edition has none of its own.
       # actions/setup-dotnet v4.3.1
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73
         with:
           dotnet-version: 8.0.x
       # The same checks as the .NET workflow: exactly what the lock files say, checked for known vulnerabilities.

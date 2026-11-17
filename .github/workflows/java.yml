@@ -36,7 +36,7 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
       # actions/setup-dotnet v4.3.1, for the .NET SDK's mock receiver, which the Java SDK is tested against.
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73
         with:
           dotnet-version: 8.0.x
       # Exactly what the lock files say, checked against nuget.org's list of known vulnerabilities, as the .NET
