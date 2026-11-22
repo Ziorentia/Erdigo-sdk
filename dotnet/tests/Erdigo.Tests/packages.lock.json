@@ -112,20 +112,13 @@
       "erdigo-gateway": {
         "type": "Project",
         "dependencies": {
-          "Erdigo.Sdk": "[0.1.0, )"
+          "Erdigo.Sdk": "[1.0.0, )"
         }
       },
       "erdigo-relay": {
         "type": "Project",
         "dependencies": {
-          "Erdigo.Core": "[0.1.0, )"
-        }
-      },
-      "erdigo-send": {
-        "type": "Project",
-        "dependencies": {
-          "Erdigo.MockReceiver": "[0.1.0, )",
-          "Erdigo.Sdk": "[0.1.0, )"
+          "Erdigo.Core": "[1.0.0, )"
         }
       },
       "erdigo.core": {
@@ -137,14 +130,21 @@
       "erdigo.mockreceiver": {
         "type": "Project",
         "dependencies": {
-          "Erdigo.Core": "[0.1.0, )"
+          "Erdigo.Core": "[1.0.0, )"
         }
       },
       "erdigo.sdk": {
         "type": "Project",
         "dependencies": {
-          "Erdigo.Core": "[0.1.0, )",
+          "Erdigo.Core": "[1.0.0, )",
           "System.Security.Cryptography.ProtectedData": "[8.0.0, )"
+        }
+      },
+      "Erdigo.Send": {
+        "type": "Project",
+        "dependencies": {
+          "Erdigo.MockReceiver": "[1.0.0, )",
+          "Erdigo.Sdk": "[1.0.0, )"
         }
       },
       "BouncyCastle.Cryptography": {

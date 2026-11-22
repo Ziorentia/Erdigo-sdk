@@ -4,7 +4,7 @@ import Network
 
 /// Pairs this device with a receiver, using the one-time code a person reads from the receiver's screen.
 public enum Pairing {
-    public static let sdkName = "erdigo-swift/0.1.0"
+    public static let sdkName = "erdigo-swift/1.0.0"
 
     /// - Parameters:
     ///   - target: where to find the receiver.

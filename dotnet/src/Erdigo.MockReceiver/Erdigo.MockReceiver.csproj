@@ -2,6 +2,7 @@
   <PropertyGroup>
     <RootNamespace>Erdigo.MockReceiver</RootNamespace>
     <Description>An in-memory stand-in for the receiver side of integration-v1, for developing and testing without the Erdigo app.</Description>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,5 +11,9 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Erdigo.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 </Project>

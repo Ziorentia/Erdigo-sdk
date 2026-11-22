@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    The packages are built against each other's internal code (InternalsVisibleTo), which may change in any version.
+    So a package depends on exactly the same version of the others, [1.2.3], not 1.2.3 or later.
+  -->
+  <Target Name="PinSiblingPackageVersions" AfterTargets="_GetProjectReferenceVersions">
+    <ItemGroup>
+      <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)"
+                                      ProjectVersion="[%(_ProjectReferencesWithVersions.ProjectVersion)]" />
+    </ItemGroup>
+  </Target>
+</Project>

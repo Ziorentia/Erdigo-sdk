@@ -11,13 +11,13 @@
       "erdigo.mockreceiver": {
         "type": "Project",
         "dependencies": {
-          "Erdigo.Core": "[0.1.0, )"
+          "Erdigo.Core": "[1.0.0, )"
         }
       },
       "erdigo.sdk": {
         "type": "Project",
         "dependencies": {
-          "Erdigo.Core": "[0.1.0, )",
+          "Erdigo.Core": "[1.0.0, )",
           "System.Security.Cryptography.ProtectedData": "[8.0.0, )"
         }
       },

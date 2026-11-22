@@ -11,13 +11,27 @@
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <InvariantGlobalization>false</InvariantGlobalization>
 
-    <Version>0.1.0</Version>
+    <Version>1.0.0</Version>
     <Authors>Ziorentia</Authors>
     <Company>Ziorentia</Company>
     <Product>Erdigo SDK</Product>
     <Copyright>Copyright (c) 2026 Ziorentia</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Ziorentia/Erdigo-sdk</RepositoryUrl>
+
+    <!--
+      Only the SDK, the code it is built on, the mock receiver and the erdigo-send tool are packed for nuget.org; each
+      of them sets IsPackable. Examples and tests are not.
+    -->
+    <IsPackable>false</IsPackable>
+    <PackageProjectUrl>https://github.com/Ziorentia/Erdigo-sdk/tree/main/dotnet</PackageProjectUrl>
+    <PackageTags>erdigo;map;gps;location;iot;sensors;local-network;noise-protocol</PackageTags>
+    <PackageReleaseNotes>https://github.com/Ziorentia/Erdigo-sdk/releases</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
     <!-- Every package version is pinned, and CI restores exactly what the lock files say. -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>

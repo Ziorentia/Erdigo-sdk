@@ -25,7 +25,7 @@ def test_qr_text_pairs_and_keeps_what_the_person_allowed(receiver: TestReceiver)
     request = receiver.record.pair_requests[0]
     # Sent in the protocol's order, whatever order they were given in.
     assert request.kinds == (ItemKind.PIN, ItemKind.TRACK)
-    assert request.name == "Greenhouse" and request.sdk == "erdigo-python/0.1.0" and request.versions == (1,)
+    assert request.name == "Greenhouse" and request.sdk == "erdigo-python/1.0.0" and request.versions == (1,)
 
 
 def test_wrong_fingerprint_stops_before_the_receiver_hears_the_device(receiver: TestReceiver) -> None:

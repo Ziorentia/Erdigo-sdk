@@ -5,16 +5,18 @@ local network. It runs on macOS, Windows and Linux, in Node.js and in server run
 web browser, because a browser cannot open a TCP connection to the local network, and this protocol has no internet
 path.
 
-It speaks the same [protocol](../spec/integration-v1.md) as the [Swift SDK](../swift/README.md) and the
-[.NET SDK](../dotnet/README.md), and works with their mock receivers. It has no runtime dependencies: the
+It speaks the same [protocol](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/integration-v1.md) as the [Swift SDK](https://github.com/Ziorentia/Erdigo-sdk/blob/main/swift/README.md) and the
+[.NET SDK](https://github.com/Ziorentia/Erdigo-sdk/blob/main/dotnet/README.md), and works with their mock receivers. It has no runtime dependencies: the
 cryptography comes from `node:crypto`, the connection from `node:net`, and discovery from `node:dgram`.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later on a Mac or a PC on the same local network, from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) or the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US). The app's minimum and recommended
-systems are listed in [System requirements for the app](../README.md#system-requirements-for-the-app).
+systems are listed in [System requirements for the app](https://github.com/Ziorentia/Erdigo-sdk/blob/main/README.md#system-requirements-for-the-app).
 
 ## Try it in two minutes
+
+These steps use a clone of this repository: `git clone https://github.com/Ziorentia/Erdigo-sdk.git`.
 
 You need [Node.js](https://nodejs.org/) 20 or later. This edition has no mock receiver of its own, so start the one
 from the .NET SDK (it needs the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)) or, on a Mac, the
@@ -45,17 +47,19 @@ node nodejs/bin/erdigo-send.js pin --host 127.0.0.1 --port PORT --id city-hall -
 ```
 
 The mock prints each request it accepts. Type `devices` and then `items 1` in its terminal to see what it holds.
-[`examples/quickstart.js`](examples/quickstart.js) is a complete program: `node nodejs/examples/quickstart.js 127.0.0.1 PORT`.
+[`examples/quickstart.js`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/nodejs/examples/quickstart.js) is a complete program: `node nodejs/examples/quickstart.js 127.0.0.1 PORT`.
 
 ## Use it in your code
 
-No package is published. Install it from your clone of this repository:
+Install it from [npm](https://www.npmjs.com/package/erdigo-sdk):
 
 ```bash
-npm install path/to/Erdigo-sdk/nodejs
+npm install erdigo-sdk
 ```
 
-It is an ES module with type declarations ([`index.d.ts`](index.d.ts)), so TypeScript sees every type.
+To change the SDK itself, install it from your clone of this repository instead: `npm install path/to/Erdigo-sdk/nodejs`.
+
+It is an ES module with type declarations ([`index.d.ts`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/nodejs/index.d.ts)), so TypeScript sees every type.
 
 Pair once:
 
@@ -98,7 +102,7 @@ device is sent until the receiver has proven the code and its key matches the on
 Text from the QR code carries the receiver's key, and `pair` compares it and stops on a mismatch, so it asks the person
 nothing. `PairingTicket.parse` refuses QR text without a valid fingerprint. The terminal check makes a pipe or a file
 count as a no, because nobody is there to see the key and answer, so a program with no terminal should use the QR text.
-The [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this matters.
+The [threat model](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/threat-model.md#what-this-does-not-protect-against) explains why this matters.
 
 After that, write:
 
@@ -178,7 +182,7 @@ learning anything.
 |---|---|
 | `noAnswer` | See above. Check the network and that the app is running. |
 | `notPermitted` | The person did not allow this kind (`itemKind`). Pair again to ask for more. |
-| `rejected` | The receiver refused this request. `receiverError.code` is listed in the [specification](../spec/integration-v1.md#10-errors). |
+| `rejected` | The receiver refused this request. `receiverError.code` is listed in the [specification](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/integration-v1.md#10-errors). |
 | `keyNotConfirmed` | With a typed code, `confirmKey` did not return `true`. The receiver was not asked to pair, and the code still works. |
 | `fingerprintMismatch` | The receiver's key is not the one in the QR text or `--fingerprint`. Pairing stopped before the receiver heard a request. |
 | `pairingDenied`, `pairingTimedOut` | The person declined, or did not answer in time. |
@@ -254,7 +258,7 @@ None at run time, and none for the tests, which use `node:test`. Everything come
 | `node:tty` | Reading a code and an answer from the terminal. |
 
 The Noise handshakes (`Noise_XXpsk0_25519_ChaChaPoly_SHA256` for pairing and `Noise_IK_25519_ChaChaPoly_SHA256` for
-connecting) are written here, in [`src/noise.js`](src/noise.js), on top of those primitives, and checked against the
+connecting) are written here, in [`src/noise.js`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/nodejs/src/noise.js), on top of those primitives, and checked against the
 official vectors. JSON from a receiver is read by a strict parser of this repository, because `JSON.parse` keeps the
 last of two duplicate keys and accepts lone surrogates.
 
@@ -304,7 +308,7 @@ sent.
 ## Cloud relay example
 
 The app takes connections only from its own local network. To send to it from the internet, for example from a drone
-on a mobile network, [`examples/cloud-relay/`](examples/cloud-relay/) has two programs, written with Node.js and this
+on a mobile network, [`examples/cloud-relay/`](https://github.com/Ziorentia/Erdigo-sdk/tree/main/nodejs/examples/cloud-relay) has two programs, written with Node.js and this
 SDK and nothing else:
 
 - **`relay.js`** runs on a server that can be reached from the internet, behind an HTTPS reverse proxy. Devices send
@@ -336,7 +340,7 @@ To try both on one computer with a mock receiver, add `--host 127.0.0.1 --port P
 give `run` the relay's `http://127.0.0.1:8080`. With `--once`, `run` stops when nothing more is waiting. The gateway
 keeps its key, its pairing and its place in the relay's queue in the `cloud-gateway` profile, in the folder shown in
 [Where things are kept](#where-things-are-kept), or in `--state-dir`. A token typed in front of a command stays in the
-shell's history, so on a server keep it in a file only you can read. [`docs/cloud-relay.md`](../docs/cloud-relay.md)
+shell's history, so on a server keep it in a file only you can read. [`docs/cloud-relay.md`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay.md)
 has everything else: the HTTP API, what the gateway prints and its exit codes, security, and deployment.
 
 While the app is out of reach, the SDK keeps the operation and sends the same request again with the same sequence
@@ -360,7 +364,7 @@ another program, remove the file.
 What was checked:
 
 - `tests/cloud-relay.test.js` runs the relay against every case in
-  [`docs/cloud-relay-cases.json`](../docs/cloud-relay-cases.json), and the rest of the API: each token's role, the order
+  [`docs/cloud-relay-cases.json`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay-cases.json), and the rest of the API: each token's role, the order
   of 404, 405 and 401, sizes and limits, epochs, expiry with a clock of its own, paging, and waiting for operations.
 - `tests/cloud-gateway.test.js` runs the gateway against that relay and this edition's test receiver: every kind of
   operation, nothing applied twice, an answer lost on the way back (the same request is sent again and applied once),

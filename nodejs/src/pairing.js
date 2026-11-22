@@ -10,7 +10,7 @@ import { ErrorCode, MAX_HANDSHAKE_FRAME_LENGTH, Mode, VERSION, WireError, finger
 import { ByteStream, ByteStreamError, ByteStreamFailure, frame } from './stream.js';
 
 /** Sent to receivers for diagnostics only. */
-export const SDK_NAME = 'erdigo-nodejs/0.1.0';
+export const SDK_NAME = 'erdigo-nodejs/1.0.0';
 
 /**
  * Shows a person the receiver's key, and returns whether it matches the key on the receiver's screen.

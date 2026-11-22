@@ -37,8 +37,8 @@ Elsewhere:
    output, and use made-up data in examples, as [Rules for the code](#rules-for-the-code) describes.
 3. **Search first.** Your question may already have an answer in Discussions, the issues or the SDK guides.
 4. **One topic per discussion,** with a title that says what it is about.
-5. **Say what you use:** the SDK folder (swift, dotnet, python, nodejs, java or php), its commit, the system with its
-   runtime version, and the Erdigo app version if the app is involved. Show the smallest code and output that shows
+5. **Say what you use:** the SDK folder (swift, dotnet, python, nodejs, java or php), its version (or the commit, if you
+   use a clone), the system with its runtime version, and the Erdigo app version if the app is involved. Show the smallest code and output that shows
    the problem.
 6. **Write in English if you can,** so that everyone can search and follow. If that is hard, write in your own language
    and add a machine translation.
@@ -70,7 +70,9 @@ If you touch the wire format, also generate the vectors again and run the indepe
   coordinates, device names or addresses.
 - **A pairing code never goes in a command-line argument or a log.**
 - **Automation stays minimal.** Pin actions to a full commit hash, keep the token at `contents: read`, and do not add
-  repository secrets or `pull_request_target`.
+  repository secrets or `pull_request_target`. The one exception is the Publish workflow's publishing jobs, which also
+  get `id-token: write` for trusted publishing and run only in the `pypi`, `npm` and `nuget` environments
+  ([Releasing](docs/releasing.md)).
 
 ## Sign-off
 

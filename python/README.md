@@ -8,33 +8,36 @@ cron job that reads its readings in its own way and sends them through the SDK. 
 Raspberry Pi or any other ARM board.** Its tests run on Linux (x64) and Windows (x64) in CI, and on macOS (Apple
 silicon) locally.
 
-It speaks the same [protocol](../spec/integration-v1.md) as the [Swift](../swift/README.md) and
-[.NET](../dotnet/README.md) SDKs, and its `erdigo-send` tool has the same commands and options as theirs. It has no
+It speaks the same [protocol](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/integration-v1.md) as the [Swift](https://github.com/Ziorentia/Erdigo-sdk/blob/main/swift/README.md) and
+[.NET](https://github.com/Ziorentia/Erdigo-sdk/blob/main/dotnet/README.md) SDKs, and its `erdigo-send` tool has the same commands and options as theirs. It has no
 mock receiver of its own: develop against the mock that comes with either of them. CI pairs with the .NET mock and
 writes every item kind to it, and the same was done with the Swift mock on a Mac.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later on a Mac from the
 [Mac App Store](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12) or on a PC from the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US), on the same local network. The app's
-minimum and recommended systems are listed in [System requirements for the app](../README.md#system-requirements-for-the-app).
+minimum and recommended systems are listed in [System requirements for the app](https://github.com/Ziorentia/Erdigo-sdk/blob/main/README.md#system-requirements-for-the-app).
 
 ## Install
 
-No package is published. Install it from a full clone of this repository, into a virtual environment:
+Install it from [PyPI](https://pypi.org/project/erdigo-sdk/) into a virtual environment:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install ./python
+.venv/bin/pip install erdigo-sdk
 ```
 
-On Windows the second line is `.venv\Scripts\pip install .\python`. To find receivers on the network without giving an
-address, add the optional discovery package: `pip install "./python[discovery]"`. Everything else works without it.
+On Windows the second line is `.venv\Scripts\pip install erdigo-sdk`. To find receivers on the network without giving
+an address, add the optional discovery package: `pip install "erdigo-sdk[discovery]"`. Everything else works without
+it. To change the SDK itself, install it from a full clone of this repository instead: `pip install ./python`.
 
 That installs `erdigo-send`, which `python -m erdigo_sdk` also runs. The one dependency is `cryptography`, which has
 ready-made wheels for 64-bit Linux on x64 and ARM, macOS and Windows. On a 32-bit Raspberry Pi OS pip may have to build
 it, which needs Rust; use the 64-bit system where you can. Neither has been tried.
 
 ## Try it in two minutes
+
+These steps use a clone of this repository: `git clone https://github.com/Ziorentia/Erdigo-sdk.git`.
 
 Start a mock receiver from one of the other SDKs in one terminal. With the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0),
 in the `dotnet` folder:
@@ -99,7 +102,7 @@ sent until the receiver has proven the code and its key matches the one the pers
 without `confirm_key`. Text from the QR code carries the receiver's key, and `pair` compares it and stops on a mismatch,
 so it asks the person nothing. `PairingTicket.parse` refuses QR text without a valid fingerprint. The terminal check
 makes a pipe or a file count as a no, because nobody is there to see the key and answer, so a program with no terminal
-should use the QR text. The [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains why this
+should use the QR text. The [threat model](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/threat-model.md#what-this-does-not-protect-against) explains why this
 matters.
 
 After that, write:
@@ -123,7 +126,7 @@ with ErdigoClient(identity, pairing, store) as client:
     client.delete_all()  # Only this device's items.
 ```
 
-[`examples/quickstart.py`](examples/quickstart.py) is a complete program. The API is synchronous, and a client may be
+[`examples/quickstart.py`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/examples/quickstart.py) is a complete program. The API is synchronous, and a client may be
 shared between threads: requests run one at a time, in the order they were made.
 
 ## What the SDK does for you
@@ -172,7 +175,7 @@ anything.
 |---|---|
 | `NO_ANSWER` | See above. Check the network and that the app is running. |
 | `NOT_PERMITTED` | The person did not allow this kind (`item_kind`). Pair again to ask for more. |
-| `REJECTED` | The receiver refused this request. `receiver_error.code` is listed in the [specification](../spec/integration-v1.md#10-errors). |
+| `REJECTED` | The receiver refused this request. `receiver_error.code` is listed in the [specification](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/integration-v1.md#10-errors). |
 | `KEY_NOT_CONFIRMED` | With a typed code, `confirm_key` returned false. The receiver was not asked to pair, and the code still works. |
 | `FINGERPRINT_MISMATCH` | The receiver's key is not the one in the QR text or `--fingerprint`. Nothing was sent about this device. |
 | `PAIRING_DENIED`, `PAIRING_TIMED_OUT` | The person declined, or did not answer in time. |
@@ -207,7 +210,7 @@ in `identity.dpapi`, encrypted with [DPAPI](https://learn.microsoft.com/windows/
 for the current user, with entropy that ties it to this purpose, called through `ctypes`. DPAPI keeps the key from other
 users and from someone who copies the file to another computer. It does not protect against a program running as you,
 an administrator, or someone with your password and a copy of your profile. The
-[.NET SDK guide](../dotnet/README.md#what-dpapi-does-not-protect-against) says more.
+[.NET SDK guide](https://github.com/Ziorentia/Erdigo-sdk/blob/main/dotnet/README.md#what-dpapi-does-not-protect-against) says more.
 
 The store tells these apart, and never makes a new key over an old one:
 
@@ -226,16 +229,16 @@ may hold a copy.
 
 ## Dependencies, and why
 
-| Package | Version | Why |
+| Package | Version tested | Why |
 |---|---|---|
 | `cryptography` | 50.0.2 | X25519 and ChaCha20-Poly1305, from OpenSSL. SHA-256, HMAC and HKDF come from Python itself. The Noise handshakes are implemented in this package and checked against the official vectors. |
 | `zeroconf` | 0.154.0 (0.152.0 on Python 3.10) | Optional, for finding receivers on the network. |
 | `pytest`, `setuptools` | 9.2.0, 84.2.1 | Tests and building only. |
 
-The runtime version is pinned in [`pyproject.toml`](pyproject.toml), so every install gets the version that was tested.
-CI installs exactly what [`requirements/test.txt`](requirements/test.txt) lists, with a hash for every file, including
+[`pyproject.toml`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/pyproject.toml) asks for these versions or later, so that the package installs beside
+others that need `cryptography`. CI installs exactly what [`requirements/test.txt`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/requirements/test.txt) lists, with a hash for every file, including
 the packages these bring with them. Regenerate it after changing a version, with the command at the top of
-[`requirements/test.in`](requirements/test.in). Nothing checks these packages against a list of known vulnerabilities
+[`requirements/test.in`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/requirements/test.in). Nothing checks these packages against a list of known vulnerabilities
 yet; check `cryptography`'s security advisories before updating it, and update it when one affects you.
 
 ## Differences from the Swift and .NET SDKs
@@ -281,7 +284,7 @@ folders made with mode 0o700, such as those from `tempfile.mkdtemp`, exactly tha
 ## Cloud relay example
 
 The app takes connections only from its own local network. For data that starts on the internet,
-[`examples/cloud_relay`](examples/cloud_relay) has the two programs of the [cloud relay guide](../docs/cloud-relay.md):
+[`examples/cloud_relay`](https://github.com/Ziorentia/Erdigo-sdk/tree/main/python/examples/cloud_relay) has the two programs of the [cloud relay guide](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay.md):
 
 - `relay.py` runs on a server and holds what your devices send it over HTTPS until the gateway fetches it. It uses
   only the Python standard library, so the one file can be copied to a server and run with Python 3.10 or later. It
@@ -310,7 +313,7 @@ On Windows the gateway runs as `.venv\Scripts\python python\examples\cloud_relay
 gateway keeps its key, its pairing and its place in the relay's queue (`relay-state.json`) in the profile
 `cloud-gateway`, or in `--state-dir`; `erdigo-send list --profile cloud-gateway` shows its pairing. `run --once` does
 not hold its fetches open, and stops as soon as the relay has nothing more. The relay API, every option, the exit codes
-and how to deploy both are in the [guide](../docs/cloud-relay.md).
+and how to deploy both are in the [guide](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay.md).
 
 While the app is out of reach or paused, the SDK keeps the operation and sends the same request again by itself, after
 1, 2, 4 ... up to 60 seconds, with the same sequence number, so the app applies it once even if its answer was lost
@@ -336,10 +339,10 @@ error for about 30 seconds. For the relay the time each try takes counts too, so
 never answers is given up on in about 30 seconds as well. What was fetched stays on the relay, and the next run sends it
 again as a new request, so a `track` operation's points can then appear twice.
 
-What was checked: [`tests/test_cloud_relay.py`](tests/test_cloud_relay.py) runs the relay against every case in
-[`cloud-relay-cases.json`](../docs/cloud-relay-cases.json), and against the rest of the API: tokens, the order of the
+What was checked: [`tests/test_cloud_relay.py`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/tests/test_cloud_relay.py) runs the relay against every case in
+[`cloud-relay-cases.json`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay-cases.json), and against the rest of the API: tokens, the order of the
 checks, size limits, whole batches, a full queue, epochs, expiry with a test clock, paging, waiting, slow clients, its
-start-up checks and its log. [`tests/test_cloud_gateway.py`](tests/test_cloud_gateway.py) runs the relay, the gateway
+start-up checks and its log. [`tests/test_cloud_gateway.py`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/tests/test_cloud_gateway.py) runs the relay, the gateway
 and the test receiver together: every operation kind, a second run, kinds the person did not allow, the app out of
 reach with and without `--once` (an answer lost before a long outage is sent again with the same sequence number, and
 Ctrl+C and `SIGTERM` stop the gateway while the SDK waits), a proxy in front of the test receiver that loses every
@@ -347,7 +350,7 @@ answer or holds every answer back (given up on with `--once`; lost answers waite
 with the same number each time), a track paced for longer than `--once` allows, also right after a "not now", which
 is not given up on, the relay out of reach with `--once` (nothing listening,
 server errors, and a relay that never answers), a relay restart, wrong tokens, answers that break the API, and HTTPS
-with a test certificate. CI runs [`scripts/cloud_relay_interop.py`](scripts/cloud_relay_interop.py) against the .NET
+with a test certificate. CI runs [`scripts/cloud_relay_interop.py`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/scripts/cloud_relay_interop.py) against the .NET
 mock on Linux and Windows, and it was run locally against the Swift mock. **Not checked:** a real server behind an
 HTTPS proxy, the released app, a Raspberry Pi, and this gateway with the other editions' relays. No security audit has
 been done.
@@ -374,7 +377,7 @@ pip install --no-deps --no-build-isolation .
 python -m pytest
 ```
 
-The tests use the official Noise vectors and every integration-v1 vector in [`spec/vectors`](../spec/vectors/README.md),
+The tests use the official Noise vectors and every integration-v1 vector in [`spec/vectors`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/vectors/README.md),
 byte for byte, so run them from a full clone. They also run the SDK and the tool against a small receiver over real TCP,
 including the cases that must fail: a typed code nobody confirmed, a wrong fingerprint, a receiver key spelled two ways,
 low-order keys, every kind of error answer, files others can read, and a code given as an argument. The Windows-only

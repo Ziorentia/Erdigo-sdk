@@ -4,15 +4,17 @@ A .NET 8 library for writing pins, markers, notes, photos and tracks to an Erdig
 for Windows 10 or later. It also builds and runs on macOS and Linux, which this repository uses for development and
 CI, but the device key is protected only on Windows (see [Where things are kept](#where-things-are-kept)).
 
-It is a port of the [Swift SDK](../swift/README.md) and speaks the same [protocol](../spec/integration-v1.md). The two
+It is a port of the [Swift SDK](https://github.com/Ziorentia/Erdigo-sdk/blob/main/swift/README.md) and speaks the same [protocol](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/integration-v1.md). The two
 SDKs and their mock receivers work with each other.
 
 To use the SDK with a real map, install Erdigo 2.17.23 or later from the
 [Microsoft Store](https://apps.microsoft.com/detail/9ndwqg2sdr7x?hl=en-US) on a PC on the same local network. It can
 also write to [Erdigo for Mac](https://apps.apple.com/us/app/erdigo/id6446225102?mt=12). The app's minimum and recommended systems are listed in
-[System requirements for the app](../README.md#system-requirements-for-the-app).
+[System requirements for the app](https://github.com/Ziorentia/Erdigo-sdk/blob/main/README.md#system-requirements-for-the-app).
 
 ## Try it in two minutes
+
+These steps use a clone of this repository: `git clone https://github.com/Ziorentia/Erdigo-sdk.git`.
 
 You need the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or a later one; the libraries target
 .NET 8 either way. Run the tests from a full clone, since they read the shared vectors in `spec/`. In the `dotnet`
@@ -52,7 +54,14 @@ standard output does not hold it.
 
 ## Use it in your code
 
-No package is published yet. Reference the project from yours:
+Install it from [nuget.org](https://www.nuget.org/packages/Erdigo.Sdk):
+
+```powershell
+dotnet add package Erdigo.Sdk
+```
+
+The `erdigo-send` command is also on nuget.org, as a .NET tool: `dotnet tool install --global Erdigo.Send`. To change
+the SDK itself, reference the project from your clone of this repository instead:
 
 ```xml
 <ProjectReference Include="path\to\Erdigo-sdk\dotnet\src\Erdigo.Sdk\Erdigo.Sdk.csproj" />
@@ -102,7 +111,7 @@ receiver may still be closing the connection that showed the key. A typed code c
 `confirmKey`. Text from the QR code carries the receiver's key, and `PairAsync` compares it and stops on a mismatch,
 so it asks the person nothing. `PairingTicket.Parse` refuses QR text without a valid fingerprint. The redirection check
 makes a pipe or a file count as a no, because nobody is there to see the key and answer, so a program with no
-terminal should use the QR text. The [threat model](../spec/threat-model.md#what-this-does-not-protect-against) explains
+terminal should use the QR text. The [threat model](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/threat-model.md#what-this-does-not-protect-against) explains
 why this matters.
 
 After that, write:
@@ -126,7 +135,7 @@ await client.DeleteAllAsync();   // Only this device's items.
 ```
 
 Every method takes an optional `CancellationToken`. A cancelled request throws `OperationCanceledException`.
-[`examples/Quickstart`](examples/Quickstart/Program.cs) is a complete program.
+[`examples/Quickstart`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/dotnet/examples/Quickstart/Program.cs) is a complete program.
 
 ## What the SDK does for you
 
@@ -179,7 +188,7 @@ learning anything.
 |---|---|
 | `NoAnswer` | See above. Check the network and that the app is running. |
 | `NotPermitted` | The person did not allow this kind (`ItemKind`). Pair again to ask for more. |
-| `Rejected` | The receiver refused this request. `ReceiverError.Code` is listed in the [specification](../spec/integration-v1.md#10-errors). |
+| `Rejected` | The receiver refused this request. `ReceiverError.Code` is listed in the [specification](https://github.com/Ziorentia/Erdigo-sdk/blob/main/spec/integration-v1.md#10-errors). |
 | `KeyNotConfirmed` | With a typed code, `confirmKey` returned false. The receiver was not asked to pair, and the code still works. |
 | `PairingDenied`, `PairingTimedOut` | The person declined, or did not answer in time. |
 | `CodeReused` | The code was already used. Ask for a new one. |
@@ -246,8 +255,8 @@ never passes it a key.
 | `System.Security.Cryptography.ProtectedData` | 8.0.0 | DPAPI, from Microsoft. Called only on Windows. |
 | `xunit`, `xunit.runner.visualstudio`, `Microsoft.NET.Test.Sdk` | 2.9.3, 3.1.5, 17.14.1 | Tests only. |
 
-Every version is pinned in [`Directory.Packages.props`](Directory.Packages.props) and every project has a lock file.
-[`nuget.config`](nuget.config) allows nuget.org and nothing else.
+Every version is pinned in [`Directory.Packages.props`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/dotnet/Directory.Packages.props) and every project has a lock file.
+[`nuget.config`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/dotnet/nuget.config) allows nuget.org and nothing else.
 
 Restoring checks every package, including the ones packages bring with them (`NuGetAuditMode=all`), against
 nuget.org's list of known vulnerabilities. A vulnerability of any severity is an error, and so is a list that cannot
@@ -307,13 +316,13 @@ sent.
 ## Cloud relay example
 
 The Erdigo app takes connections only from its own local network. Two example programs bring data from the internet
-in anyway, as [docs/cloud-relay.md](../docs/cloud-relay.md) describes:
+in anyway, as [docs/cloud-relay.md](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay.md) describes:
 
-- **`erdigo-relay`** ([`examples/CloudRelay`](examples/CloudRelay)) runs on a server that can be reached from the
+- **`erdigo-relay`** ([`examples/CloudRelay`](https://github.com/Ziorentia/Erdigo-sdk/tree/main/dotnet/examples/CloudRelay)) runs on a server that can be reached from the
   internet, behind an HTTPS reverse proxy. Devices send operations to it, and it keeps them in memory until the
   gateway is done with them. It is served by Kestrel, part of ASP.NET Core, which comes with the .NET SDK, so it
   needs no package. A server that runs it needs the ASP.NET Core runtime.
-- **`erdigo-gateway`** ([`examples/CloudGateway`](examples/CloudGateway)) runs on a computer on the app's local
+- **`erdigo-gateway`** ([`examples/CloudGateway`](https://github.com/Ziorentia/Erdigo-sdk/tree/main/dotnet/examples/CloudGateway)) runs on a computer on the app's local
   network. It fetches from the relay with outgoing HTTPS requests and writes to the app through this SDK, as a paired
   device.
 
@@ -358,7 +367,7 @@ files only while it writes them, so that alone would not keep a second run out.
 What was checked:
 
 - `tests/Erdigo.Tests` runs the relay against every case in
-  [`docs/cloud-relay-cases.json`](../docs/cloud-relay-cases.json) and the rest of the guide: tokens and their roles,
+  [`docs/cloud-relay-cases.json`](https://github.com/Ziorentia/Erdigo-sdk/blob/main/docs/cloud-relay-cases.json) and the rest of the guide: tokens and their roles,
   the order of checks, sizes, the whole-or-nothing batch, a full queue, epochs, expiry with a test clock, paging and
   waiting fetches. It runs the gateway between that relay and the mock receiver: every kind of operation, running
   again, kinds the person did not allow, the app or the relay out of reach (with `--once`, also a relay that takes the

@@ -4,34 +4,41 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "erdigo-sdk"
-version = "0.1.0"
+version = "1.0.0"
 description = "Write pins, markers, notes, photos and tracks to an Erdigo receiver on the local network."
 readme = "README.md"
 license = "MIT"
 authors = [{ name = "Ziorentia LLC" }]
+keywords = ["erdigo", "map", "gps", "location", "iot", "sensors", "local network", "noise protocol"]
 requires-python = ">=3.10"
-# Pinned: every user gets the cryptography that was tested. Update it here, in requirements/, and test again.
-dependencies = ["cryptography==50.0.2"]
+# The oldest versions tested, or later, so that the package installs beside other packages that need cryptography.
+# CI tests exactly the versions in requirements/test.txt.
+dependencies = ["cryptography>=50.0.2"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: POSIX :: Linux",
     "Operating System :: MacOS",
     "Operating System :: Microsoft :: Windows",
-    "Private :: Do Not Upload",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: GIS",
 ]
 
 [project.optional-dependencies]
 # Finds receivers on the local network. Without it, give --host and --port, or ReceiverTarget.address(...).
 discovery = [
-    "zeroconf==0.154.0; python_version >= '3.11'",
-    "zeroconf==0.152.0; python_version < '3.11'",
+    "zeroconf>=0.154.0; python_version >= '3.11'",
+    "zeroconf>=0.152.0; python_version < '3.11'",
 ]
 
 [project.scripts]
 erdigo-send = "erdigo_sdk.cli:main"
 
 [project.urls]
+Homepage = "https://www.ziorentia.com/product.php?id=erdigo"
+Documentation = "https://github.com/Ziorentia/Erdigo-sdk/blob/main/python/README.md"
 Source = "https://github.com/Ziorentia/Erdigo-sdk"
+Issues = "https://github.com/Ziorentia/Erdigo-sdk/issues"
+Changelog = "https://github.com/Ziorentia/Erdigo-sdk/releases"
 
 [tool.setuptools.packages.find]
 where = ["src"]
