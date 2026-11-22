@@ -48,7 +48,7 @@ standard output does not hold it.
 
 ```swift
 // Package.swift
-.package(url: "https://github.com/Ziorentia/Erdigo-sdk.git", branch: "main")
+.package(url: "https://github.com/Ziorentia/Erdigo-sdk.git", from: "1.0.0")
 
 // and in your target's dependencies:
 .product(name: "ErdigoSDK", package: "erdigo-sdk")

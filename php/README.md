@@ -49,7 +49,7 @@ Without Composer, copy the `php` folder anywhere outside your web server's docum
 This edition has no mock receiver of its own. Start the .NET or the Swift edition's, from a clone of this repository:
 
 ```bash
-cd windows && dotnet run --project src/erdigo-send -- serve --mock --code-file /tmp/erdigo-code
+cd dotnet && dotnet run --project src/erdigo-send -- serve --mock --code-file /tmp/erdigo-code
 ```
 
 It prints a port, writes the pairing's QR text to `/tmp/erdigo-code` (a file only you can read), and prints the

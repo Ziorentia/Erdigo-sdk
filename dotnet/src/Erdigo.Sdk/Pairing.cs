@@ -14,7 +14,7 @@ public delegate Task<bool> ConfirmReceiverKey(string receiverKey, CancellationTo
 /// <summary>Pairs this device with a receiver, using the one-time code a person reads from the receiver's screen.</summary>
 public static class Pairing
 {
-    public const string SdkName = "erdigo-dotnet/0.1.0";
+    public const string SdkName = "erdigo-dotnet/1.0.0";
 
     /// <summary>Pairs with a receiver and returns what to store about it.</summary>
     /// <param name="target">Where to find the receiver.</param>

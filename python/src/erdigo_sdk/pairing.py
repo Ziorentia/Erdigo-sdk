@@ -14,7 +14,7 @@ from .model import ItemKind, PairingCode, PairingTicket, canonical_kinds, saniti
 from .protocol import ErrorCode, WireError
 from .stream import FramedStream, StreamError, StreamFailure
 
-SDK_NAME = "erdigo-python/0.1.0"
+SDK_NAME = "erdigo-python/1.0.0"
 
 #: How many times the pairing connection is tried after a person confirmed the key.
 CONFIRMED_ATTEMPTS = 3

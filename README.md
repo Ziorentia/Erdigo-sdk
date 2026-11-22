@@ -65,14 +65,14 @@ streams use the Microsoft Edge WebView2 Runtime, which comes with Windows 11 and
 
 ## Platforms
 
-| Platform | Where | Status |
+| Platform | Where | Get it |
 |---|---|---|
-| Swift, on macOS 12 or later | [`swift/`](swift/README.md) | Preview |
-| C# (.NET 8), on Windows 10 or later | [`dotnet/`](dotnet/README.md) | Preview |
-| Linux, macOS or Windows (Python 3.10 or later), for scripts and boards such as a Raspberry Pi | [`python/`](python/README.md) | Preview |
-| Node.js 20 or later on macOS, Windows or Linux | [`nodejs/`](nodejs/README.md) | Preview |
-| Java 17 or later (Windows, macOS, Linux) | [`java/`](java/README.md) | Preview |
-| PHP 8.1 or later, on the local network: a NAS, a server or a script | [`php/`](php/README.md) | Preview |
+| Swift, on macOS 12 or later | [`swift/`](swift/README.md) | Swift Package Manager, from this repository |
+| C# (.NET 8), on Windows 10 or later | [`dotnet/`](dotnet/README.md) | [nuget.org](https://www.nuget.org/packages/Erdigo.Sdk) |
+| Linux, macOS or Windows (Python 3.10 or later), for scripts and boards such as a Raspberry Pi | [`python/`](python/README.md) | [PyPI](https://pypi.org/project/erdigo-sdk/) |
+| Node.js 20 or later on macOS, Windows or Linux | [`nodejs/`](nodejs/README.md) | [npm](https://www.npmjs.com/package/erdigo-sdk) |
+| Java 17 or later (Windows, macOS, Linux) | [`java/`](java/README.md) | Build it from this repository |
+| PHP 8.1 or later, on the local network: a NAS, a server or a script | [`php/`](php/README.md) | From this repository |
 
 **Linux, including a Raspberry Pi.** The .NET SDK also builds and runs on Linux, and its tests run on Linux (x64) in
 CI. It is supported there for development and testing only, it has not been tried on a Raspberry Pi or another ARM
@@ -137,6 +137,7 @@ router port is opened. See [Sending from the internet: a cloud relay and a gatew
 - [Java SDK guide](java/README.md)
 - [PHP SDK guide](php/README.md)
 - [Sending from the internet: a cloud relay and a gateway](docs/cloud-relay.md)
+- [Releases](https://github.com/Ziorentia/Erdigo-sdk/releases): what changed in each version, and [how a release is made](docs/releasing.md)
 - [Protocol specification](spec/integration-v1.md), for building an SDK in another language or a receiver
 - [Threat model](spec/threat-model.md): what this protects against, and what it does not
 - [Test vectors](spec/vectors/README.md)

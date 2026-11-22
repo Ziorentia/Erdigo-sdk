@@ -4,6 +4,12 @@
     <AssemblyName>erdigo-send</AssemblyName>
     <RootNamespace>Erdigo.Send</RootNamespace>
     <Description>Writes pins, markers, notes, photos and tracks to a paired Erdigo receiver, and runs a mock receiver for testing.</Description>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <PackageId>Erdigo.Send</PackageId>
+    <ToolCommandName>erdigo-send</ToolCommandName>
+    <!-- Runs on a later .NET where .NET 8 is not installed. -->
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,5 +19,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Erdigo.Sdk\Erdigo.Sdk.csproj" />
     <ProjectReference Include="..\Erdigo.MockReceiver\Erdigo.MockReceiver.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
 </Project>

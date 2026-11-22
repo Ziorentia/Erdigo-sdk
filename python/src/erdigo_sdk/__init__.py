@@ -14,7 +14,7 @@ from .pairing import SDK_NAME, ConfirmReceiverKey, pair
 from .protocol import ErrorCode, WireError, fingerprint, short_fingerprint
 from .store import DeviceStore, FileDeviceStore, InMemoryDeviceStore, default_directory
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 
 __all__ = [
     "DISCOVER",

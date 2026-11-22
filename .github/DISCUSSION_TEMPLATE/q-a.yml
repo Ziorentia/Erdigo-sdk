@@ -32,8 +32,8 @@ body:
   - type: input
     id: version
     attributes:
-      label: Commit and system
-      description: The commit, and the system with its runtime version, for example "1a2b3c4, Windows 11, Python 3.12". Add the Erdigo app version if the app is involved.
+      label: Version and system
+      description: The SDK and its version (or the commit, if you use a clone), and the system with its runtime version, for example "python 1.0.0, Windows 11, Python 3.12". Add the Erdigo app version if the app is involved.
     validations:
       required: true
   - type: textarea

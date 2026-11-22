@@ -30,7 +30,7 @@ import java.util.Objects;
 /** Pairs this device with a receiver, using the one-time code a person reads from the receiver's screen. */
 public final class Pairing {
     /** What this SDK calls itself in {@code hello} and {@code pair_request}. */
-    public static final String SDK_NAME = "erdigo-java/0.1.0";
+    public static final String SDK_NAME = "erdigo-java/1.0.0";
 
     private Pairing() {
     }

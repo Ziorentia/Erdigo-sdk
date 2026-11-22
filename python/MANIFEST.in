@@ -1,0 +1,2 @@
+# The tests need the rest of the repository (spec/vectors, the mock receivers), so they run from a clone.
+prune tests

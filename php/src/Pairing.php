@@ -26,7 +26,7 @@ use Erdigo\Core\FrameStreamException;
  */
 final class Pairing
 {
-    public const SDK_NAME = 'erdigo-php/0.1.0';
+    public const SDK_NAME = 'erdigo-php/1.0.0';
 
     /** How many times the pairing connection is tried after a person confirmed the key. */
     private const CONFIRMED_ATTEMPTS = 3;

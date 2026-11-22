@@ -7,7 +7,7 @@
   <!-- Not published to Maven Central or anywhere else. Build it from this repository. -->
   <groupId>com.ziorentia.erdigo</groupId>
   <artifactId>erdigo-sdk</artifactId>
-  <version>0.1.0</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
   <name>Erdigo SDK for Java</name>
   <description>Writes pins, markers, notes, photos and tracks to an Erdigo receiver on the local network.</description>
