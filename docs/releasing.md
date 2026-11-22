@@ -94,6 +94,11 @@ npm login
 npm publish ./nodejs --access public
 ```
 
+The `./` matters: without it npm reads `nodejs` as the name of a GitHub repository. npm may first show a placeholder
+version, `0.0.0-stage`, as the package's latest version while it checks the upload; the real version replaced it as
+latest about a minute later for 1.0.0. Check the package's page, and approve the version under **Staged Packages** in
+the account settings if it is waiting there.
+
 npm also lets a new trusted publisher wait at most two days for its first publish, after which it expires and must be
 deleted and added again. So add it only when the next release is about to be made: in the package's settings on
 npmjs.com, add a trusted publisher for GitHub Actions with organization or user `Ziorentia`, repository `Erdigo-sdk`,
