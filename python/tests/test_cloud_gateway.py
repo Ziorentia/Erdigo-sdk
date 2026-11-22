@@ -368,7 +368,9 @@ def test_without_once_ctrl_c_and_sigterm_stop_the_gateway_while_the_app_is_out_o
     assert relay_server.held() == [1]
 
 
-@pytest.mark.parametrize("idle_seconds, connections", [(0.0, 2), (240.0, 1)])
+# Below zero rather than zero, so that the connection counts as idle even when the clock has not moved: on Windows,
+# Python before 3.13 reads a clock that moves in steps of about 16 ms.
+@pytest.mark.parametrize("idle_seconds, connections", [(-1.0, 2), (240.0, 1)])
 def test_a_connection_left_idle_is_closed_before_the_next_batch(
     tool: Gateway, relay_server: RunningRelay, receiver: TestReceiver, monkeypatch, idle_seconds: float, connections: int
 ) -> None:
